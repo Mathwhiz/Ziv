@@ -1327,7 +1327,7 @@ window.uiTerritorioPicker = function({
       const expandBtn = overlay.querySelector('#tp-expand-grupos');
       if (expandBtn) expandBtn.onclick = () => { gruposExpanded = !gruposExpanded; render(); };
 
-      overlay.querySelectorAll('.tp-item').forEach(btn => {
+      overlay.querySelectorAll('.tp-item, .tp-grid-item').forEach(btn => {
         btn.onclick = () => { overlay.remove(); resolve(btn.dataset.terr); };
       });
 
