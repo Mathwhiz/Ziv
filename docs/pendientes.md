@@ -87,11 +87,12 @@ Notificaciones automáticas para recordar responsabilidades próximas.
 
 ---
 
-### Auditoría — log de cambios (ANOTAR)
-- ⬜ Registrar en Firestore quién hizo qué y cuándo en acciones importantes
-- Colección `congregaciones/{congreId}/auditoria/{entryId}` con `uid`, `accion`, `datos`, `fecha`
-- Acciones a auditar: crear/editar/eliminar hermano, cambiar asignación, modificar semana especial, cambiar rol de usuario
-- Vista en `admin.html` para revisar el log
+### Auditoría — log de cambios (✅ implementado básico)
+- Colección `congregaciones/{congreId}/actividad/{entryId}` con `uid`, `deviceId`, `nombre`, `modulo`, `accion`, `detalle`, `anonimo`, `timestamp`
+- Vista en `admin.html` → botón 📊 por congregación (`view-actividad`): stats de acciones / personas / guardados + lista cronológica
+- `shared/actividad.js` exporta `logActividad(congreId, modulo, accion, detalle?)` — llamado en apertura y guardado de cada módulo
+- Regla Firestore: `allow create: if true` (sin auth requerida) para capturar también usuarios sin sesión
+- **Pendiente:** registrar acciones más granulares (crear/editar/eliminar hermano, cambiar rol, etc.)
 
 ### Dashboard de estadísticas (más adelante)
 - Territorios trabajados por mes/gráfico

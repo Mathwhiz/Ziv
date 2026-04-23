@@ -23,6 +23,8 @@ Instalar dependencias:
 import argparse
 import re
 import sys
+sys.stdout.reconfigure(encoding='utf-8')
+sys.stderr.reconfigure(encoding='utf-8')
 import xml.etree.ElementTree as ET
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -159,7 +161,9 @@ def main():
         sys.exit(1)
 
     db = firestore.client()
-    terr_col = db.collection('congregaciones').document(args.congre).collection('territorios')
+    congre_ref = db.collection('congregaciones').document(args.congre)
+    terr_col   = congre_ref.collection('territorios')
+    mapa_col   = congre_ref.collection('mapa_territorios')
 
     # Actualizar — SOLO poligonos y punto, nada más
     ok = 0
@@ -175,9 +179,16 @@ def main():
             update_data['punto'] = t['punto']
 
         doc_ref.update(update_data)
-        ok += 1
         n_polys = len(t['poligonos'])
-        print(f'   ✅ Territorio {tid}: {n_polys} polígono(s) actualizados')
+        print(f'   ✅ Territorio {tid}: {n_polys} polígono(s) actualizados en territorios')
+
+        # Espejo en mapa_territorios (usado por Ver Mapa público)
+        mapa_ref = mapa_col.document(str(tid))
+        if mapa_ref.get().exists:
+            mapa_ref.update(update_data)
+            print(f'   ✅ Territorio {tid}: espejo mapa_territorios actualizado')
+
+        ok += 1
 
     print(f'\n{"="*50}')
     print(f'✅ {ok}/{len(targets)} territorios actualizados')

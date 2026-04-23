@@ -48,6 +48,13 @@ Algunas congregaciones predican en más de una ciudad. Soporte completo:
 - En info grid ("ver mi grupo"): headers de ciudad cuando hay territorios de múltiples ciudades
 - En picker de salidas: territorios de Congregación agrupados por ciudad
 
+### Mapa público vs mapa interno
+
+`index.html` abre el mapa con `modo=public` → `mapa.html` lee de `mapa_territorios` (espejo de solo lectura).
+Los módulos internos (territorios/app.js) abren el mapa sin ese parámetro → lee de `territorios`.
+
+**Al actualizar polígonos hay que escribir en ambas colecciones.** `tools/update_poligonos.py` ya lo hace automáticamente (actualiza `territorios` y, si existe el doc, también `mapa_territorios`).
+
 ### Mapa (`mapa.html`)
 
 Modos via URL params:

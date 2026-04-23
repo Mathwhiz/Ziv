@@ -15,7 +15,9 @@ congregaciones/{congreId}/
   ├── chatNotas/grupo_{grupoId}/mensajes → autor, texto, createdAt, canal, grupo
   ├── chatNotas/congregacion/mensajes   → autor, texto, createdAt, canal, grupo
   ├── vidaministerio/{semanaId} → fecha, canciones, presidente, oraciones, tesoros, ministerio[], vidaCristiana[], tipoEspecial?
-  └── vmMeses/{YYYY-MM}        → encargadoSalaAuxId
+  ├── vmMeses/{YYYY-MM}        → encargadoSalaAuxId
+  ├── mapa_territorios/{terrId} → espejo de territorios/ para el mapa público (modo=public)
+  └── actividad/{entryId}      → uid, deviceId, nombre, modulo, accion, detalle, anonimo, timestamp
 
 config/superadmin              → pin  ← PIN del panel de admin
 
