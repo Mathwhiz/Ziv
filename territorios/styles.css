@@ -152,7 +152,7 @@ label { font-size: 12px; color: #888; display: block; margin-bottom: 3px; }
   background: var(--gc-bg, #2a2a2a); cursor: pointer;
   position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 14px 8px 32px; min-height: 110px;
+  padding: 14px 8px; min-height: 110px;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
 .grupo-btn:hover { transform: scale(1.03); background: var(--grupo-hover-bg, #2f2f2f); }
