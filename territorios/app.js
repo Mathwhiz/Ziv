@@ -789,7 +789,6 @@ function removeSalida(id) {
   if (el) el.remove();
   updatePlanProgress();
 }
-}
 
 function renderSalidaCard(s) {
   const c = document.getElementById('salidas-container');
