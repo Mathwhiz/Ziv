@@ -36,6 +36,9 @@ async function _rolesDesdePublicador(congreId, pubId) {
   } catch { return []; }
 }
 
+// ── Detección de plataforma (Capacitor APK vs browser) ───────────
+const _isNative = () => window.Capacitor?.isNativePlatform() === true;
+
 // ── Estado interno ────────────────────────────────────────────────
 let _user      = null;   // { ...campos Firestore, _firebaseUser }
 let _authReady = false;
@@ -265,8 +268,20 @@ window.authGuard = async (feature) => {
   }
 };
 
-/** Abre el popup de Google y retorna el FirebaseUser. */
+/** Abre Google sign-in (popup en browser, nativo en APK Capacitor). */
 window.signInWithGoogle = async () => {
+  if (_isNative()) {
+    // Plugin nativo: Google Sign-In legacy (compatible con todos los Android)
+    const { GoogleAuth } = window.Capacitor.Plugins;
+    await GoogleAuth.initialize({
+      clientId: '161788232097-fek8psb65gkanmo2vijh2mjd877hhbps.apps.googleusercontent.com',
+      scopes: ['profile', 'email'],
+    });
+    const googleUser = await GoogleAuth.signIn();
+    const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
+    const fbResult = await signInWithCredential(auth, credential);
+    return fbResult.user;
+  }
   const provider = new GoogleAuthProvider();
   const result   = await signInWithPopup(auth, provider);
   return result.user;
@@ -285,6 +300,17 @@ window.signInAnonymousUser = async () => {
 window.linkWithGoogle = async () => {
   if (!_user?.isAnonymous) throw new Error('No hay sesión anónima activa');
 
+  if (_isNative()) {
+    const { GoogleAuth } = window.Capacitor.Plugins;
+    await GoogleAuth.initialize({
+      clientId: '161788232097-fek8psb65gkanmo2vijh2mjd877hhbps.apps.googleusercontent.com',
+      scopes: ['profile', 'email'],
+    });
+    const googleUser = await GoogleAuth.signIn();
+    const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
+    const fbResult = await signInWithCredential(auth, credential);
+    return fbResult.user;
+  }
   const provider = new GoogleAuthProvider();
   let result;
   try {
@@ -360,6 +386,7 @@ window.signOutUser = async () => {
  * Actualiza el perfil del usuario en Firestore y en memoria.
  * @param {Object} data — campos a actualizar en usuarios/{uid}
  */
+
 window.updateUserProfile = async (data) => {
   if (!_user) throw new Error('No hay usuario logueado');
   const safeData = Object.fromEntries(
