@@ -529,6 +529,6 @@ body.light-mode .section-sub   { color: #67626f; }
   .plan-footer,
   .salida-count { max-width: 960px; margin-left: auto; margin-right: auto; }
   .plan-footer { margin-top: 16px; }
-  .btn-home { width: 52px; height: 52px; border-radius: 12px; }
-  .btn-mapa-float { width: 52px; height: 52px; border-radius: 12px; right: 78px; font-size: 9px; }
+  .btn-home { width: 52px; height: 52px; border-radius: 12px; top: 66px; }
+  .btn-mapa-float { width: 52px; height: 52px; border-radius: 12px; top: 66px; right: 78px; font-size: 9px; }
 }
