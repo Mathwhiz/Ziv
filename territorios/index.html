@@ -292,7 +292,10 @@
   <!-- ── PLANIFICADOR ── -->
   <div id="view-config" class="view" style="display:none;">
     <div class="plan-header">
-      <p class="plan-titulo">Planificar salidas</p>
+      <div>
+        <p class="plan-titulo">Planificar salidas</p>
+        <p id="plan-grupo-label" style="font-size:14px;font-weight:600;margin-top:2px;color:var(--grupo-color,#97C459);">—</p>
+      </div>
       <div class="plan-btns">
         <button class="btn-add-tel"   onclick="addSalida('tel')">+ Telefónica</button>
         <button class="btn-add-salida" onclick="addSalida('campo')">+ Salida</button>
@@ -311,7 +314,7 @@
     <div id="salidas-container"></div>
     <div class="plan-footer">
       <button class="btn-secondary" onclick="goToModo()" style="flex:1;">← Volver</button>
-      <button class="btn-primary"   onclick="generatePreview()" style="flex:2;font-size:12px;padding:7px 12px;">Generar tabla →</button>
+      <button class="btn-primary"   id="btn-generar-tabla" onclick="generatePreview()" style="flex:2;font-size:12px;padding:7px 12px;">Generar tabla →</button>
     </div>
   </div>
 

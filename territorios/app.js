@@ -659,6 +659,34 @@ function cambiarSemana(dir) {
 function renderSalidas() {
   const c = document.getElementById('salidas-container');
   c.innerHTML = '';
+  // ── Aplicar color del grupo ──
+  const _gc = GROUP_COLORS[selectedGrupo] || '#97C459';
+  const _gcBg = hexToRgba(_gc, 0.12);
+  const _gcBd = hexToRgba(_gc, 0.35);
+  const _vc = document.getElementById('view-config');
+  if (_vc) {
+    _vc.style.setProperty('--grupo-color', _gc);
+    _vc.style.setProperty('--grupo-color-bg', _gcBg);
+    _vc.style.setProperty('--grupo-color-bd', _gcBd);
+  }
+  // ── Nombre del grupo en el header ──
+  const _gl = GRUPOS.find(g => String(g.id) === String(selectedGrupo));
+  const _glabel = _gl ? _gl.label : 'Grupo ' + selectedGrupo;
+  const _planSub = document.getElementById('plan-grupo-label');
+  if (_planSub) { _planSub.textContent = _glabel; _planSub.style.color = _gc; }
+  // ── Botón generar tabla ──
+  const _btnGen = document.getElementById('btn-generar-tabla');
+  if (_btnGen) { _btnGen.style.background = _gc; _btnGen.style.color = '#fff'; }
+  // ── Botones agregar ──
+  const _btnCampo = document.querySelector('.btn-add-salida');
+  const _btnTel   = document.querySelector('.btn-add-tel');
+  if (_btnCampo) { _btnCampo.style.color = _gc; _btnCampo.style.borderColor = hexToRgba(_gc, 0.5); _btnCampo.style.background = hexToRgba(_gc, 0.1); }
+  if (_btnTel)   { _btnTel.style.color   = _gc; _btnTel.style.borderColor   = hexToRgba(_gc, 0.4); _btnTel.style.background   = hexToRgba(_gc, 0.08); }
+  // ── Progress bar v2 ──
+  const _pb = document.createElement('div');
+  _pb.className = 'plan-progress-wrap';
+  _pb.innerHTML = '<span class="plan-progress-label">Progreso</span><div class="plan-progress-track"><div class="plan-progress-fill" id="plan-progress-fill" style="width:0%"></div></div><span class="plan-progress-count" id="plan-progress-count">0/0 listas</span>';
+  c.appendChild(_pb);
   salidas = [];
   salidaCounter = 0;
 
@@ -709,10 +737,16 @@ function getConductorOptions(grupo, sel = '') {
 function updateDiaLabel(id) {
   const fecha = document.getElementById('sal-fecha-' + id)?.value;
   const label = document.getElementById('sal-dia-label-' + id);
-  if (!label) return;
   const nombre = getNombreDia(fecha);
-  label.textContent = nombre;
-  label.style.color = DIA_COLORS[nombre] || '#eee';
+  const color  = DIA_COLORS[nombre] || '#eee';
+  if (label) { label.textContent = nombre; label.style.color = color; }
+  // v2 header blocks
+  const numEl  = document.getElementById('scv2-dia-num-' + id);
+  const abbrEl = document.getElementById('scv2-dia-abbr-' + id);
+  const card   = document.getElementById('salida-card-' + id);
+  if (numEl)  numEl.textContent  = fecha ? parseInt(fecha.split('-')[2]) : '—';
+  if (abbrEl) abbrEl.textContent = nombre ? nombre.slice(0,3) : '—';
+  if (card)   card.style.setProperty('--dia-color', color);
 }
 
 function reordenarSalidas() {
@@ -753,82 +787,148 @@ function removeSalida(id) {
   salidas = salidas.filter(s => s.id !== id);
   const el = document.getElementById('salida-card-' + id);
   if (el) el.remove();
+  updatePlanProgress();
+}
 }
 
 function renderSalidaCard(s) {
   const c = document.getElementById('salidas-container');
   const esTel = s.tipo === 'tel';
   const div = document.createElement('div');
-  div.className = 'salida-card-new ' + (esTel ? 'tipo-tel' : 'tipo-campo');
-  div.id = 'salida-card-' + s.id;
   const nombreDia = getNombreDia(s.fecha);
   const diaColor  = DIA_COLORS[nombreDia] || '#eee';
-  div.innerHTML = `
-    <div class="salida-card-top">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span id="sal-dia-label-${s.id}" style="font-size:14px;font-weight:600;color:${diaColor};">${nombreDia}</span>
-        <span style="font-size:12px;color:#666;">·</span>
-        <span style="font-size:12px;color:#888;font-weight:500;">${esTel ? 'Telefónica' : 'Campo'}</span>
+  const diaNum    = s.fecha ? parseInt(s.fecha.split('-')[2]) : '—';
+  const diaAbbr   = nombreDia ? nombreDia.slice(0,3) : '—';
+
+  div.className = 'salida-card-v2 ' + (esTel ? 'tipo-tel' : 'tipo-campo');
+  div.id = 'salida-card-' + s.id;
+  div.style.setProperty('--dia-color', diaColor);
+
+  const terrFields = esTel ? '' : `
+    <div>
+      <label class="scv2-field-label">Territorio</label>
+      <div class="scv2-input-wrap">
+        <input type="hidden" id="sal-terr-${s.id}" value="">
+        <button type="button" id="sal-terr-btn-${s.id}" class="ui-fake-input empty" style="flex:1;"
+          onclick="openTerritorioPicker(${s.id}, 'sal-terr-${s.id}', 'sal-terr-btn-${s.id}')">
+          <span class="ui-fake-input-icon">🗺</span><span>Elegir</span></button>
+        <span class="terr-days-hint" id="scv2-terr-days-${s.id}" style="display:none;"></span>
+        <button type="button" class="scv2-icon-btn" onclick="openMapaPicker(${s.id})" title="Mapa">🗺</button>
+        <button type="button" class="scv2-icon-btn green" onclick="addExtraTerritory(${s.id})" style="font-size:16px;padding:4px 8px;">+</button>
       </div>
-      <button class="salida-remove-btn" onclick="removeSalida(${s.id})">✕</button>
-    </div>
-    <div class="form-row" style="margin-bottom:6px;">
-      <div><label style="font-size:11px;">Día</label><input type="date" id="sal-fecha-${s.id}" value="${s.fecha}" onchange="updateDiaLabel(${s.id})"></div>
-      <div><label style="font-size:11px;">Hora</label><input type="time" id="sal-hora-${s.id}" value="${s.hora}"></div>
-    </div>
-    <div class="form-row" style="margin-bottom:6px;">
-      <div>
-        <label style="font-size:11px;">Conductor</label>
-        <div style="display:flex;align-items:center;gap:5px;">
-          <select id="sal-cond-${s.id}" style="flex:1;">${getConductorOptions(selectedGrupo, s.conductor)}</select>
-          <button type="button" onclick="openConductorPicker('sal-cond-${s.id}', selectedGrupo, this)"
-            style="padding:5px 9px;background:#1a1a2e;color:#7F77DD;border:0.5px solid #4A44A5;border-radius:8px;cursor:pointer;font-size:13px;flex-shrink:0;">
-            👤
-          </button>
-        </div>
-      </div>
-      ${esTel ? '' : `
-      <div>
-        <label style="font-size:11px;">Territorio</label>
-        <div style="display:flex;align-items:center;gap:5px;">
-          <div style="flex:1;min-width:0;">
-            <input type="hidden" id="sal-terr-${s.id}" value="">
-            <button type="button" id="sal-terr-btn-${s.id}" class="ui-fake-input empty"
-              onclick="openTerritorioPicker(${s.id}, 'sal-terr-${s.id}', 'sal-terr-btn-${s.id}')">
-              <span class="ui-fake-input-icon">🗺</span><span>Elegir</span>
-            </button>
-          </div>
-          <button type="button" onclick="openMapaPicker(${s.id})" title="Elegir del mapa"
-            style="padding:5px 9px;background:#1a1a2e;color:#7F77DD;border:0.5px solid #4A44A5;border-radius:8px;cursor:pointer;font-size:13px;flex-shrink:0;">
-            🗺
-          </button>
-          <button type="button" onclick="addExtraTerritory(${s.id})"
-            style="padding:5px 8px;background:#1a2e0a;color:#97C459;border:0.5px solid #3B6D11;border-radius:8px;cursor:pointer;font-size:15px;line-height:1;flex-shrink:0;">+</button>
-        </div>
-        <div id="extra-terrs-${s.id}"></div>
-      </div>`}
+      <div id="extra-terrs-${s.id}"></div>
     </div>
     <div>
-      <label style="font-size:11px;">Encuentro / Familia</label>
-      <div style="display:flex;align-items:center;gap:5px;">
-        <input type="text" id="sal-enc-${s.id}" value="${s.encuentro}" placeholder="Ej: Flia. García / esq. X y Y" style="flex:1;">
-        <button type="button" onclick="openEncuentroPicker(${s.id})" title="Elegir en el mapa"
-          style="padding:5px 9px;background:#1a2e0a;color:#97C459;border:0.5px solid #3B6D11;border-radius:8px;cursor:pointer;font-size:14px;flex-shrink:0;">
-          📍
-        </button>
+      <label class="scv2-field-label">Encuentro / Familia</label>
+      <div class="scv2-input-wrap">
+        <input type="text" id="sal-enc-${s.id}" value="${s.encuentro}"
+          placeholder="Ej: Flia. García / esq. X y Y" style="flex:1;">
+        <button type="button" class="scv2-icon-btn green" onclick="openEncuentroPicker(${s.id})" title="Mapa">📍</button>
       </div>
     </div>`;
+
+  div.innerHTML = `
+    <div class="scv2-header">
+      <div class="scv2-dia-block">
+        <span class="scv2-dia-num" id="scv2-dia-num-${s.id}">${diaNum}</span>
+        <span class="scv2-dia-abbr" id="scv2-dia-abbr-${s.id}">${diaAbbr}</span>
+      </div>
+      <div class="scv2-meta">
+        <div class="scv2-hora-row">
+          <span class="scv2-hora-text" id="scv2-hora-text-${s.id}">${s.hora || '—'}</span>
+          <span class="scv2-tipo-tag ${esTel ? 'tel' : ''}">${esTel ? '📞 Telefónica' : '🚶 Campo'}</span>
+        </div>
+        <span class="scv2-dia-text" id="sal-dia-label-${s.id}">${nombreDia}</span>
+      </div>
+      <div class="scv2-status warn" id="scv2-status-${s.id}">⚠ Incompleta</div>
+      <button class="scv2-remove" onclick="removeSalida(${s.id})">✕</button>
+    </div>
+    <div class="scv2-divider"></div>
+    <div class="scv2-fields">
+      <div class="scv2-row">
+        <div>
+          <label class="scv2-field-label">Día</label>
+          <input type="date" id="sal-fecha-${s.id}" value="${s.fecha}" style="width:100%;">
+        </div>
+        <div>
+          <label class="scv2-field-label">Hora</label>
+          <input type="time" id="sal-hora-${s.id}" value="${s.hora}" style="width:100%;">
+        </div>
+      </div>
+      <div>
+        <label class="scv2-field-label">Conductor</label>
+        <div class="scv2-input-wrap">
+          <select id="sal-cond-${s.id}" style="flex:1;">${getConductorOptions(selectedGrupo, s.conductor)}</select>
+          <button type="button" class="scv2-icon-btn"
+            onclick="openConductorPicker('sal-cond-${s.id}', selectedGrupo, this)">👤</button>
+        </div>
+      </div>
+      ${terrFields}
+    </div>`;
+
   c.appendChild(div);
   if (window.upgradeInputs) upgradeInputs(div);
-  const fechaInput = div.querySelector(`#sal-fecha-${s.id}`);
-  if (fechaInput) {
-    fechaInput.addEventListener('change', () => { updateDiaLabel(s.id); reordenarSalidas(); });
-  }
-  const horaInput = div.querySelector(`#sal-hora-${s.id}`);
-  if (horaInput) {
-    horaInput.addEventListener('change', () => reordenarSalidas());
-  }
+
+  const fechaEl = div.querySelector('#sal-fecha-' + s.id);
+  if (fechaEl) fechaEl.addEventListener('change', () => { updateDiaLabel(s.id); reordenarSalidas(); updateCardStatus(s.id); });
+
+  const horaEl = div.querySelector('#sal-hora-' + s.id);
+  if (horaEl) horaEl.addEventListener('change', () => {
+    const ht = document.getElementById('scv2-hora-text-' + s.id);
+    if (ht) ht.textContent = horaEl.value || '—';
+    reordenarSalidas();
+  });
+
+  const condEl = div.querySelector('#sal-cond-' + s.id);
+  if (condEl) condEl.addEventListener('change', () => updateCardStatus(s.id));
+
+  setTimeout(() => updateCardStatus(s.id), 0);
 }
+
+// ─── PLAN v2 helpers ───
+function isSalidaCompleta(id) {
+  const s = salidas.find(x => x.id === id);
+  if (!s) return false;
+  const cond = document.getElementById('sal-cond-' + id)?.value || '';
+  if (!cond) return false;
+  if (s.tipo === 'tel') return true;
+  const terr = document.getElementById('sal-terr-' + id)?.value || '';
+  return !!terr;
+}
+
+function updateCardStatus(id) {
+  const ok    = isSalidaCompleta(id);
+  const card  = document.getElementById('salida-card-' + id);
+  const badge = document.getElementById('scv2-status-' + id);
+  if (card)  card.classList.toggle('scv2-completa', ok);
+  if (badge) { badge.textContent = ok ? '✓ Lista' : '⚠ Incompleta'; badge.className = 'scv2-status ' + (ok ? 'ok' : 'warn'); }
+  updatePlanProgress();
+}
+
+function updatePlanProgress() {
+  const total = salidas.length;
+  const done  = salidas.filter(s => isSalidaCompleta(s.id)).length;
+  const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+  const fill  = document.getElementById('plan-progress-fill');
+  const count = document.getElementById('plan-progress-count');
+  if (fill)  fill.style.width = pct + '%';
+  if (count) count.textContent = done + '/' + total + ' listas';
+}
+
+function showTerrDaysHint(salidaId, terrNum) {
+  const hint = document.getElementById('scv2-terr-days-' + salidaId);
+  if (!hint) return;
+  if (!terrNum || !territoriosData[terrNum]) { hint.style.display = 'none'; return; }
+  const d = territoriosData[terrNum];
+  const lastDate = d.lastFin || d.lastIni;
+  const dias = daysSince(lastDate);
+  if (!dias || dias >= 9999) { hint.style.display = 'none'; return; }
+  const cls = dias > 90 ? 'terr-days-old' : dias > 45 ? 'terr-days-mid' : 'terr-days-new';
+  hint.className = 'terr-days-hint ' + cls;
+  hint.textContent = dias + 'd';
+  hint.style.display = '';
+}
+
 
 function addExtraTerritory(salidaId) {
   const container = document.getElementById('extra-terrs-' + salidaId);
@@ -892,6 +992,8 @@ function openTerritorioPicker(salidaId, hiddenId, btnId) {
         btn.classList.add('empty');
       }
     }
+    showTerrDaysHint(salidaId, resultado);
+    updateCardStatus(salidaId);
   });
 }
 
