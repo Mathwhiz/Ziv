@@ -316,12 +316,8 @@ const WEEK = getWeekDates();
 
 
 function selectGrupo(el, n, autoOpenPin = true) {
-  document.querySelectorAll('.grupo-btn').forEach(b => {
-    b.classList.remove('selected');
-    b.style.background = '';
-  });
+  document.querySelectorAll('.grupo-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
-  el.style.background = GBGS[n] || 'rgba(100,100,100,0.18)';
   selectedGrupo = n;
   document.getElementById('btn-start').classList.add('enabled');
   if (autoOpenPin && selectedGrupo) openPin();
@@ -450,17 +446,17 @@ function renderGrupoButtons() {
   const numericos = GRUPOS.filter(g => !isNaN(parseInt(g.id)));
   const congre    = GRUPOS.filter(g => isNaN(parseInt(g.id)));
 
-  // Numéricos: 2 por fila
-  for (let i = 0; i < numericos.length; i += 2) {
+  // Numéricos: 3 por fila
+  for (let i = 0; i < numericos.length; i += 3) {
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:8px;';
-    [numericos[i], numericos[i+1]].forEach(g => {
+    row.style.cssText = 'display:flex;gap:10px;';
+    [numericos[i], numericos[i+1], numericos[i+2]].forEach(g => {
       if (!g) return;
       const btn = document.createElement('button');
       btn.className = 'grupo-btn';
       btn.dataset.grupo = g.id;
       btn.style.flex = '1';
-      btn.textContent = g.label;
+      btn.innerHTML = `<div class="gbcard-badge">${g.id}</div><div class="gbcard-check">✓</div>`;
       btn.onclick = () => selectGrupo(btn, g.id, true);
       _applyGrupoColorToBtn(btn, g.id);
       row.appendChild(btn);
@@ -468,13 +464,12 @@ function renderGrupoButtons() {
     wrap.appendChild(row);
   }
 
-  // Congregación (y cualquier otro no-numérico): ancho completo
+  // Congregación: ancho completo, horizontal
   congre.forEach(g => {
     const btn = document.createElement('button');
-    btn.className = 'grupo-btn';
+    btn.className = 'grupo-btn grupo-btn-congre';
     btn.dataset.grupo = g.id;
-    btn.style.cssText = 'width:100%;font-size:15px;';
-    btn.textContent = g.label;
+    btn.innerHTML = `<div class="gbcard-badge gbcard-badge-sm">${g.id}</div><span class="gbcard-label">${g.label}</span>`;
     btn.onclick = () => selectGrupo(btn, g.id, true);
     _applyGrupoColorToBtn(btn, g.id);
     wrap.appendChild(btn);
@@ -495,11 +490,12 @@ function renderGrupoButtons() {
 }
 
 function _applyGrupoColorToBtn(btn, id) {
-  const c  = GCOLORS[id]  || '#888';
-  const bg = GBGS[id]     || 'rgba(100,100,100,0.18)';
-  btn.style.borderColor = c;
-  btn.style.color = c;
-  btn.style.setProperty('--grupo-hover-bg', bg);
+  const c = GCOLORS[id] || '#888';
+  btn.style.setProperty('--gc',             c);
+  btn.style.setProperty('--gc-bg',          hexToRgba(c, 0.08));
+  btn.style.setProperty('--gc-bg-sel',      hexToRgba(c, 0.16));
+  btn.style.setProperty('--gc-badge',       hexToRgba(c, 0.2));
+  btn.style.setProperty('--grupo-hover-bg', hexToRgba(c, 0.13));
 }
 
 cargarPins();
