@@ -799,7 +799,17 @@ function renderSalidaCard(s) {
   div.id = 'salida-card-' + s.id;
   div.style.setProperty('--dia-color', diaColor);
 
-  const terrFields = esTel ? '' : `
+  const encField = `
+    <div>
+      <label class="scv2-field-label">Encuentro / Familia</label>
+      <div class="scv2-input-wrap">
+        <input type="text" id="sal-enc-${s.id}" value="${s.encuentro}"
+          placeholder="Ej: Flia. García / esq. X y Y" style="flex:1;">
+        ${esTel ? '' : `<button type="button" class="scv2-icon-btn green" onclick="openEncuentroPicker(${s.id})" title="Mapa">📍</button>`}
+      </div>
+    </div>`;
+
+  const terrFields = esTel ? encField : `
     <div>
       <label class="scv2-field-label">Territorio</label>
       <div class="scv2-input-wrap">
@@ -813,14 +823,7 @@ function renderSalidaCard(s) {
       </div>
       <div id="extra-terrs-${s.id}"></div>
     </div>
-    <div>
-      <label class="scv2-field-label">Encuentro / Familia</label>
-      <div class="scv2-input-wrap">
-        <input type="text" id="sal-enc-${s.id}" value="${s.encuentro}"
-          placeholder="Ej: Flia. García / esq. X y Y" style="flex:1;">
-        <button type="button" class="scv2-icon-btn green" onclick="openEncuentroPicker(${s.id})" title="Mapa">📍</button>
-      </div>
-    </div>`;
+    ${encField}`;
 
   div.innerHTML = `
     <div class="scv2-header">
