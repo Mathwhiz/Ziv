@@ -169,11 +169,27 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 .sc-pred-enc  { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
 .sc-pred-map-btn {
   flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; border-radius: 10px;
+  width: 36px; height: 36px; border-radius: 10px; border: none; cursor: pointer;
   background: rgba(255,255,255,0.06); color: var(--text-muted);
-  text-decoration: none; transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 .sc-pred-map-btn:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
+
+/* Mapa overlay */
+#mapa-overlay { display: flex; }
+#mapa-overlay[style*="display:none"] { display: none !important; }
+.mapa-ov-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; background: #1e2023;
+  border-bottom: 0.5px solid #2e2e2e; flex-shrink: 0;
+}
+.mapa-ov-close {
+  display: flex; align-items: center; gap: 6px;
+  background: #2a2a2a; border: 0.5px solid #444; color: #ccc;
+  border-radius: 8px; padding: 6px 12px; font-size: 13px;
+  cursor: pointer; font-family: inherit; flex-shrink: 0;
+}
+.mapa-ov-title { font-size: 14px; color: #999; font-weight: 500; }
 .timer-add-wrap { text-align: center; }
 .manual-actions { margin-bottom: 12px; }
 .timer-add-btn {

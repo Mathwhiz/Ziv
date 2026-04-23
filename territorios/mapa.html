@@ -486,7 +486,7 @@ async function initMap() {
   }
 
   // Zoom a territorio(s) específico(s) si viene el param terrid (ej: desde Predicación)
-  if (_terrIdParam && _modoParam === 'full') {
+  if (_terrIdParam && (_modoParam === 'full' || _modoParam === 'registrar')) {
     const ids = String(_terrIdParam).split(',').map(s => s.trim()).filter(Boolean);
     const terrLayers = allLayers.filter(l =>
       ids.some(id => String(l.numero).replace(/[A-Za-z]+$/, '') === String(id).replace(/[A-Za-z]+$/, ''))

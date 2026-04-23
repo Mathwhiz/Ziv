@@ -1242,14 +1242,17 @@ async function cargarSalidasSemana() {
         const borderColor = esTel ? '#1D9E75' : (_grupoColor || '#E05277');
         const hasTerr     = !esTel && s.terr && s.terr !== '—';
         const congreId    = _user?.congregacionId || sessionStorage.getItem('congreId') || '';
-        const mapaUrl     = `../territorios/mapa.html?modo=full&congre=${congreId}&terrid=${encodeURIComponent(String(s.terr || ''))}`;
+        const terrParam   = encodeURIComponent(String(s.terr || ''));
+        const mapaUrl     = `../territorios/mapa.html?modo=registrar&enprogreso=${terrParam}&terrid=${terrParam}&congre=${congreId}`;
+        const terrLabel   = `Territorio ${s.terr}`;
         const mapBtn      = hasTerr
-          ? `<a href="${mapaUrl}" target="_blank" class="sc-pred-map-btn" title="Ver en mapa">
+          ? `<button type="button" class="sc-pred-map-btn" title="Ver en mapa"
+               onclick="abrirMapaOverlay('${mapaUrl.replace(/'/g, "\\'")}','${terrLabel.replace(/'/g, "\\'")}')">
                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                  <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
                  <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
                </svg>
-             </a>`
+             </button>`
           : '';
         html += `
           <div class="salida-card-pred" style="border-left-color:${borderColor}">
@@ -1271,3 +1274,22 @@ async function cargarSalidasSemana() {
     console.error('[predicacion] cargarSalidasSemana:', err);
   }
 }
+
+// ─────────────────────────────────────────
+//   MAPA OVERLAY
+// ─────────────────────────────────────────
+window.abrirMapaOverlay = function(url, titulo) {
+  const ov = document.getElementById('mapa-overlay');
+  const fr = document.getElementById('mapa-frame');
+  const tl = document.getElementById('mapa-ov-title');
+  if (tl) tl.textContent = titulo || 'Mapa';
+  fr.src = url;
+  ov.style.display = 'flex';
+};
+
+window.cerrarMapaOverlay = function() {
+  const ov = document.getElementById('mapa-overlay');
+  const fr = document.getElementById('mapa-frame');
+  ov.style.display = 'none';
+  fr.src = '';
+};

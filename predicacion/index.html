@@ -276,6 +276,20 @@
 
 </div><!-- /view-app -->
 
+<!-- ── Mapa overlay ── -->
+<div id="mapa-overlay" style="display:none; position:fixed; inset:0; z-index:9000; background:#1a1c1f; flex-direction:column;">
+  <div class="mapa-ov-header">
+    <button class="mapa-ov-close" onclick="cerrarMapaOverlay()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      Cerrar
+    </button>
+    <span class="mapa-ov-title" id="mapa-ov-title">Territorio</span>
+  </div>
+  <iframe id="mapa-frame" src="" style="flex:1; border:none; width:100%;"></iframe>
+</div>
+
 <script src="../shared/ui-utils.js?v=1.4"></script>
 <script type="module" src="app.js"></script>
 </body>
