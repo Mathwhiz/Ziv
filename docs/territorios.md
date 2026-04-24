@@ -81,6 +81,31 @@ Las cards de salida (`renderSalidaCard`) usan diseño compacto:
 - Labels de campo: `font-size:11px` (override local)
 - `form-row` con `margin-bottom:6px`
 
+### Informe para el Super (✅ implementado)
+
+Exportación en PDF del historial de todos los territorios del grupo para presentar al
+superintendente de circuito en cada visita semestral.
+
+**Entrada:** botón "📋 Informe para el Super" en `view-info` ("Ver mi grupo"), visible tras cargar los territorios.
+
+**Período automático** — lee `semanasEspeciales` filtrando `tipo === 'superintendente'` y toma las
+dos fechas más recientes:
+- 2 visitas registradas → `desde` = penúltima, `hasta` = última
+- 1 visita → `desde` = esa fecha, `hasta` = hoy
+- Sin visitas → fallback a 6 meses atrás
+
+**Datos por territorio** (ordenados por número):
+- Todas las entradas de `historial/` donde `fechaInicio >= desdeISO`
+- Por entrada: fecha inicio → fecha fin · conductor
+- Sin actividad en el período: resaltado en amarillo
+
+**Exportación:** botón "📄 Descargar PDF" llama `window.print()`. CSS `@media print` en
+`territorios/styles.css` oculta todo excepto `#view-informe` y formatea en A4 con
+paleta blanca/negra apta para impresión o guardado como PDF.
+
+**Carga de datos:** N queries individuales a `histCol(id)` (una por territorio del grupo).
+Aceptable para grupos típicos de 15–25 territorios en un reporte puntual semestral.
+
 ### Formato de territorio en Firestore
 
 ```js
