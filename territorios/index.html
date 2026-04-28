@@ -89,53 +89,63 @@
   <!-- ── ELEGIR MODO ── -->
   <div id="view-modo" class="view" style="display:none;">
     <div class="modo-wrap">
-      <div class="modo-titulo">Grupo <span id="modo-grupo-label">?</span></div>
-      <button class="modo-card modo-planificar" onclick="goToStep1()">
-        <div class="modo-icon modo-icon-plan">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <div class="modo-sup" id="modo-sup-label" style="color:var(--grupo-color,#97C459)">Territorios</div>
+      <div class="modo-titulo">Grupo <span id="modo-grupo-label" style="color:var(--grupo-color,#97C459)">?</span></div>
+      <div class="modo-congre-sub">Seleccioná qué querés hacer hoy</div>
+
+      <div class="plan-hero" onclick="goToStep1()">
+        <div class="plan-hero-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="var(--grupo-color,#378ADD)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
         </div>
-        <div>
-          <div class="modo-card-title">Planificar salidas</div>
-          <div class="modo-card-sub">Armar las salidas de esta semana</div>
+        <div style="flex:1;min-width:0;">
+          <div class="plan-hero-title">Planificar salidas</div>
+          <div class="plan-hero-sub" id="plan-hero-week">Semana del —</div>
         </div>
-      </button>
-      <button class="modo-card modo-registrar" onclick="goToRegistrar()">
-        <div class="modo-icon modo-icon-reg">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4M7 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-2M9 3h6" stroke="#1D9E75" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="plan-status-dot sin-plan" id="plan-hero-status">Sin planificar</div>
+      </div>
+
+      <div class="modo-grid">
+        <div class="modo-card-v2 mc-reg-v2" onclick="goToRegistrar()">
+          <div class="mc-icon-v2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4M7 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-2M9 3h6" stroke="#1D9E75" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="mc-texts-v2">
+            <div class="mc-title-v2">Registrar territorios</div>
+            <div class="mc-sub-v2">Cerrar los de esta semana</div>
+          </div>
         </div>
-        <div>
-          <div class="modo-card-title">Registrar territorios</div>
-          <div class="modo-card-sub">Cerrar territorios de la semana</div>
+        <div class="modo-card-v2 mc-grupo-v2" onclick="goToInfoGrupo()">
+          <div class="mc-icon-v2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="#7F77DD" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <div class="mc-texts-v2">
+            <div class="mc-title-v2">Ver mi grupo</div>
+            <div class="mc-sub-v2">Territorios y configuración</div>
+          </div>
         </div>
-      </button>
-      <button class="modo-card" onclick="goToInfoGrupo()">
-        <div class="modo-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="#7F77DD" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <div class="modo-card-v2 mc-hist-v2" onclick="goToHistorial()">
+          <div class="mc-icon-v2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 8v4l3 3M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="#EF9F27" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <div class="mc-texts-v2">
+            <div class="mc-title-v2">Ver historial</div>
+            <div class="mc-sub-v2">Salidas anteriores</div>
+          </div>
         </div>
-        <div>
-          <div class="modo-card-title">Ver mi grupo</div>
-          <div class="modo-card-sub">Territorios y configuración</div>
+        <div class="modo-card-v2 mc-mapa-v2" onclick="goToMapa()">
+          <div class="mc-icon-v2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 8V9m0 0L9 7" stroke="#e88080" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="mc-texts-v2">
+            <div class="mc-title-v2">Ver mapa</div>
+            <div class="mc-sub-v2">Territorios en el mapa</div>
+          </div>
         </div>
-      </button>
-      <button class="modo-card" onclick="goToHistorial()" style="max-width:320px;width:100%;">
-        <div class="modo-icon" style="background:rgba(250,199,117,0.15);">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 8v4l3 3M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="#FAC775" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </div>
-        <div>
-          <div class="modo-card-title" style="color:#ccc;">Ver historial</div>
-          <div class="modo-card-sub">Salidas de semanas anteriores</div>
-        </div>
-      </button>
-      <button class="modo-card" onclick="goToMapa()" style="max-width:320px;width:100%;">
-        <div class="modo-icon" style="background:rgba(93,202,165,0.15);">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 8V9m0 0L9 7" stroke="#5DCAA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <div>
-          <div class="modo-card-title" style="color:#ccc;">Ver mapa</div>
-          <div class="modo-card-sub">Territorios en el mapa</div>
-        </div>
-      </button>
-      <button class="btn-secondary" onclick="cerrarSesion()" style="width:100%;max-width:320px;border-color:#A32D2D;color:#F09595;">Cerrar sesión</button>
+      </div>
+
+      <button class="btn-secondary" onclick="cerrarSesion()" style="width:100%;max-width:440px;border-color:rgba(163,45,45,0.2);color:#9a6060;">Cerrar sesión</button>
     </div>
   </div>
 

@@ -55,21 +55,114 @@ label { font-size: 12px; color: #888; display: block; margin-bottom: 3px; }
 .btn-save:hover { background: #0F6E56; }
 
 /* ── Modo selector ── */
-.modo-wrap { min-height: calc(100vh - 4rem); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 2rem 1rem; }
-.modo-titulo { font-size: 48px; font-weight: 500; color: #ccc; margin-bottom: 20px; text-align: center; }
-.grupo-color-1 { color: #378ADD; }
-.grupo-color-2 { color: #EF9F27; }
-.grupo-color-3 { color: #97C459; }
-.grupo-color-4 { color: #D85A30; }
-.grupo-color-C { color: #7F77DD; }
-.modo-card { width: 100%; max-width: 320px; background: #2a2a2a; border: 1.5px solid #444; border-radius: 14px; padding: 1.25rem 1.5rem; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 16px; transition: border-color 0.15s, background 0.15s, transform 0.1s, box-shadow 0.18s; }
-.modo-card:hover { transform: scale(1.02); background: var(--modo-hover-bg, #31363a); border-color: var(--modo-hover-border, #777); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
-.modo-card:active { transform: scale(0.98); }
-.modo-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.modo-icon-plan { background: rgba(55,138,221,0.15); }
-.modo-icon-reg { background: rgba(29,158,117,0.15); }
-.modo-card-title { font-size: 16px; font-weight: 500; color: #eee; margin-bottom: 3px; }
-.modo-card-sub { font-size: 13px; color: #888; }
+.modo-wrap {
+  min-height: calc(100vh - 4rem);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; padding: 2rem 1rem;
+}
+.modo-titulo {
+  font-size: 64px; font-weight: 800;
+  letter-spacing: -0.03em; line-height: 1;
+  color: #ccc; text-align: center; white-space: nowrap;
+}
+.modo-sup {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  text-align: center; opacity: 0.9;
+}
+.modo-congre-sub {
+  font-size: 14px; color: #888;
+  text-align: center; margin-top: 2px;
+}
+
+/* Hero planificar */
+.plan-hero {
+  width: 100%; max-width: 440px;
+  border-radius: 22px; padding: 22px 24px;
+  cursor: pointer;
+  border: 1.5px solid color-mix(in srgb, var(--grupo-color, #378ADD) 30%, transparent);
+  background: color-mix(in srgb, var(--grupo-color, #378ADD) 8%, #0a0c10);
+  display: flex; align-items: center; gap: 18px;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.13s;
+  position: relative; overflow: hidden;
+}
+.plan-hero:hover {
+  border-color: color-mix(in srgb, var(--grupo-color, #378ADD) 55%, transparent);
+  box-shadow: 0 16px 48px color-mix(in srgb, var(--grupo-color, #378ADD) 22%, transparent);
+  transform: translateY(-2px);
+}
+.plan-hero-icon {
+  width: 60px; height: 60px; border-radius: 16px; flex-shrink: 0;
+  background: color-mix(in srgb, var(--grupo-color, #378ADD) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--grupo-color, #378ADD) 28%, transparent);
+  display: flex; align-items: center; justify-content: center;
+}
+.plan-hero-title {
+  font-size: 20px; font-weight: 700;
+  color: color-mix(in srgb, var(--grupo-color, #378ADD) 70%, #fff);
+}
+.plan-hero-sub { font-size: 13px; color: #5a7fa8; margin-top: 3px; }
+.plan-status-dot {
+  flex-shrink: 0; font-size: 12px; font-weight: 700;
+  padding: 5px 12px; border-radius: 99px; white-space: nowrap;
+  display: flex; align-items: center; gap: 7px; border: 1px solid transparent;
+}
+.plan-status-dot::before {
+  content: ''; width: 7px; height: 7px;
+  border-radius: 50%; background: currentColor; flex-shrink: 0;
+}
+.plan-status-dot.planificada {
+  background: rgba(29,158,117,0.15); color: #5DCAA5;
+  border-color: rgba(29,158,117,0.3);
+}
+.plan-status-dot.sin-plan {
+  background: rgba(239,159,39,0.12); color: #FAC775;
+  border-color: rgba(239,159,39,0.28);
+}
+
+/* Grid 2×2 */
+.modo-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; width: 100%; max-width: 440px;
+}
+.modo-card-v2 {
+  border-radius: 20px; padding: 22px 20px 20px;
+  cursor: pointer; border: 1.5px solid transparent;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start; gap: 14px;
+  transition: transform 0.13s, box-shadow 0.18s, border-color 0.18s;
+}
+.modo-card-v2:hover { transform: translateY(-3px); }
+.modo-card-v2:active { transform: scale(0.97); }
+.mc-icon-v2 {
+  width: 56px; height: 56px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+.mc-texts-v2 { text-align: center; }
+.mc-title-v2 { font-size: 15px; font-weight: 700; line-height: 1.2; }
+.mc-sub-v2 { font-size: 12px; color: #888; margin-top: 4px; }
+
+/* Colores por card */
+.mc-reg-v2 { background: linear-gradient(155deg,#0c2a1e,#091f17); border-color: rgba(29,158,117,0.28); }
+.mc-reg-v2 .mc-icon-v2 { background: rgba(29,158,117,0.18); }
+.mc-reg-v2 .mc-title-v2 { color: #5DCAA5; }
+.mc-reg-v2:hover { box-shadow: 0 14px 36px rgba(29,158,117,0.18); border-color: rgba(29,158,117,0.5); }
+
+.mc-grupo-v2 { background: linear-gradient(155deg,#18143a,#120f2e); border-color: rgba(127,119,221,0.28); }
+.mc-grupo-v2 .mc-icon-v2 { background: rgba(127,119,221,0.18); }
+.mc-grupo-v2 .mc-title-v2 { color: #A9A3EE; }
+.mc-grupo-v2:hover { box-shadow: 0 14px 36px rgba(127,119,221,0.18); border-color: rgba(127,119,221,0.5); }
+
+.mc-hist-v2 { background: linear-gradient(155deg,#2a1d08,#1f1505); border-color: rgba(239,159,39,0.25); }
+.mc-hist-v2 .mc-icon-v2 { background: rgba(239,159,39,0.14); }
+.mc-hist-v2 .mc-title-v2 { color: #FAC775; }
+.mc-hist-v2:hover { box-shadow: 0 14px 36px rgba(239,159,39,0.14); border-color: rgba(239,159,39,0.45); }
+
+.mc-mapa-v2 { background: linear-gradient(155deg,#2a0e0e,#1f0909); border-color: rgba(220,80,80,0.22); }
+.mc-mapa-v2 .mc-icon-v2 { background: rgba(220,80,80,0.14); }
+.mc-mapa-v2 .mc-title-v2 { color: #e88080; }
+.mc-mapa-v2:hover { box-shadow: 0 14px 36px rgba(220,80,80,0.16); border-color: rgba(220,80,80,0.45); }
 
 /* ── Registro de territorios ── */
 .reg-card { background: #2a2a2a; border: 0.5px solid #444; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; }

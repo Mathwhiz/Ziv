@@ -339,31 +339,49 @@ function goToModo() {
   hide('view-cover'); hide('view-config'); hide('view-preview');
   hide('view-registrar'); hide('view-info'); hide('view-historial');
   showChatFab();
-  const label = document.getElementById('modo-grupo-label');
-  const grupoObj = GRUPOS.find(g => String(g.id) === String(selectedGrupo));
-  label.textContent = grupoObj ? grupoObj.label : selectedGrupo;
-  label.style.color = GROUP_COLORS[selectedGrupo] || '#97C459';
 
-  const cardColors = [
-    { border: '#378ADD', bg: 'rgba(55,138,221,0.15)'  },
-    { border: '#1D9E75', bg: 'rgba(29,158,117,0.15)'  },
-    { border: '#7F77DD', bg: 'rgba(127,119,221,0.15)' },
-    { border: '#FAC775', bg: 'rgba(250,199,117,0.15)' },
-    { border: '#5DCAA5', bg: 'rgba(93,202,165,0.15)'  },
-  ];
-  document.querySelectorAll('.modo-card').forEach((card, i) => {
-    const cc = cardColors[i] ?? cardColors[cardColors.length - 1];
-    card.style.borderColor = cc.border;
-    card.style.setProperty('--modo-hover-bg', cc.bg);
-    card.style.setProperty('--modo-hover-border', cc.border);
-  });
-  document.querySelectorAll('.modo-icon').forEach((icon, i) => {
-    const cc = cardColors[i] ?? cardColors[cardColors.length - 1];
-    icon.style.background = cc.bg;
-  });
+  const grupoObj = GRUPOS.find(g => String(g.id) === String(selectedGrupo));
+  const grupoLabel = grupoObj ? grupoObj.label : selectedGrupo;
+  const grupoColor = GROUP_COLORS[selectedGrupo] || '#97C459';
+
+  document.getElementById('modo-grupo-label').textContent = grupoLabel;
+  document.querySelector('.modo-wrap').style.setProperty('--grupo-color', grupoColor);
+
+  const supEl = document.getElementById('modo-sup-label');
+  if (supEl) supEl.style.color = grupoColor;
+
+  const w = getWeekDates(0);
+  const planWeekEl = document.getElementById('plan-hero-week');
+  if (planWeekEl) planWeekEl.textContent = `Semana del ${formatShort(w.mon)} al ${formatShort(w.sun)}`;
+
+  // Resetear badge mientras carga
+  const statusEl = document.getElementById('plan-hero-status');
+  if (statusEl) { statusEl.textContent = 'Sin planificar'; statusEl.className = 'plan-status-dot sin-plan'; }
 
   show('view-modo');
   document.getElementById('step-bar').style.display = 'none';
+
+  actualizarBadgePlanificada(w);
+}
+
+async function actualizarBadgePlanificada(w) {
+  const statusEl = document.getElementById('plan-hero-status');
+  if (!statusEl) return;
+  try {
+    const q = query(
+      salidaCol(),
+      where('grupoId', '==', String(selectedGrupo)),
+      where('fechaReg', '>=', w.mon),
+      where('fechaReg', '<=', w.sun)
+    );
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      statusEl.textContent = 'Planificada';
+      statusEl.className = 'plan-status-dot planificada';
+    }
+  } catch(e) {
+    // badge queda en "Sin planificar"
+  }
 }
 
 function goToMapa() {
