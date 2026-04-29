@@ -229,24 +229,33 @@
 
   <!-- ── INFO GRUPO ── -->
   <div id="view-info" class="view" style="display:none;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-      <p class="section-title" id="info-titulo" style="font-size:36px;margin-bottom:0;">Grupo ?</p>
+    <div class="info-vh">
+      <div class="info-back" onclick="goToModo()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888798" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+      </div>
+      <div style="flex:1;">
+        <div class="va-header-sup" id="info-header-sup">Territorios</div>
+        <div class="va-header-title"><span id="info-titulo-prefix">Grupo </span><span id="info-titulo-num" style="color:var(--grupo-color,#97C459)">?</span></div>
+      </div>
+      <div class="info-count-pill" id="info-count-pill" style="display:none;"></div>
     </div>
-    <p class="section-sub">Tocá un territorio para ver su info o cambiar su estado</p>
+    <div class="va-legend">
+      <div class="va-legend-item"><div class="va-dot va-dot-gc"></div>Normal</div>
+      <div class="va-legend-item"><div class="va-dot" style="background:#EF9F27;"></div>Peligroso</div>
+      <div class="va-legend-item"><div class="va-dot" style="background:#e06060;"></div>No predica</div>
+      <div class="va-legend-item"><div class="va-dot" style="background:#444350;"></div>Sin reg.</div>
+    </div>
     <div id="info-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando...</div></div>
     <div id="info-error" style="display:none;"></div>
     <div id="info-content" style="display:none;">
-      <div class="info-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#444;"></div>Normal</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#EF9F27;"></div>Peligroso</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#A32D2D;"></div>No se predica</div>
-      </div>
-      <div class="info-grid" id="info-grid"></div>
+      <div class="va-grid" id="info-grid"></div>
+      <button class="va-informe-full" id="btn-informe-super" style="display:none;" onclick="goToInforme()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4M7 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-2M9 3h6"/></svg>
+        Informe para el Superintendente
+      </button>
     </div>
-    <button class="btn-informe-super" id="btn-informe-super" style="display:none;" onclick="goToInforme()">
-      📋 Informe para el Super
-    </button>
-    <button class="btn-secondary" style="width:100%;margin-top:8px;" onclick="goToModo()">← Volver</button>
   </div>
 
   <!-- ── INFORME PARA EL SUPER ── -->
@@ -270,44 +279,55 @@
 
   <!-- ── MODAL TERRITORIO ── -->
   <div id="estado-modal" class="estado-modal" style="display:none;" onclick="handleModalBg(event)">
-    <div class="estado-modal-card">
-      <div class="estado-modal-title" id="modal-terr-title">Territorio ?</div>
-      <div class="modal-section-title" style="margin-top:10px;">Historial</div>
-      <div id="modal-hist-loading" style="font-size:13px;color:#888;margin-bottom:10px;">Cargando...</div>
-      <div id="modal-hist-content" style="display:none;">
-        <table class="hist-table">
-          <thead><tr><th>Conductor</th><th>Inicio</th><th>Fin</th><th style="text-align:right;"></th></tr></thead>
-          <tbody id="modal-hist-body"></tbody>
-        </table>
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-sheet-header">
+        <div>
+          <div class="modal-terr-num" id="modal-terr-title">?</div>
+          <div class="modal-terr-sub" id="modal-terr-sub">Territorio</div>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal()">✕</button>
       </div>
-      <div id="modal-edit-form" style="display:none;">
-        <div class="edit-row-form">
-          <div class="edit-row-title">Editando fila</div>
-          <div class="form-row">
-            <div><label>Conductor</label><input type="text" id="edit-cond" list="conductores-list" placeholder="Elegir o escribir..."><datalist id="conductores-list"></datalist></div>
-            <div><label>Inicio</label><input type="date" id="edit-ini"></div>
-          </div>
-          <div><label>Fin</label><input type="date" id="edit-fin" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid #555;border-radius:8px;background:#1e1e1e;color:#eee;margin-top:3px;"></div>
-          <div style="display:flex;gap:8px;margin-top:10px;">
-            <button class="btn-secondary" style="flex:1;font-size:13px;padding:7px;" onclick="cancelEdit()">Cancelar</button>
-            <button class="btn-primary"   style="flex:1;font-size:13px;padding:7px;" onclick="saveEdit()">Guardar</button>
+
+      <div class="modal-estado-section">
+        <div class="modal-section-label">Estado del territorio</div>
+        <div class="modal-estado-btns">
+          <button class="modal-estado-btn me-normal"    onclick="setTerritoryEstado('normal')">Normal</button>
+          <button class="modal-estado-btn me-peligroso" onclick="setTerritoryEstado('peligroso')">Peligroso</button>
+          <button class="modal-estado-btn me-nopredica" onclick="setTerritoryEstado('no_predica')">No predica</button>
+        </div>
+      </div>
+
+      <div class="modal-hist-section">
+        <div class="modal-section-label">Historial de salidas</div>
+        <div id="modal-hist-loading" style="font-size:13px;color:#888798;margin-bottom:10px;">Cargando...</div>
+        <div id="modal-hist-content" style="display:none;">
+          <table class="hist-table">
+            <thead><tr><th>Conductor</th><th>Inicio</th><th>Fin</th><th style="text-align:right;"></th></tr></thead>
+            <tbody id="modal-hist-body"></tbody>
+          </table>
+        </div>
+        <div id="modal-edit-form" style="display:none;">
+          <div class="edit-row-form">
+            <div class="edit-row-title">Editando fila</div>
+            <div class="form-row">
+              <div><label>Conductor</label><input type="text" id="edit-cond" list="conductores-list" placeholder="Elegir o escribir..."><datalist id="conductores-list"></datalist></div>
+              <div><label>Inicio</label><input type="date" id="edit-ini"></div>
+            </div>
+            <div><label>Fin</label><input type="date" id="edit-fin" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;background:#1e2126;color:#eee;margin-top:3px;"></div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn-secondary" style="flex:1;font-size:13px;padding:7px;" onclick="cancelEdit()">Cancelar</button>
+              <button class="btn-primary"   style="flex:1;font-size:13px;padding:7px;" onclick="saveEdit()">Guardar</button>
+            </div>
           </div>
         </div>
       </div>
-      <div id="modal-notas-section" style="margin-top:12px;">
-        <div class="modal-section-title">Notas</div>
-        <textarea id="modal-notas" placeholder="Observaciones sobre este territorio..." rows="3"
-          style="width:100%;box-sizing:border-box;background:#1e1e1e;color:#e8e8e8;border:0.5px solid #555;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;margin-top:2px;"></textarea>
-        <button class="btn-primary" style="width:100%;margin-top:6px;font-size:13px;padding:7px;" onclick="saveNota()">Guardar nota</button>
+
+      <div id="modal-notas-section" class="modal-notas-section">
+        <div class="modal-section-label">Notas</div>
+        <textarea id="modal-notas" class="modal-notas-textarea" placeholder="Observaciones sobre este territorio..." rows="3"></textarea>
+        <button class="modal-guardar-nota" onclick="saveNota()">Guardar nota</button>
       </div>
-      <hr class="modal-divider">
-      <div class="modal-section-title">Estado del territorio</div>
-      <div style="display:flex;gap:6px;">
-        <button class="estado-opt opt-normal"     onclick="setTerritoryEstado('normal')">Normal</button>
-        <button class="estado-opt opt-peligroso"  onclick="setTerritoryEstado('peligroso')">Peligroso</button>
-        <button class="estado-opt opt-no_predica" onclick="setTerritoryEstado('no_predica')">No se predica</button>
-      </div>
-      <button class="btn-secondary" style="width:100%;margin-top:8px;" onclick="closeModal()">Cerrar</button>
     </div>
   </div>
 

@@ -278,15 +278,16 @@ async function fetchGrupo(grupo) {
       query(histCol(id), orderBy('fechaInicio', 'desc'), limit(1))
     );
 
-    let lastFin = null, lastIni = null, enProgreso = false;
+    let lastFin = null, lastIni = null, enProgreso = false, lastConductor = null;
     if (!histSnap.empty) {
       const h = histSnap.docs[0].data();
-      lastIni    = h.fechaInicio || null;
-      lastFin    = h.fechaFin   || null;
-      enProgreso = !h.fechaFin;
+      lastIni       = h.fechaInicio || null;
+      lastFin       = h.fechaFin   || null;
+      enProgreso    = !h.fechaFin;
+      lastConductor = h.conductor  || null;
     }
 
-    result[id] = { lastFin, lastIni, enProgreso, tipo: terr.tipo || 'normal', ciudad: terr.ciudad || null, nombre: terr.nombre || null, notas: terr.notas || null };
+    result[id] = { lastFin, lastIni, enProgreso, lastConductor, tipo: terr.tipo || 'normal', ciudad: terr.ciudad || null, nombre: terr.nombre || null, notas: terr.notas || null };
   }));
 
   return result;
@@ -1407,9 +1408,25 @@ async function guardarRegistros() {
 // ─────────────────────────────────────────
 async function goToInfoGrupo() {
   hide('view-modo'); show('view-info');
-  const infoTitulo = document.getElementById('info-titulo');
-  infoTitulo.textContent = selectedGrupo === 'C' ? 'Congregación' : 'Grupo ' + selectedGrupo;
-  infoTitulo.style.color = GCOLORS[selectedGrupo] || '#97C459';
+
+  const gc = GCOLORS[selectedGrupo] || '#97C459';
+  document.getElementById('view-info').style.setProperty('--grupo-color', gc);
+
+  const numEl    = document.getElementById('info-titulo-num');
+  const prefixEl = document.getElementById('info-titulo-prefix');
+  const supEl    = document.getElementById('info-header-sup');
+  if (selectedGrupo === 'C') {
+    if (prefixEl) prefixEl.style.display = 'none';
+    if (numEl) numEl.textContent = 'Congregación';
+  } else {
+    if (prefixEl) prefixEl.style.display = '';
+    if (numEl) numEl.textContent = selectedGrupo;
+  }
+  if (supEl) supEl.textContent = 'Territorios · ' + (CONGRE_NOMBRE || '');
+
+  const countPill = document.getElementById('info-count-pill');
+  if (countPill) countPill.style.display = 'none';
+
   show('info-loading'); hide('info-content'); hide('info-error');
   try {
     territoriosData = await fetchGrupo(selectedGrupo);
@@ -1417,7 +1434,7 @@ async function goToInfoGrupo() {
     hide('info-loading'); show('info-content');
     renderInfoGrid();
     const btnInf = document.getElementById('btn-informe-super');
-    if (btnInf) btnInf.style.display = 'block';
+    if (btnInf) btnInf.style.display = 'flex';
   } catch(err) {
     hide('info-loading');
     document.getElementById('info-error').innerHTML = `<div class="error-wrap">Error: ${err.message}.</div>`;
@@ -1517,30 +1534,38 @@ async function goToInforme() {
 window.goToInforme = goToInforme;
 window.descargarInformePDF = function() { window.print(); };
 
-function daysColor(dias) {
-  if (dias === null || dias === undefined) return '#555';
-  if (dias <= 30)  return '#4CAF50';
-  if (dias <= 45)  return '#8BC34A';
-  if (dias <= 60)  return '#FFC107';
-  if (dias <= 90)  return '#FF9800';
-  if (dias <= 120) return '#FF5722';
-  return '#F44336';
+function daysClass(d) {
+  if (d === null || d === undefined) return '';
+  if (d < 30)  return 'days-ok';
+  if (d <= 60) return 'days-warn';
+  return 'days-bad';
 }
 
 function renderInfoBtn(container, n) {
   const t = territoriosData[n];
-  const estado = configData[n] || 'normal';
+  const estado = configData[n] || t.tipo || 'normal';
   const lastDate = t.lastFin || t.lastIni;
-  const btn = document.createElement('button');
-  btn.className = `info-btn estado-${estado}`;
-  const estadoLabel = estado === 'normal' ? '' : estado === 'peligroso' ? '⚠ peligroso' : '✕ no predica';
-  const dias    = lastDate ? daysSince(lastDate) : null;
-  const col     = daysColor(dias);
+  const dias = lastDate ? daysSince(lastDate) : null;
   const diasTxt = dias !== null ? `${dias}d` : '—';
   const displayNum = t.nombre ? t.nombre.replace(/^Territorio\s+/, '') : n;
-  btn.innerHTML = `<div class="info-btn-num">${displayNum}</div><div class="info-btn-date">${lastDate ? formatShortFull(lastDate) : 'Sin reg.'}</div><div class="info-btn-days" style="color:${col};">${diasTxt}</div><div class="info-btn-estado">${estadoLabel}</div>`;
-  btn.onclick = () => openModal(n);
-  container.appendChild(btn);
+  const estadoLabels = { normal: 'Normal', peligroso: 'Peligroso', no_predica: 'No predica' };
+  const estadoLabel = estadoLabels[estado] || 'Normal';
+  const dataEstado = estado === 'no_predica' ? 'nopredica' : (lastDate ? estado : 'sinreg');
+  const conductor = t.lastConductor || '';
+
+  const card = document.createElement('div');
+  card.className = 'va-terr';
+  card.dataset.estado = dataEstado;
+  card.innerHTML = `
+    <div class="va-terr-num">${displayNum}</div>
+    <div class="va-terr-label">${estadoLabel}</div>
+    <div class="va-terr-dias">
+      <span class="va-terr-days-val ${daysClass(dias)}">${diasTxt}</span>
+    </div>
+    <div class="va-terr-conductor">${conductor || 'Sin conductor'}</div>
+  `;
+  card.onclick = () => openModal(n);
+  container.appendChild(card);
 }
 
 function renderInfoGrid() {
@@ -1550,6 +1575,12 @@ function renderInfoGrid() {
     const na = parseInt(a), nb = parseInt(b);
     return na !== nb ? na - nb : a.localeCompare(b);
   });
+
+  const countPill = document.getElementById('info-count-pill');
+  if (countPill) {
+    countPill.textContent = `${nums.length} territorio${nums.length !== 1 ? 's' : ''}`;
+    countPill.style.display = '';
+  }
 
   const hasCiudades = nums.some(n => territoriosData[n].ciudad);
   if (hasCiudades) {
@@ -1572,7 +1603,7 @@ function renderInfoGrid() {
         : `Territorios de ${ciudadPrincipal || CONGRE_NOMBRE}`;
       g.appendChild(hdr);
       const grid = document.createElement('div');
-      grid.className = 'info-grid';
+      grid.className = 'va-grid';
       lista.forEach(n => renderInfoBtn(grid, n));
       g.appendChild(grid);
     });
@@ -1588,12 +1619,34 @@ function handleModalBg(e) {
 
 async function openModal(n) {
   modalTerr = n;
-  document.getElementById('modal-terr-title').textContent = 'Territorio ' + n;
+  editingRow = null;
+
+  const modal = document.getElementById('estado-modal');
+  const gc = GCOLORS[selectedGrupo] || '#97C459';
+  modal.style.setProperty('--grupo-color', gc);
+
+  const t = territoriosData[n];
+  const displayNum = t?.nombre ? t.nombre.replace(/^Territorio\s+/, '') : n;
+  document.getElementById('modal-terr-title').textContent = displayNum;
+  const subEl = document.getElementById('modal-terr-sub');
+  if (subEl) {
+    const grupoLabel = selectedGrupo === 'C' ? 'Congregación' : `Grupo ${selectedGrupo}`;
+    subEl.textContent = `Territorio · ${grupoLabel}`;
+  }
+
+  // Activar botón de estado actual
+  const estado = configData[n] || t?.tipo || 'normal';
+  modal.querySelectorAll('.modal-estado-btn').forEach(b => b.classList.remove('active'));
+  const btnClass = estado === 'no_predica' ? '.me-nopredica' : (estado === 'peligroso' ? '.me-peligroso' : '.me-normal');
+  const activeBtn = modal.querySelector(btnClass);
+  if (activeBtn) activeBtn.classList.add('active');
+
   document.getElementById('modal-hist-loading').style.display = '';
   document.getElementById('modal-hist-content').style.display = 'none';
   document.getElementById('modal-edit-form').style.display = 'none';
-  document.getElementById('estado-modal').style.display = 'flex';
-  editingRow = null;
+
+  modal.style.display = 'flex';
+  requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('open')));
 
   try {
     const [histSnap, terrSnap] = await Promise.all([
@@ -1709,9 +1762,13 @@ async function saveEdit() {
 }
 
 function closeModal() {
-  document.getElementById('estado-modal').style.display = 'none';
-  modalTerr  = null;
-  editingRow = null;
+  const modal = document.getElementById('estado-modal');
+  modal.classList.remove('open');
+  setTimeout(() => {
+    modal.style.display = 'none';
+    modalTerr  = null;
+    editingRow = null;
+  }, 300);
 }
 
 async function refreshTerrEntrada(n) {
@@ -1719,14 +1776,15 @@ async function refreshTerrEntrada(n) {
   const histSnap = await getDocs(
     query(histCol(n), orderBy('fechaInicio', 'desc'), limit(1))
   );
-  let lastFin = null, lastIni = null, enProgreso = false;
+  let lastFin = null, lastIni = null, enProgreso = false, lastConductor = null;
   if (!histSnap.empty) {
     const h = histSnap.docs[0].data();
-    lastIni    = h.fechaInicio || null;
-    lastFin    = h.fechaFin   || null;
-    enProgreso = !h.fechaFin;
+    lastIni       = h.fechaInicio || null;
+    lastFin       = h.fechaFin   || null;
+    enProgreso    = !h.fechaFin;
+    lastConductor = h.conductor  || null;
   }
-  territoriosData[n] = { ...territoriosData[n], lastFin, lastIni, enProgreso };
+  territoriosData[n] = { ...territoriosData[n], lastFin, lastIni, enProgreso, lastConductor };
   renderInfoGrid();
 }
 
