@@ -81,12 +81,38 @@ Las cards de salida (`renderSalidaCard`) usan diseño compacto:
 - Labels de campo: `font-size:11px` (override local)
 - `form-row` con `margin-bottom:6px`
 
+### View-info ("Ver mi grupo") — diseño actual
+
+Header: botón back (`.info-back`) + label uppercase `.va-header-sup` ("Territorios · Cong") + título grande con número de grupo coloreado + pill con conteo de territorios (`.info-count-pill`).
+
+Leyenda: `.va-legend` con `.va-dot` para cada estado. El punto "Normal" usa `.va-dot-gc` → `var(--grupo-color)`.
+
+Grid: `.va-grid` con `grid-template-columns: repeat(auto-fill, minmax(160px, 1fr))`. Funciona sin breakpoints manuales.
+
+**Cards de territorio** (`.va-terr[data-estado]`):
+- `data-estado`: `"normal"` | `"peligroso"` | `"nopredica"` | `"sinreg"` (sinreg = sin historial)
+- Número grande, label de estado en uppercase, chip de días, conductor del último historial
+- Color del número y gradiente de fondo determinados por `data-estado` + `--grupo-color` para normal
+- `fetchGrupo()` ya incluye `lastConductor` del último historial para mostrarlo en la card
+
+**`daysClass(d)`** — umbrales exactos para el chip de días:
+- `d < 30` → `days-ok` (verde)
+- `d ≤ 60` → `days-warn` (amarillo)
+- `d > 60` → `days-bad` (rojo)
+
+**Modal de territorio** — bottom sheet animado:
+- Overlay: `display:flex; align-items:flex-end`. Sheet: `transform:translateY(100%)` → `translateY(0)` con `cubic-bezier(0.22,1,0.36,1)`.
+- Apertura: `modal.style.display='flex'` + doble `requestAnimationFrame` → `modal.classList.add('open')`.
+- Cierre: `modal.classList.remove('open')` → `setTimeout 300ms` → `display:none` + reset de `modalTerr`.
+- Estructura: handle → número grande + sub-label → **estado arriba** (3 botones `.me-normal/.me-peligroso/.me-nopredica`) → historial → notas.
+- `--grupo-color` se setea en el modal element al abrirlo; `modal-terr-num` lo hereda para su color.
+
 ### Informe para el Super (✅ implementado)
 
 Exportación en PDF del historial de todos los territorios del grupo para presentar al
 superintendente de circuito en cada visita semestral.
 
-**Entrada:** botón "📋 Informe para el Super" en `view-info` ("Ver mi grupo"), visible tras cargar los territorios.
+**Entrada:** botón "Informe para el Superintendente" (`.va-informe-full`) en `view-info`, visible tras cargar los territorios.
 
 **Período automático** — lee `semanasEspeciales` filtrando `tipo === 'superintendente'` y toma las
 dos fechas más recientes:

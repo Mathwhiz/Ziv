@@ -22,6 +22,9 @@
 - No usar `calcularIndicesVM()` en VM — fue reemplazado por `calcularColasVM()` que es democrático (ordena por última fecha asignada en historial completo, no solo por índice de ronda)
 - No asignar ayudante de sexo distinto al principal en VM — `autoAsignarSemana` lo evita filtrando la cola por `sexoDePub()`; si se edita manualmente, respetar la misma regla
 - No omitir `_marcarModificada()` en funciones que muten `semanaData` en VM — el dirty state del botón Guardar depende de que se llame en todos los puntos de mutación
+- No usar `daysColor()` en territorios — fue reemplazado por `daysClass()` (clases CSS `days-ok/days-warn/days-bad`) con umbrales <30/≤60/>60
+- No usar `.info-btn` / `.info-grid` en `view-info` — reemplazados por `.va-terr` / `.va-grid`; el modal ya no usa `.estado-modal-card` ni `.estado-opt` — es bottom sheet con `.modal-sheet` y `.modal-estado-btn`
+- No llamar `closeModal()` esperando que `modalTerr` sea `null` inmediatamente — el reset ocurre 300ms después (animación); capturar `const n = modalTerr` antes si se necesita el valor
 
 ### Estilos — NO hacer (ver `docs/UI-STYLE.md` para el sistema completo)
 - No usar Inter, Geist ni Google Fonts — el proyecto usa `system-ui`
