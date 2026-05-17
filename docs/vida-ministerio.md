@@ -3,10 +3,10 @@
 Módulo para el **presidente de la reunión VM**: importar programa de WOL, asignar partes,
 gestionar publicadores por rol VM, sala auxiliar.
 
-**Estado al 2026-04-09:** Fases 1, 2, sala auxiliar, historial Excel, semanas especiales (UI+generador),
+**Estado al 2026-05-16:** Fases 1, 2, sala auxiliar, historial Excel, semanas especiales (UI+generador),
 PIN VM, navegación, vista mensual, editar títulos, duración visible, export/compartir, visor público,
 menú Encargado centrado, filtros en vista Hermanos, Lista de Hermanos en encargado VM, dirty state con aviso de guardado,
-**export a Google Sheets + export imagen por mes** — todos ✅.
+**export a Google Sheets + export imagen por mes + papelitos S-89** — todos ✅.
 **Fase 4 auto-asignación:** ✅ implementada (colas democráticas por historial completo + restricción de género en ayudantes).
 
 ### Visor público (`programa.html`)
@@ -102,6 +102,62 @@ Acciones soportadas: `saveVMMes` (borra y reescribe el mes completo) y `saveVMSe
 **Config:** `vmScriptUrl` en `congregaciones/{congreId}/config_privada/modulos`. Se configura en Admin → Congregación. La hoja destino se infiere del mes: `"Mayo 26"`, `"Junio 26"`, etc.
 
 **Importante — re-deploy:** al actualizar el código del Apps Script hay que ir a Implementar → Gestionar implementaciones → lápiz → Nueva versión → Implementar. La URL no cambia.
+
+### S-89 — Papelitos de asignación (✅ implementado)
+
+Genera los formularios S-89 en PDF para distribuir a los hermanos que tienen partes en **Lectura Bíblica** y **Seamos Mejores Maestros** (solo el dueño de casa — no el ayudante).
+
+**Entrada:**
+- Botón "S-89" en `view-semana` → `generarS89Semana()` — papelitos de la semana abierta
+- Botón "S-89" en el header de mes → `generarS89(mesISO)` — papelitos de todas las semanas del mes
+
+**Qué genera por semana:**
+- Lectura Bíblica SP → intervención 3, sala `'principal'`, pubId: `lecturaBiblica.pubId`
+- Lectura Bíblica SA (si `tieneAuxiliar`) → intervención 3, sala `'auxiliar'`, pubId: `lecturaBiblica.ayudante` ⚠️ **no** `salaAux.pubId` — ese campo no existe en `lecturaBiblica`
+- Ministerio[i] SP → intervención 4+i, sala `'principal'`
+- Ministerio[i] SA → intervención 4+i, sala `'auxiliar'` (solo si `salaAux?.pubId` existe)
+
+**Objeto slip:**
+```js
+{ nombre, ayudante, fecha, intervencion, sala }
+// fecha: s89FechaReunion() → lunes+2 (miércoles) o lunes+1 (semana superintendente)
+// sala: 'principal' | 'auxiliar'
+// intervencion: 3 para Lectura, 4+ para Ministerio
+```
+
+**Overlay `#s89-overlay`:**
+- Header sticky: título + botón "Imprimir" + botón "✕"
+- Botón grande "↓ Descargar todos los S-89" → `s89Descargar()`
+- Lista de cards: label (nombre + sala), preview HTML del slip, botones WA e imagen
+
+**Acciones por slip:**
+- `s89Whatsapp(idx)` → abre `wa.me` con texto español pre-armado (nombre, ayudante, fecha, intervención, sala)
+- `s89Compartir(idx)` → html2canvas sobre `#s89-slip-{idx}` → `navigator.share()` con archivo imagen, o descarga fallback
+
+**Generación PDF (`s89Descargar`):**
+- jsPDF 2.5.1 + html2canvas (cargados lazy desde CDN)
+- `s89GenerarHtml(slips)` — genera 2 slips por página A4, fuente Times New Roman, checkboxes como `<span>` con borde
+- La función inyecta el HTML parseado en el DOM vivo (DOMParser + `adoptNode`) porque html2canvas no captura iframes
+- Guarda como `s89-DD-MM-YYYY.pdf`
+
+**Impresión (`s89Imprimir`):**
+- Abre nueva pestaña con el mismo HTML + `window.print()` autoejecutado al cargar
+
+**Nota sobre re-uso del S-89 original:**
+El PDF `vida-ministerio/S-89_S.pdf` (240.9 × 320.3 pts) está en el repo para referencia.
+Se intentó usar como plantilla con `pdf-lib` (resultado pixel-perfect) pero se revirtió.
+Si se retoma, las coordenadas exactas de cada campo (extraídas con pdfminer) son:
+
+| Campo | x | y (bottom-left) |
+|-------|---|-----------------|
+| Nombre | 65 | 265 |
+| Ayudante | 73 | 242 |
+| Fecha | 53 | 219 |
+| Intervención núm. | 138 | 196 |
+| Checkbox Sala principal | 30 | 153 |
+| Checkbox Sala auxiliar 1 | 30 | 137 |
+
+Ver commit `eef8e84` (luego revertido en `9524adf`) para la implementación completa con pdf-lib 1.17.1.
 
 ### Export como imagen del mes
 

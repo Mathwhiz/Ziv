@@ -25,6 +25,7 @@
 - No usar `daysColor()` en territorios — fue reemplazado por `daysClass()` (clases CSS `days-ok/days-warn/days-bad`) con umbrales <30/≤60/>60
 - No usar `.info-btn` / `.info-grid` en `view-info` — reemplazados por `.va-terr` / `.va-grid`; el modal ya no usa `.estado-modal-card` ni `.estado-opt` — es bottom sheet con `.modal-sheet` y `.modal-estado-btn`
 - No llamar `closeModal()` esperando que `modalTerr` sea `null` inmediatamente — el reset ocurre 300ms después (animación); capturar `const n = modalTerr` antes si se necesita el valor
+- No leer `lecturaBiblica.salaAux.pubId` para el conductor SA de la lectura — ese campo no existe en ese nivel. Cuando `tieneAuxiliar=true`, el pubId del conductor SA de lectura se guarda en `lecturaBiblica.ayudante` (mismo campo que el ayudante normal pero repropósito). Ver `s89SlipsDeSemana` y `renderSemanaPublico`.
 
 ### Estilos — NO hacer (ver `docs/UI-STYLE.md` para el sistema completo)
 - No usar Inter, Geist ni Google Fonts — el proyecto usa `system-ui`
