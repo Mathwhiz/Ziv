@@ -2391,94 +2391,70 @@ ${printScript}
 </body></html>`;
 }
 
-// Genera un PDF real a partir del S-89_S.pdf original como plantilla.
-// Retorna Blob listo para descargar o abrir.
-async function s89GenerarPDF(slips) {
-  if (!window.PDFLib) {
-    await new Promise((res, rej) => {
-      const sc = document.createElement('script');
-      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
-      sc.onload = res; sc.onerror = rej;
-      document.head.appendChild(sc);
-    });
-  }
-
-  const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
-  const templateBytes = await fetch('./S-89_S.pdf').then(r => r.arrayBuffer());
-  const templateDoc  = await PDFDocument.load(templateBytes);
-  const newDoc       = await PDFDocument.create();
-  const font         = await newDoc.embedFont(StandardFonts.Helvetica);
-  const black        = rgb(0, 0, 0);
-
-  // Coordenadas en pts (origen bottom-left), página 240.9 × 320.3 pts.
-  // Derivadas de pdfminer sobre S-89_S.pdf.
-  const POS = {
-    nombre:       { x: 65,  y: 265 },
-    ayudante:     { x: 73,  y: 242 },
-    fecha:        { x: 53,  y: 219 },
-    intervencion: { x: 138, y: 196 },
-    chkSalaP:     { x: 30,  y: 153 },  // checkbox Sala principal
-    chkSalaA1:    { x: 30,  y: 137 },  // checkbox Sala auxiliar 1
-  };
-
-  const drawCheck = (page, cx, cy) => {
-    page.drawLine({ start: {x: cx-3.5, y: cy+0.5}, end: {x: cx-1,   y: cy-3  }, thickness: 1.4, color: black });
-    page.drawLine({ start: {x: cx-1,   y: cy-3  }, end: {x: cx+4.5, y: cy+4.5}, thickness: 1.4, color: black });
-  };
-
-  for (const slip of slips) {
-    const [page] = await newDoc.copyPages(templateDoc, [0]);
-    newDoc.addPage(page);
-    const draw = (text, pos) =>
-      page.drawText(String(text ?? ''), { x: pos.x, y: pos.y, size: 9, font, color: black });
-    draw(slip.nombre,       POS.nombre);
-    draw(slip.ayudante,     POS.ayudante);
-    draw(slip.fecha,        POS.fecha);
-    draw(slip.intervencion, POS.intervencion);
-    const chk = slip.sala === 'principal' ? POS.chkSalaP : POS.chkSalaA1;
-    drawCheck(page, chk.x, chk.y);
-  }
-
-  const pdfBytes = await newDoc.save();
-  return new Blob([pdfBytes], { type: 'application/pdf' });
-}
-
-window.s89Imprimir = async function() {
+window.s89Imprimir = function() {
   const slips = window._s89Slips;
   if (!slips?.length) return;
-  uiLoading.show('Preparando impresión…');
-  try {
-    const blob = await s89GenerarPDF(slips);
-    const url  = URL.createObjectURL(blob);
-    const win  = window.open(url, '_blank');
-    if (!win) uiToast('Habilitá los pop-ups para imprimir', 'error');
-    else setTimeout(() => URL.revokeObjectURL(url), 60000);
-  } catch(err) {
-    console.error('s89Imprimir:', err);
-    uiToast('Error al preparar impresión', 'error');
-  } finally {
-    uiLoading.hide();
-  }
+  const html = s89GenerarHtml(slips, { autoPrint: true });
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
 };
 
 window.s89Descargar = async function() {
   const slips = window._s89Slips;
   if (!slips?.length) return;
+
   uiLoading.show('Generando PDF…');
+  const tempStyle = document.createElement('style');
+  const container = document.createElement('div');
+
   try {
-    const blob  = await s89GenerarPDF(slips);
-    const fecha = (slips[0]?.fecha || 'vm').replace(/\//g, '-');
-    const a = Object.assign(document.createElement('a'), {
-      href: URL.createObjectURL(blob),
-      download: `s89-${fecha}.pdf`,
-    });
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    // Cargar jsPDF si todavía no está
+    if (!window.jspdf) {
+      await new Promise((res, rej) => {
+        const sc = document.createElement('script');
+        sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        sc.onload = res; sc.onerror = rej;
+        document.head.appendChild(sc);
+      });
+    }
+
+    // Parsear el HTML del print e inyectarlo en el documento vivo
+    // (html2canvas no funciona dentro de iframes)
+    const parsed = new DOMParser().parseFromString(s89GenerarHtml(slips), 'text/html');
+    tempStyle.textContent = Array.from(parsed.querySelectorAll('style')).map(s => s.textContent).join('\n');
+    document.head.appendChild(tempStyle);
+
+    container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;background:#fff;';
+    Array.from(parsed.querySelectorAll('.pagina')).forEach(p => container.appendChild(document.adoptNode(p)));
+    document.body.appendChild(container);
+
+    await new Promise(r => setTimeout(r, 300)); // esperar layout
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageEls = container.querySelectorAll('.pagina');
+
+    for (let i = 0; i < pageEls.length; i++) {
+      if (i > 0) pdf.addPage();
+      const canvas = await html2canvas(pageEls[i], {
+        scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false,
+      });
+      // Mantener proporción real del canvas sobre la página A4
+      const pxToMm = 210 / canvas.width;
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, canvas.height * pxToMm);
+    }
+
+    const fecha = slips[0]?.fecha?.replace(/\//g, '-') || 'vm';
+    pdf.save(`s89-${fecha}.pdf`);
     uiToast('PDF descargado ✓', 'success');
+
   } catch(err) {
     console.error('s89Descargar:', err);
     uiToast('Error al generar PDF', 'error');
   } finally {
+    if (tempStyle.parentNode) document.head.removeChild(tempStyle);
+    if (container.parentNode) document.body.removeChild(container);
     uiLoading.hide();
   }
 };
