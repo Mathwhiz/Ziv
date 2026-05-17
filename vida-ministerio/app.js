@@ -2166,14 +2166,175 @@ window.exportarMesImagen = async function(mesISO) {
 // ─────────────────────────────────────────
 //   S-89
 // ─────────────────────────────────────────
-window.generarS89 = async function(mesISO) {
-  // Implementación próxima
-  uiToast('S-89 — próximamente', 'success');
-};
+
+function s89FechaReunion(semana) {
+  // La reunión VM es miércoles (+2), excepto semana de superintendente → martes (+1)
+  const offset = semana.tipoEspecial === 'superintendente' ? 1 : 2;
+  const d = new Date(semana.fecha + 'T12:00:00');
+  d.setDate(d.getDate() + offset);
+  const pad = n => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+}
+
+function s89SlipsDeSemana(semana) {
+  const slips = [];
+  const fecha = s89FechaReunion(semana);
+
+  const add = (pubId, ayudanteId, intervencion, sala) => {
+    const nombre = nombreDePub(pubId);
+    if (!nombre) return;
+    slips.push({
+      nombre,
+      ayudante: nombreDePub(ayudanteId) || '',
+      fecha,
+      intervencion,
+      sala,           // 'principal' | 'auxiliar'
+    });
+  };
+
+  // Lectura Bíblica → intervención 3 (nunca tiene ayudante en el slip)
+  add(semana.tesoros?.lecturaBiblica?.pubId, null, 3, 'principal');
+  if (tieneAuxiliar) {
+    add(semana.tesoros?.lecturaBiblica?.salaAux?.pubId, null, 3, 'auxiliar');
+  }
+
+  // Seamos Mejores Maestros → intervenciones 4, 5, 6 …
+  (semana.ministerio || []).forEach((parte, i) => {
+    const num = 4 + i;
+    const conAyudante = parte.tipo !== 'discurso';
+    add(parte.pubId, conAyudante ? parte.ayudante : null, num, 'principal');
+    if (tieneAuxiliar && parte.salaAux?.pubId) {
+      add(parte.salaAux.pubId, conAyudante ? parte.salaAux.ayudante : null, num, 'auxiliar');
+    }
+  });
+
+  return slips;
+}
+
+function s89AbrirVentana(slips, titulo) {
+  if (!slips.length) {
+    uiToast('No hay hermanos asignados en Lectura ni Ministerio', 'error');
+    return;
+  }
+
+  const e = s => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const slipHtml = s => `
+<div class="slip">
+  <div class="slip-titulo">ASIGNACIÓN PARA LA REUNIÓN<br>VIDA Y MINISTERIO CRISTIANOS</div>
+  <div class="campo"><span class="etq">Nombre:</span><span class="lin">${e(s.nombre)}</span></div>
+  <div class="campo"><span class="etq">Ayudante:</span><span class="lin">${e(s.ayudante)}</span></div>
+  <div class="campo"><span class="etq">Fecha:</span><span class="lin">${e(s.fecha)}</span></div>
+  <div class="campo"><span class="etq">Intervención núm.:</span><span class="lin">${s.intervencion}</span></div>
+  <div class="se-en">Se presentará en:</div>
+  <div class="opciones">
+    <div class="opcion"><span class="caja">${s.sala === 'principal' ? '&#x2713;' : '&#x25A1;'}</span> Sala principal</div>
+    <div class="opcion"><span class="caja">${s.sala === 'auxiliar'  ? '&#x2713;' : '&#x25A1;'}</span> Sala auxiliar núm. 1</div>
+  </div>
+  <div class="nota"><b>Nota al estudiante:</b> En la <i>Guía de actividades</i> encontrará la información que necesita para su intervención. Repase también las indicaciones que se describen en las <i>Instrucciones para la reunión Vida y Ministerio Cristianos</i> (S-38).</div>
+  <div class="codigo">S-89-S 11/23</div>
+</div>`;
+
+  // Agrupar en páginas de 4 slips (grilla 2×2)
+  const paginas = [];
+  for (let i = 0; i < slips.length; i += 4) paginas.push(slips.slice(i, i + 4));
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>${e(titulo)}</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: serif; background: #fff; color: #000; }
+.pagina {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 210mm;
+  margin: 0 auto;
+  page-break-after: always;
+}
+.slip {
+  padding: 8mm 7mm 5mm;
+  border: 0.5px dashed #aaa;
+  display: flex;
+  flex-direction: column;
+  min-height: 148mm;
+}
+.slip-titulo {
+  font-size: 12pt;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+  line-height: 1.3;
+  margin-bottom: 7mm;
+}
+.campo {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  margin-bottom: 5mm;
+}
+.etq { font-size: 10pt; font-weight: bold; white-space: nowrap; }
+.lin {
+  flex: 1;
+  border-bottom: 1px solid #000;
+  font-size: 10pt;
+  padding-bottom: 1px;
+  min-width: 0;
+  word-break: break-word;
+}
+.se-en { font-size: 10pt; font-weight: bold; margin-bottom: 3mm; }
+.opciones { margin-left: 8mm; }
+.opcion { font-size: 10pt; margin-bottom: 2.5mm; display: flex; align-items: center; gap: 5px; }
+.caja { font-size: 13pt; line-height: 1; }
+.nota {
+  margin-top: auto;
+  padding-top: 4mm;
+  font-size: 7.5pt;
+  line-height: 1.35;
+}
+.codigo { font-size: 7pt; margin-top: 3mm; color: #666; }
+@media print {
+  @page { size: A4; margin: 0; }
+  body { margin: 0; }
+}
+</style>
+</head>
+<body>
+${paginas.map(p => `<div class="pagina">${p.map(slipHtml).join('')}</div>`).join('')}
+<script>window.onload = () => setTimeout(() => window.print(), 300);<\/script>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+}
 
 window.generarS89Semana = function() {
-  // Implementación próxima
-  uiToast('S-89 — próximamente', 'success');
+  if (!semanaData) return;
+  const slips = s89SlipsDeSemana(semanaData);
+  const d = new Date(semanaData.fecha + 'T12:00:00');
+  const titulo = `S-89 — Semana ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+  s89AbrirVentana(slips, titulo);
+};
+
+window.generarS89 = function(mesISO) {
+  // Toma las semanas del mes desde el cache semanasLista
+  const semanas = semanasLista
+    .filter(s => s.fecha && s.fecha.startsWith(mesISO))
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+  if (!semanas.length) {
+    uiToast('No hay semanas cargadas para ese mes', 'error');
+    return;
+  }
+
+  const slips = semanas.flatMap(s89SlipsDeSemana);
+  const [anio, mes] = mesISO.split('-');
+  const titulo = `S-89 — ${MESES_ES[Number(mes)-1]} ${anio}`;
+  s89AbrirVentana(slips, titulo);
 };
 
 window.exportarSemanaActualASheets = function() {
