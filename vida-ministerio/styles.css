@@ -246,7 +246,16 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   background: rgba(127,119,221,0.1); border: 1px solid rgba(127,119,221,0.28);
   border-radius: 10px; color: #7F77DD; font-size: 13px; font-weight: 600;
   padding: 10px 8px; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
 }
+.btn-autocomplete:hover { background: rgba(127,119,221,0.2); border-color: rgba(127,119,221,0.6); }
+.btn-s89 {
+  background: rgba(91,141,222,0.1); border: 1px solid rgba(91,141,222,0.3);
+  border-radius: 10px; color: #5B8DDE; font-size: 13px; font-weight: 600;
+  padding: 10px 8px; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-s89:hover { background: rgba(91,141,222,0.2); border-color: rgba(91,141,222,0.6); }
 
 /* ── Tipo chip + instruccion (partes de ministerio) ── */
 .parte-tipo-row { margin-bottom: 5px; }
@@ -323,6 +332,10 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   background: rgba(127,119,221,0.1); border: 1px solid rgba(127,119,221,0.3); color: #9A95DD;
 }
 .vm-mes-img-btn:hover { background: rgba(127,119,221,0.2); }
+.vm-mes-s89-btn {
+  background: rgba(91,141,222,0.1); border: 1px solid rgba(91,141,222,0.3); color: #5B8DDE;
+}
+.vm-mes-s89-btn:hover { background: rgba(91,141,222,0.2); }
 
 /* ── Botón → Sheets en action bar de semana ── */
 .btn-sheets-sm {

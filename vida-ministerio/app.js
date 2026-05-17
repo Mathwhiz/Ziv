@@ -826,6 +826,10 @@ function renderSemanas(semanas) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         Img
       </button>`;
+      acciones += `<button class="vm-mes-action-btn vm-mes-s89-btn" onclick="generarS89('${key}')" title="Formulario S-89">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        S-89
+      </button>`;
     }
 
     return `<div class="semanas-mes-hdr-row">
@@ -2105,27 +2109,40 @@ window.exportarMesImagen = async function(mesISO) {
   const auxId      = vmMesesCache[mesISO]?.encargadoSalaAuxId;
   const auxNombre  = (tieneAuxiliar && auxId) ? (nombreDePub(auxId) || '') : '';
   const auxLine    = auxNombre
-    ? `<div style="font-size:12px;color:#888;margin-bottom:14px;">Sala Auxiliar: ${esc(auxNombre)}</div>`
+    ? `<div style="font-size:12px;color:#888;margin-bottom:10px;">Sala Auxiliar: ${esc(auxNombre)}</div>`
     : '';
 
   // Cargar datos completos de Firestore (semanasLista tiene todo pero por si acaso)
-  const contenidoSemanas = await Promise.all(semanasDelMes.map(async s => {
+  const semanasData = await Promise.all(semanasDelMes.map(async s => {
     let data = s;
-    if (!s.tesoros) { // datos parciales → recargar
+    if (!s.tesoros) {
       try {
         const sn = await getDoc(doc(db, 'congregaciones', congreId, 'vidaministerio', s.fecha));
         if (sn.exists()) data = sn.data();
       } catch { /* usar lo que hay */ }
     }
-    return `<div style="margin-bottom:14px;">${renderSemanaPublico(data)}</div>`;
+    return data;
   }));
 
+  // Render de cada semana con su encabezado de fecha — grilla 2 columnas
+  const dd = n => String(n).padStart(2, '0');
+  const cellsHtml = semanasData.map(s => {
+    const inicio = new Date(s.fecha + 'T12:00:00');
+    const fin    = new Date(inicio);
+    fin.setDate(fin.getDate() + 6);
+    const rango = `${dd(inicio.getDate())}/${dd(inicio.getMonth()+1)} al ${dd(fin.getDate())}/${dd(fin.getMonth()+1)}`;
+    return `<div style="background:#1e1e1e;border-radius:12px;padding:12px;overflow:hidden;">
+      <div style="font-size:10px;font-weight:700;color:#EF9F27;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #2e3033;letter-spacing:0.06em;text-transform:uppercase;">Semana ${rango}</div>
+      ${renderSemanaPublico(s)}
+    </div>`;
+  }).join('');
+
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;background:#1a1c1f;padding:20px 16px;width:400px;';
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;background:#1a1c1f;padding:20px;width:820px;box-sizing:border-box;';
   wrap.innerHTML = `
     <div style="font-size:17px;font-weight:800;color:#EF9F27;margin-bottom:4px;">${esc(label)}</div>
     ${auxLine}
-    ${contenidoSemanas.join('')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">${cellsHtml}</div>
   `;
   document.body.appendChild(wrap);
 
@@ -2144,6 +2161,19 @@ window.exportarMesImagen = async function(mesISO) {
       uiLoading.hide();
       uiToast('Error al generar imagen: ' + e.message, 'error');
     });
+};
+
+// ─────────────────────────────────────────
+//   S-89
+// ─────────────────────────────────────────
+window.generarS89 = async function(mesISO) {
+  // Implementación próxima
+  uiToast('S-89 — próximamente', 'success');
+};
+
+window.generarS89Semana = function() {
+  // Implementación próxima
+  uiToast('S-89 — próximamente', 'success');
 };
 
 window.exportarSemanaActualASheets = function() {

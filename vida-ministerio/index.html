@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../shared/styles-base.css">
-  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=2.2">
+  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=2.3">
 </head>
 <body>
 
@@ -286,6 +286,7 @@
         <button class="btn-primary" onclick="guardarSemana()">Guardar</button>
         <button class="btn-autocomplete" onclick="autocompletarHermanos()">✦ Auto</button>
         <button id="btn-sheet-semana" class="btn-sheets-sm" style="display:none;" onclick="exportarSemanaActualASheets()">→ Sheets</button>
+        <button class="btn-s89" onclick="generarS89Semana()">S-89</button>
         <button class="btn-danger-outline btn-sm" onclick="eliminarSemana(semanaData?.fecha)">Eliminar</button>
       </div>
       <div id="semana-content"></div>
