@@ -97,7 +97,9 @@ Botones inline en el header de cada mes en la vista "Semanas". También hay bot�
 | Nuestra Vida Cristiana | Rojo `#990000` | Blanco, bold, merge A:C |
 | Sub-header sala | Dorado `#BF9000` | Blanco, bold (B y C separados) |
 
-Acciones soportadas: `saveVMMes` (borra y reescribe el mes completo) y `saveVMSemana` (reemplaza una semana buscando por día de inicio).
+Acciones soportadas: `saveVMMes` (borra y reescribe el mes completo) y `saveVMSemana` (reemplaza una semana buscando por día de inicio, hace `breakApart` antes de manipular filas para no romper con merges previos).
+
+**Reutilización de hojas entre años:** si existe una hoja `"Julio 25"` y se exporta `"Julio 26"`, el script la renombra y la limpia (`sheet.clear()`) en vez de crear una nueva. Mismo mes, distinto año de 2 dígitos.
 
 **Config:** `vmScriptUrl` en `congregaciones/{congreId}/config_privada/modulos`. Se configura en Admin → Congregación. La hoja destino se infiere del mes: `"Mayo 26"`, `"Junio 26"`, etc.
 
