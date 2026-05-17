@@ -2573,7 +2573,10 @@ function _lhPubCol() {
   return collection(db, 'congregaciones', congreId, 'publicadores');
 }
 
-window.goToListaHermanos = function() {
+window.goToListaHermanos = async function() {
+  uiLoading.show('Cargando…');
+  await ensureVmLookupsLoaded();
+  uiLoading.hide();
   document.getElementById('lista-hermanos-sub').textContent = congreNombre || '—';
   document.getElementById('lh-search').value = '';
   document.getElementById('lh-rol').value = '';
