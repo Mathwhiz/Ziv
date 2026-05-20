@@ -9,13 +9,14 @@ tools/import_myministry_predicacion.py
 .agents/
 .claude/
 skills-lock.json
+.vscode/
+demo/
 tools/merge_publicadores_duplicados.py
 tools/Copia de Reunión Vida y Ministerio Cristiano.xlsx
 tools/congregacionsur.kml
 ui-utils-old.js
 tools/NWS Desktop Personas (157).csv
-.aidesigner/*
-!.aidesigner/.gitkeep
+.aidesigner/
 node_modules/
 
 tools/grupos.jpeg
