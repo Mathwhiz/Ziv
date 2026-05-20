@@ -844,3 +844,119 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   letter-spacing: -0.4px;
   color: #fff !important;
 }
+
+
+/* ════════════════════════════════════════════════════════
+   v2.1 — Encargado menu refresh
+   ════════════════════════════════════════════════════════ */
+
+.enc-hdr { padding: 18px 22px 8px; }
+.enc-hdr-eyebrow {
+  font-size: 11px; color: #b6acff;
+  text-transform: uppercase; letter-spacing: 0.16em; font-weight: 700;
+}
+.enc-hdr-row { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.enc-hdr-avatar {
+  width: 44px; height: 44px; border-radius: 14px;
+  background: linear-gradient(135deg, #9B8FFF, #4A3FB5);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: #fff;
+  box-shadow: 0 8px 22px rgba(127,119,221,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.enc-hdr-avatar svg { width: 22px; height: 22px; }
+.enc-hdr-name { flex: 1; min-width: 0; }
+.enc-hdr-title {
+  font-size: 26px; font-weight: 700; letter-spacing: -0.4px;
+  line-height: 1.1; color: #fff;
+}
+.enc-hdr-sub { font-size: 13px; color: #888; margin-top: 4px; }
+
+.enc-section-hdr {
+  margin: 18px 22px 8px;
+  font-size: 11px; color: #666;
+  text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+}
+
+.enc-actions { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.enc-act {
+  position: relative;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cc, #7F77DD) 10%, transparent) 0%, transparent 60%),
+    #232628;
+  border: 1px solid color-mix(in srgb, var(--cc, #7F77DD) 38%, #2e3033);
+  border-radius: 16px;
+  padding: 14px 16px 14px 22px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.28);
+  overflow: hidden;
+  transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.enc-act:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.34);
+  border-color: color-mix(in srgb, var(--cc, #7F77DD) 60%, #2e3033);
+}
+.enc-act:active { transform: scale(0.99); }
+.enc-act::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+  background: var(--cc, #7F77DD);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--cc, #7F77DD) 60%, transparent);
+}
+.enc-act::after {
+  content: ''; position: absolute; right: -50px; top: -50px;
+  width: 150px; height: 150px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--cc, #7F77DD) 14%, transparent) 0%, transparent 65%);
+  pointer-events: none;
+}
+.enc-act-icon {
+  width: 44px; height: 44px; border-radius: 13px;
+  background: color-mix(in srgb, var(--cc, #7F77DD) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cc, #7F77DD) 38%, transparent);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--cc, #7F77DD);
+  flex-shrink: 0;
+  box-shadow: 0 0 22px color-mix(in srgb, var(--cc, #7F77DD) 26%, transparent),
+              inset 0 1px 0 color-mix(in srgb, var(--cc, #7F77DD) 25%, rgba(255,255,255,0.05));
+  position: relative; z-index: 1;
+}
+.enc-act-icon svg { width: 22px; height: 22px; }
+.enc-act-tx { flex: 1; min-width: 0; position: relative; z-index: 1; }
+.enc-act-tx .t {
+  font-size: 16px; font-weight: 700; color: #f0f0f0;
+  letter-spacing: -0.2px;
+}
+.enc-act-tx .s { font-size: 12px; color: #888; margin-top: 3px; }
+.enc-act-chev {
+  color: color-mix(in srgb, var(--cc, #7F77DD) 75%, white 25%);
+  flex-shrink: 0; position: relative; z-index: 1;
+}
+
+.enc-footer {
+  padding: 18px 22px 24px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.enc-footer-btn {
+  width: 100%; padding: 12px;
+  background: transparent;
+  border: 1px solid #3a3a3a;
+  border-radius: 12px;
+  color: #aaa;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: .15s;
+}
+.enc-footer-btn:hover { color: #ddd; border-color: #555; }
+.enc-footer-btn.danger {
+  color: #F09595;
+  border-color: rgba(240,149,149,0.20);
+}
+.enc-footer-btn.danger:hover {
+  color: #ff8e8e;
+  background: rgba(240,149,149,0.06);
+  border-color: rgba(240,149,149,0.35);
+}

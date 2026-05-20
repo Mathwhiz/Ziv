@@ -26,7 +26,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Asignaciones — Ziv</title>
 <link rel="stylesheet" href="../shared/styles-base.css">
-<link rel="stylesheet" href="/asignaciones/styles.css?v=3.0">
+<link rel="stylesheet" href="/asignaciones/styles.css?v=3.1">
 </head>
 <body>
 
@@ -185,45 +185,67 @@
 
   <!-- ── MENÚ ENCARGADO ── -->
   <div id="view-encargado" class="view" style="display:none;">
-  <div style="min-height:calc(100vh - 2rem);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:2rem 1rem;">
-    <p class="section-title" style="color:#7F77DD;margin-bottom:4px;">Encargado</p>
-    <p class="section-sub" style="margin-bottom:16px;">Panel de gestión de asignaciones</p>
-    <div class="enc-menu">
-      <button class="cs-module-card" style="--card-hover-border:rgba(55,138,221,0.5);--card-hover-bg:rgba(55,138,221,0.08);" onclick="goToEditar()">
-        <div class="cs-module-card-icon" style="background:rgba(55,138,221,0.15);">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <div class="enc-hdr">
+      <div class="enc-hdr-eyebrow">Asignaciones · Encargado</div>
+      <div class="enc-hdr-row">
+        <div class="enc-hdr-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
-        <div>
-          <div class="cs-module-card-title">Editar programación</div>
-          <div class="cs-module-card-sub">Modificar asignaciones de la semana</div>
+        <div class="enc-hdr-name">
+          <div class="enc-hdr-title">Panel</div>
+          <div class="enc-hdr-sub">Gestión de asignaciones</div>
         </div>
-      </button>
-      <button class="cs-module-card" style="--card-hover-border:rgba(29,158,117,0.5);--card-hover-bg:rgba(29,158,117,0.08);" onclick="goToAutomatico()">
-        <div class="cs-module-card-icon" style="background:rgba(29,158,117,0.15);">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="#1D9E75" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <div class="enc-section-hdr">Acciones</div>
+
+    <div class="enc-actions">
+      <button class="enc-act" style="--cc:#5DB1FF;" onclick="goToEditar()">
+        <div class="enc-act-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </div>
-        <div>
-          <div class="cs-module-card-title">Generar automático</div>
-          <div class="cs-module-card-sub">Asignar roles por rotación (3 meses)</div>
+        <div class="enc-act-tx">
+          <div class="t">Editar programación</div>
+          <div class="s">Modificar asignaciones de la semana</div>
         </div>
-      </button>
-      <button class="cs-module-card" style="--card-hover-border:rgba(250,199,117,0.5);--card-hover-bg:rgba(250,199,117,0.08);" onclick="goToGenerarImagen()">
-        <div class="cs-module-card-icon" style="background:rgba(250,199,117,0.15);">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#FAC775" stroke-width="1.8"/><circle cx="8.5" cy="8.5" r="1.5" stroke="#FAC775" stroke-width="1.8"/><path d="M21 15l-5-5L5 21" stroke="#FAC775" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </div>
-        <div>
-          <div class="cs-module-card-title">Generar imagen</div>
-          <div class="cs-module-card-sub">Tabla para compartir por WhatsApp</div>
-        </div>
-      </button>
-      <button id="btn-ver-planilla" class="btn-secondary" onclick="abrirPlanilla()" style="width:100%;max-width:320px;display:none;">
-        📊 Ver planilla
+        <div class="enc-act-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 6l6 6-6 6"/></svg></div>
       </button>
 
-      <button class="btn-secondary" onclick="cerrarSesionEncargado()" style="width:100%;max-width:320px;border-color:#A32D2D;color:#F09595;">Cerrar sesión</button>
-    </div><!-- enc-menu -->
-  </div><!-- centrado -->
-</div><!-- view-encargado -->
+      <button class="enc-act" style="--cc:#3FD969;" onclick="goToAutomatico()">
+        <div class="enc-act-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <div class="enc-act-tx">
+          <div class="t">Generar automático</div>
+          <div class="s">Rotación justa por 3 meses</div>
+        </div>
+        <div class="enc-act-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 6l6 6-6 6"/></svg></div>
+      </button>
+
+      <button class="enc-act" style="--cc:#FFA82E;" onclick="goToGenerarImagen()">
+        <div class="enc-act-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        </div>
+        <div class="enc-act-tx">
+          <div class="t">Generar imagen</div>
+          <div class="s">Tabla para compartir por WhatsApp</div>
+        </div>
+        <div class="enc-act-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 6l6 6-6 6"/></svg></div>
+      </button>
+    </div>
+
+    <div class="enc-footer">
+      <button id="btn-ver-planilla" class="enc-footer-btn" onclick="abrirPlanilla()" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        Ver planilla en Sheets
+      </button>
+      <button class="enc-footer-btn danger" onclick="cerrarSesionEncargado()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+        Cerrar sesión
+      </button>
+    </div>
+  </div><!-- view-encargado -->
 
   <!-- ── EDITAR ── -->
   <div id="view-editar" class="view" style="display:none;">
