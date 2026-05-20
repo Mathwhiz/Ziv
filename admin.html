@@ -37,35 +37,246 @@
     .field input:focus { outline: none; border-color: #7F77DD; }
 
     /* PIN */
-    .pin-wrap  { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 20px; }
-    .pin-title { font-size: 22px; font-weight: 700; color: #7F77DD; }
-    .pin-dots  { display: flex; gap: 12px; margin: 8px 0; }
-    .pin-dot   { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #555; background: transparent; transition: .15s; }
-    .pin-dot.filled { background: #7F77DD; border-color: #7F77DD; }
-    .pin-grid  { display: grid; grid-template-columns: repeat(3, 64px); gap: 10px; }
-    .pin-btn   { background: #2a2a2a; border: none; border-radius: 12px; width: 64px; height: 64px; font-size: 22px; color: #eee; cursor: pointer; }
-    .pin-btn:active { background: #3a3a3a; }
-    .pin-error { color: #F09595; font-size: 13px; min-height: 18px; text-align: center; max-width: 220px; }
-    .auth-card { width:100%; max-width:320px; background:#252525; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:18px; text-align:center; }
-    .auth-status { color:#aaa; font-size:13px; line-height:1.45; margin-bottom:14px; }
-    .auth-status strong { color:#eee; }
+    .pin-wrap  { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-height: calc(100vh - 60px); padding-top: 18px; gap: 18px; }
+    .pin-lock {
+      position: relative; width: 80px; height: 80px; border-radius: 22px;
+      background: linear-gradient(160deg, rgba(127,119,221,0.18), rgba(127,119,221,0.04));
+      border: 1px solid rgba(127,119,221,0.35);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 14px 38px rgba(127,119,221,0.22), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .pin-lock::before {
+      content: ''; position: absolute; inset: -16px; border-radius: 30px;
+      background: radial-gradient(circle, rgba(127,119,221,0.18) 0%, transparent 60%);
+      z-index: -1; pointer-events: none;
+    }
+    .pin-lock svg { width: 40px; height: 40px; color: #b6acff; }
+    .pin-eyebrow { font-size: 11px; color: #777; text-transform: uppercase; letter-spacing: 0.18em; }
+    .pin-title { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -0.5px; margin: 0; }
+    .pin-hint  { font-size: 12px; color: #666; }
+    .pin-dots  { display: flex; gap: 14px; margin: 4px 0 0; }
+    .pin-dot   { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #555; background: transparent; transition: .15s; }
+    .pin-dot.filled { background: #7F77DD; border-color: #7F77DD; box-shadow: 0 0 12px rgba(127,119,221,0.55); }
+    .pin-grid  { display: grid; grid-template-columns: repeat(3, 72px); gap: 12px; }
+    .pin-btn   {
+      background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px; width: 72px; height: 72px;
+      font-size: 26px; font-weight: 500; color: #eee; cursor: pointer;
+      font-family: inherit; transition: .12s;
+    }
+    .pin-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(127,119,221,0.20); }
+    .pin-btn:active { background: rgba(127,119,221,0.10); transform: scale(0.96); }
+    .pin-btn.ghost { opacity: 0; cursor: default; pointer-events: none; }
+    .pin-btn.del   { background: transparent; border-color: transparent; color: #888; font-size: 18px; }
+    .pin-btn.del:hover { color: #ddd; background: rgba(255,255,255,0.03); border-color: transparent; }
+    .pin-error { color: #F09595; font-size: 13px; min-height: 18px; text-align: center; max-width: 240px; }
+    .auth-card {
+      width: 100%; max-width: 320px;
+      background: rgba(36,38,40,0.85);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 14px 16px;
+    }
+    .auth-card-row { display: flex; align-items: center; gap: 12px; }
+    .auth-icon {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: rgba(127,119,221,0.14);
+      border: 1px solid rgba(127,119,221,0.28);
+      display: flex; align-items: center; justify-content: center;
+      color: #b6acff; flex-shrink: 0;
+    }
+    .auth-icon svg { width: 16px; height: 16px; }
+    .auth-status { flex: 1; min-width: 0; color: #aaa; font-size: 12px; line-height: 1.4; text-align: left; }
+    .auth-status strong { color: #eee; }
+    .auth-card .btn-primary { margin-top: 10px; width: 100%; font-size: 13px; padding: 10px; }
 
-    /* Wizard steps */
-    .step-indicator { display: flex; gap: 6px; margin-bottom: 20px; }
-    .step-dot { flex: 1; height: 3px; border-radius: 2px; background: #333; transition: .2s; }
-    .step-dot.active { background: #7F77DD; }
+    /* Wizard — header + step indicator */
+    .wiz-hd { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+    .wiz-hd .swatch {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: var(--cc, #7F77DD);
+      border: 1px solid color-mix(in srgb, var(--cc, #7F77DD) 70%, white 0%);
+      box-shadow: 0 0 22px color-mix(in srgb, var(--cc, #7F77DD) 45%, transparent), inset 0 1px 0 rgba(255,255,255,0.18);
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.95); font-weight: 700; font-size: 16px; letter-spacing: -0.3px;
+      flex-shrink: 0;
+    }
+    .wiz-hd-eyebrow { font-size: 11px; color: color-mix(in srgb, var(--cc, #7F77DD) 75%, white 25%); text-transform: uppercase; letter-spacing: 0.14em; font-weight: 700; }
+    .wiz-hd-title   { font-size: 24px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.15; margin-top: 1px; color: #eee; }
+    .wiz-hd-sub     { font-size: 13px; color: #777; margin-top: 4px; }
 
-    /* Grupo rows */
-    .grupo-row { display: flex; align-items: center; gap: 10px; background: #2a2a2a; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
-    .grupo-row input[type=color] { width: 36px; height: 36px; border: none; border-radius: 8px; cursor: pointer; padding: 2px; background: #1e1e1e; flex-shrink: 0; }
-    .gc-label { flex: 2; background: #1e1e1e; border: 1px solid #444; border-radius: 8px; padding: 8px 10px; color: #eee; font-size: 14px; min-width: 0; }
-    .gc-label:focus { outline: none; border-color: #7F77DD; }
-    .gc-pin   { flex: 1; background: #1e1e1e; border: 1px solid #444; border-radius: 8px; padding: 8px 10px; color: #eee; font-size: 14px; text-align: center; letter-spacing: 4px; min-width: 0; max-width: 80px; }
-    .gc-pin:focus { outline: none; border-color: #7F77DD; }
-    .btn-remove-grupo { background: none; border: none; color: #666; font-size: 18px; cursor: pointer; padding: 4px 6px; border-radius: 6px; flex-shrink: 0; }
-    .btn-remove-grupo:hover { color: #F09595; }
-    .btn-add-grupo { background: none; border: 1px dashed #444; border-radius: 10px; color: #666; font-size: 13px; padding: 10px; width: 100%; cursor: pointer; margin-top: 4px; }
-    .btn-add-grupo:hover { border-color: #7F77DD; color: #aaa; }
+    .steps { display: flex; gap: 8px; align-items: center; margin: 4px 0 16px; }
+    .steps .seg { flex: 1; height: 3px; border-radius: 2px; background: #2a2d30; transition: .2s; }
+    .steps .seg.done   { background: color-mix(in srgb, var(--cc, #7F77DD) 70%, white 0%); }
+    .steps .seg.active { background: linear-gradient(90deg, color-mix(in srgb, var(--cc, #7F77DD) 70%, white 0%) 50%, #2a2d30 50%); }
+    .steps .label { font-size: 11px; color: #666; min-width: 48px; text-align: right; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+
+    /* Form group headers + field cards */
+    .group-hdr { display: flex; align-items: baseline; justify-content: space-between; margin: 18px 4px 8px; }
+    .group-hdr .l { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+    .group-hdr .c { font-size: 11px; color: #555; }
+
+    .form-stack { display: flex; flex-direction: column; gap: 8px; }
+    .field-card {
+      background: #232628;
+      border: 1px solid #2e3033;
+      border-radius: 14px;
+      padding: 12px 14px;
+      transition: .15s;
+    }
+    .field-card:focus-within {
+      border-color: color-mix(in srgb, var(--cc, #7F77DD) 55%, #2e3033);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--cc, #7F77DD) 14%, transparent);
+    }
+    .field-card .lbl {
+      font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .field-card .lbl .help { color: #555; text-transform: none; font-weight: 400; letter-spacing: 0; font-size: 11px; }
+    .field-card input {
+      width: 100%; border: none; outline: none; background: transparent;
+      color: #e8e8e8; font-size: 16px; font-family: inherit;
+      padding: 6px 0 0; margin: 0; font-weight: 500;
+    }
+    .field-card input::placeholder { color: #555; }
+    .field-card input.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; }
+    .field-card input.pin-style { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 22px; letter-spacing: 0.4em; text-align: center; }
+    .field-card .hint { font-size: 11px; color: #666; margin-top: 4px; }
+
+    /* Color picker swatches (step 0) */
+    .color-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding-top: 8px; }
+    .color-swatch {
+      width: 36px; height: 36px; border-radius: 11px; cursor: pointer;
+      position: relative; transition: .15s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .color-swatch.sel {
+      box-shadow: 0 0 0 2px #1a1c1f, 0 0 0 4px currentColor, 0 4px 16px color-mix(in srgb, currentColor 40%, transparent);
+      transform: scale(1.08);
+    }
+    .color-swatch.sel::after {
+      content: ''; position: absolute; inset: 0; border-radius: 11px;
+      background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 50%);
+    }
+    .color-swatch.custom {
+      background: conic-gradient(from 0deg, #ff5b5b, #ffd23d, #5DCAA5, #378ADD, #9B8FFF, #ff5b5b);
+      border: 1px solid rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .color-swatch.custom input[type=color] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+      width: 100%; height: 100%; padding: 0; border: none; background: transparent;
+    }
+    .color-swatch.custom svg { width: 16px; height: 16px; color: #fff; mix-blend-mode: difference; pointer-events: none; }
+
+    /* Bottom action bar (sticky for steps) */
+    .bottom-bar {
+      position: sticky; bottom: 0; left: 0; right: 0;
+      padding: 16px 0 6px;
+      margin-top: 20px;
+      background: linear-gradient(180deg, transparent 0%, #1a1c1f 30%);
+      display: flex; gap: 8px;
+    }
+    .btn-sec {
+      flex: 1;
+      background: transparent; border: 1px solid #3a3a3a;
+      border-radius: 12px; color: #aaa;
+      font-size: 14px; font-weight: 600; font-family: inherit;
+      padding: 12px 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn-sec:hover { color: #ddd; border-color: #555; }
+    .btn-pri {
+      flex: 1.4;
+      background: var(--cc, #7F77DD);
+      border: 1px solid color-mix(in srgb, var(--cc, #7F77DD) 80%, white 20%);
+      border-radius: 12px; color: #fff;
+      font-size: 15px; font-weight: 700; font-family: inherit;
+      padding: 12px 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 8px 22px color-mix(in srgb, var(--cc, #7F77DD) 30%, transparent);
+    }
+    .btn-pri:hover  { filter: brightness(1.1); }
+    .btn-pri:disabled { opacity: .4; cursor: default; box-shadow: none; }
+
+    /* legacy support, hidden so old layout doesn't leak */
+    .step-indicator { display: none; }
+
+    /* Grupo cards (wizard step 2) */
+    .grupo-card {
+      position: relative;
+      background: #232628;
+      border: 1px solid color-mix(in srgb, var(--gc, #7F77DD) 28%, #2e3033);
+      border-radius: 14px;
+      padding: 12px 14px 14px 18px;
+      overflow: hidden;
+    }
+    .grupo-card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+      background: var(--gc, #7F77DD);
+      box-shadow: 0 0 16px color-mix(in srgb, var(--gc, #7F77DD) 55%, transparent);
+    }
+    .grupo-top { display: flex; align-items: center; gap: 8px; }
+    .grupo-badge {
+      background: color-mix(in srgb, var(--gc, #7F77DD) 18%, #1a1c1f);
+      border: 1px solid color-mix(in srgb, var(--gc, #7F77DD) 35%, transparent);
+      color: var(--gc, #7F77DD);
+      font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 6px; flex-shrink: 0;
+    }
+    .grupo-card .gc-label {
+      flex: 1; min-width: 0;
+      background: transparent; border: none; outline: none; color: #e8e8e8;
+      font-size: 16px; font-weight: 600; font-family: inherit; padding: 0;
+    }
+    .grupo-card .gc-label::placeholder { color: #555; }
+    .grupo-rm {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: transparent; border: 1px solid transparent;
+      color: #666; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; padding: 0; font-family: inherit;
+    }
+    .grupo-rm:hover { color: #F09595; border-color: rgba(240,149,149,0.25); background: rgba(240,149,149,0.06); }
+    .grupo-rm svg { width: 14px; height: 14px; }
+    .grupo-row-2 { display: flex; gap: 10px; align-items: stretch; margin-top: 12px; }
+    .grupo-col {
+      flex: 1; min-width: 0;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+    .grupo-col-lbl { font-size: 9px; color: #777; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+    .grupo-card .gc-pin {
+      width: 100%; margin-top: 6px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 6px 8px;
+      color: var(--gc, #e8e8e8);
+      font-size: 15px; font-weight: 600;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.4em; text-align: center;
+      outline: none;
+    }
+    .grupo-card .gc-pin:focus { border-color: color-mix(in srgb, var(--gc, #7F77DD) 50%, transparent); }
+    .grupo-color-mini { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+    .grupo-sw {
+      width: 20px; height: 20px; border-radius: 6px; cursor: pointer;
+      transition: .12s; flex-shrink: 0;
+    }
+    .grupo-sw.sel { box-shadow: 0 0 0 1.5px #1a1c1f, 0 0 0 3px currentColor; transform: scale(1.1); }
+    .btn-add-grupo {
+      background: transparent; border: 1px dashed #3a3a3a;
+      border-radius: 14px; color: #888;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      padding: 14px; width: 100%; cursor: pointer; margin-top: 0;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-add-grupo:hover { border-color: color-mix(in srgb, var(--cc, #7F77DD) 55%, #444); color: #ddd; }
+
+    /* Legacy .grupo-row — not used anymore, kept hidden so any cache renders nothing odd */
+    .grupo-row { display: none; }
 
     /* Territorios */
     .terr-row { display:flex; align-items:center; gap:10px; padding:9px 12px; background:#2a2a2a; border-radius:10px; margin-bottom:6px; border:1.5px solid transparent; transition:.15s; }
@@ -165,15 +376,49 @@
     }
     .dash-banner button:hover { background: rgba(239,159,39,0.10); }
 
-    /* KML */
-    .kml-drop { border: 2px dashed #444; border-radius: 12px; padding: 36px 20px; text-align: center; cursor: pointer; color: #888; font-size: 14px; transition: .2s; }
-    .kml-drop:hover, .kml-drop.drag { border-color: #7F77DD; color: #bbb; }
-    .kml-drop-sm { padding: 10px 14px; border-radius: 8px; }
-    .kml-preview { background: #2a2a2a; border-radius: 10px; padding: 12px 14px; margin-top: 12px; font-size: 14px; color: #5DCAA5; }
+    /* KML drop (wizard step 3) */
+    .kml-drop {
+      padding: 30px 20px; text-align: center;
+      border: 2px dashed color-mix(in srgb, var(--cc, #7F77DD) 30%, #3a3a3a);
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--cc, #7F77DD) 4%, #1c1e21);
+      color: #999; cursor: pointer; transition: .2s;
+    }
+    .kml-drop:hover, .kml-drop.drag { border-color: color-mix(in srgb, var(--cc, #7F77DD) 55%, #3a3a3a); color: #ccc; }
+    .kml-drop-ic {
+      width: 48px; height: 48px; margin: 0 auto 10px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--cc, #7F77DD) 14%, transparent);
+      border: 1px solid color-mix(in srgb, var(--cc, #7F77DD) 30%, transparent);
+      display: flex; align-items: center; justify-content: center;
+      color: color-mix(in srgb, var(--cc, #7F77DD) 70%, white 30%);
+    }
+    .kml-drop-ic svg { width: 22px; height: 22px; }
+    .kml-drop-t { font-size: 14px; color: #ccc; }
+    .kml-drop-t strong { color: #fff; }
+    .kml-drop-s { font-size: 12px; color: #666; margin-top: 6px; }
+    .kml-drop-sm { padding: 10px 14px; border-radius: 8px; font-size: 12px; color: #888; }
+    .kml-preview {
+      padding: 10px 14px; border-radius: 10px;
+      background: rgba(93,202,165,0.08);
+      border: 1px solid rgba(93,202,165,0.25);
+      color: #5DCAA5; font-size: 13px; font-weight: 500;
+      display: flex; align-items: center; gap: 8px;
+    }
 
     /* Ciudades extra */
-    .ciudad-extra-row { background: #2a2a2a; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
-    .ciudades-extra-hdr { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: .5px; margin: 20px 0 8px; }
+    .ciudad-extra-row {
+      background: #232628; border: 1px solid #2e3033;
+      border-radius: 12px; padding: 12px;
+    }
+    .ciudad-extra-row .ce-nombre {
+      width: 100%; background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px; padding: 8px 10px;
+      color: #e8e8e8; font-size: 14px; font-family: inherit; outline: none;
+    }
+    .ciudad-extra-row .ce-nombre:focus { border-color: color-mix(in srgb, var(--cc, #7F77DD) 55%, rgba(255,255,255,0.05)); }
+    .ciudades-extra-hdr { display: none; }
 
     .loading-wrap { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 24px; color: #888; font-size: 14px; }
     .spinner { width: 20px; height: 20px; border: 2px solid #444; border-top-color: #7F77DD; border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0; }
@@ -229,14 +474,23 @@
   <!-- ── PIN ── -->
   <div id="view-pin" class="app">
     <a href="index.html" style="position:fixed;top:16px;left:16px;z-index:100;display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#aaa;text-decoration:none;padding:7px 13px;background:#252525;border:1px solid rgba(255,255,255,0.2);border-radius:10px;">‹ Congregaciones</a>
+    <div style="height:36px;"></div>
     <div class="pin-wrap">
-      <div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;">
-        <div class="cs-logo-placeholder"></div>
-        <div class="pin-title">Admin</div>
-        <div style="font-size:13px;color:#555;">Territory App</div>
+      <div class="pin-lock">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.4"/><path d="M8 11V7a4 4 0 018 0v4"/><circle cx="12" cy="16" r="1.2" fill="currentColor"/></svg>
+      </div>
+      <div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div class="pin-eyebrow">Acceso restringido</div>
+        <div class="pin-title">Super Admin</div>
+        <div class="pin-hint">Ingresá tu PIN de 4 dígitos</div>
       </div>
       <div class="auth-card">
-        <div class="auth-status" id="admin-auth-status">Verificando acceso…</div>
+        <div class="auth-card-row">
+          <div class="auth-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="auth-status" id="admin-auth-status">Verificando acceso…</div>
+        </div>
         <button class="btn-primary" id="admin-auth-btn" onclick="adminSignIn()" style="display:none;">Ingresar con Google</button>
       </div>
       <div class="pin-dots">
@@ -256,9 +510,9 @@
         <button class="pin-btn" onclick="pinPress('7')">7</button>
         <button class="pin-btn" onclick="pinPress('8')">8</button>
         <button class="pin-btn" onclick="pinPress('9')">9</button>
-        <button class="pin-btn" style="font-size:16px;" onclick="pinDelete()">⌫</button>
+        <button class="pin-btn ghost"></button>
         <button class="pin-btn" onclick="pinPress('0')">0</button>
-        <button class="pin-btn" style="color:#555;cursor:default;"></button>
+        <button class="pin-btn del" onclick="pinDelete()">⌫</button>
       </div>
     </div>
   </div>
@@ -288,85 +542,115 @@
   <div id="view-wizard" class="app" style="display:none">
     <a href="#" onclick="showView('view-dashboard');return false;" style="position:fixed;top:16px;left:16px;z-index:100;display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#aaa;text-decoration:none;padding:7px 13px;background:#252525;border:1px solid rgba(255,255,255,0.2);border-radius:10px;">‹ Dashboard</a>
     <div style="height:52px;"></div>
-    <div class="step-indicator">
-      <div class="step-dot" id="sdot-0"></div>
-      <div class="step-dot" id="sdot-1"></div>
-      <div class="step-dot" id="sdot-2"></div>
+
+    <div class="wiz-hd">
+      <div class="swatch" id="wiz-hd-swatch">+</div>
+      <div style="flex:1;min-width:0;">
+        <div class="wiz-hd-eyebrow" id="wiz-hd-eyebrow">Nueva</div>
+        <div class="wiz-hd-title" id="wiz-hd-title">Nueva congregación</div>
+        <div class="wiz-hd-sub" id="wiz-hd-sub">Datos básicos · 1 de 3</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="seg" id="sdot-0"></div>
+      <div class="seg" id="sdot-1"></div>
+      <div class="seg" id="sdot-2"></div>
+      <div class="label"><span id="step-curr">1</span> · 3</div>
     </div>
 
     <!-- Paso 1: Datos básicos -->
     <div id="step-0">
-      <p class="section-title" id="step0-title">Nueva congregación</p>
-      <p class="section-sub" id="step0-sub">Paso 1 de 3 · Datos básicos</p>
-      <div class="field">
-        <label>Nombre</label>
-        <input type="text" id="w-nombre" placeholder="Ej: Congregación Norte" autocomplete="off" oninput="onNombreInput()">
-      </div>
-      <div class="field" id="field-id">
-        <label>ID único</label>
-        <input type="text" id="w-id" placeholder="ej: norte" autocomplete="off" oninput="onIdInput()" style="font-family:monospace;">
-        <div id="field-id-hint" style="font-size:11px;color:#555;margin-top:4px;">Solo minúsculas, números y guiones. No se puede cambiar después.</div>
-      </div>
-      <div class="field">
-        <label>PIN del encargado de asignaciones</label>
-        <input type="text" id="w-pin" placeholder="4 dígitos" maxlength="4" inputmode="numeric" autocomplete="off">
-      </div>
-      <div class="field">
-        <label>PIN Vida y Ministerio</label>
-        <input type="text" id="w-pin-vm" placeholder="4 dígitos (default 1234)" maxlength="4" inputmode="numeric" autocomplete="off">
-      </div>
-      <div class="field">
-        <label>URL Apps Script — Vida y Ministerio <span style="font-weight:400;color:#666;">(para exportar a Sheets, opcional)</span></label>
-        <input type="text" id="w-vm-script-url" placeholder="https://script.google.com/macros/s/…" autocomplete="off" style="font-size:12px;">
-      </div>
-      <div class="field">
-        <label>Ciudad principal (opcional)</label>
-        <input type="text" id="w-ciudad-principal" placeholder="Ej: Santa Rosa" autocomplete="off">
-      </div>
-      <div class="field">
-        <label>Color de la congregación</label>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;">
-          <div id="w-color-swatches" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
-          <input type="color" id="w-color" oninput="renderColorSwatches(this.value)" style="width:36px;height:36px;border:none;background:none;cursor:pointer;border-radius:8px;padding:0;" title="Color personalizado">
+      <p class="section-title" id="step0-title" style="display:none">Nueva congregación</p>
+      <p class="section-sub"   id="step0-sub"   style="display:none">Paso 1 de 3 · Datos básicos</p>
+
+      <div class="group-hdr"><span class="l">Identidad</span></div>
+      <div class="form-stack">
+        <div class="field-card">
+          <div class="lbl">Nombre</div>
+          <input type="text" id="w-nombre" placeholder="Ej: Congregación Norte" autocomplete="off" oninput="onNombreInput()">
+        </div>
+        <div class="field-card" id="field-id">
+          <div class="lbl">ID único <span class="help" id="field-id-hint">· solo minúsculas, números y guiones</span></div>
+          <input type="text" id="w-id" class="mono" placeholder="ej: norte" autocomplete="off" oninput="onIdInput()">
         </div>
       </div>
-      <div class="btn-row">
-        <button class="btn-secondary" onclick="showView('view-dashboard')">Cancelar</button>
-        <button class="btn-primary" onclick="wizardNext()">Siguiente →</button>
+
+      <div class="group-hdr"><span class="l">Seguridad</span><span class="c">PIN de 4 dígitos</span></div>
+      <div class="form-stack">
+        <div class="field-card">
+          <div class="lbl">PIN del encargado de asignaciones</div>
+          <input type="text" id="w-pin" class="pin-style" placeholder="• • • •" maxlength="4" inputmode="numeric" autocomplete="off">
+        </div>
+        <div class="field-card">
+          <div class="lbl">PIN Vida y Ministerio</div>
+          <input type="text" id="w-pin-vm" class="pin-style" placeholder="• • • • (default 1234)" maxlength="4" inputmode="numeric" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="group-hdr"><span class="l">Visual</span></div>
+      <div class="form-stack">
+        <div class="field-card">
+          <div class="lbl">Color de la congregación</div>
+          <div class="color-row" id="w-color-swatches"></div>
+          <input type="color" id="w-color" oninput="selectCongreColor(this.value)" style="display:none;">
+        </div>
+        <div class="field-card">
+          <div class="lbl">Ciudad principal <span class="help">· opcional</span></div>
+          <input type="text" id="w-ciudad-principal" placeholder="Ej: Santa Rosa" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="group-hdr"><span class="l">Integraciones</span></div>
+      <div class="form-stack">
+        <div class="field-card">
+          <div class="lbl">URL Apps Script · Vida y Ministerio</div>
+          <input type="text" id="w-vm-script-url" placeholder="https://script.google.com/macros/s/…" autocomplete="off" style="font-size:13px;">
+          <div class="hint">Solo si vas a exportar a Sheets.</div>
+        </div>
+      </div>
+
+      <div class="bottom-bar">
+        <button class="btn-sec" onclick="showView('view-dashboard')">Cancelar</button>
+        <button class="btn-pri" onclick="wizardNext()">Siguiente →</button>
       </div>
     </div>
 
     <!-- Paso 2: Grupos -->
     <div id="step-1" style="display:none">
-      <p class="section-title">Grupos</p>
-      <p class="section-sub">Paso 2 de 3 · Color y PIN de cada grupo</p>
-      <div id="grupos-config"></div>
-      <div class="btn-row">
-        <button class="btn-secondary" onclick="wizardPrev()">← Volver</button>
-        <button class="btn-primary" onclick="wizardNext()">Siguiente →</button>
+      <div class="group-hdr"><span class="l">Grupos</span><span class="c">color y PIN de cada grupo</span></div>
+      <div class="form-stack" id="grupos-config"></div>
+      <div class="bottom-bar">
+        <button class="btn-sec" onclick="wizardPrev()">← Volver</button>
+        <button class="btn-pri" onclick="wizardNext()">Siguiente →</button>
       </div>
     </div>
 
     <!-- Paso 3: KML -->
     <div id="step-2" style="display:none">
-      <p class="section-title">Territorios</p>
-      <p class="section-sub">Paso 3 de 3 · Subí el KML de Google My Maps</p>
-      <div class="kml-drop" id="kml-drop" onclick="document.getElementById('kml-input').click()">
-        <div style="font-size:30px;margin-bottom:10px;">🗺️</div>
-        <div>Tocá para subir un archivo <strong>.kml</strong></div>
-        <div style="font-size:12px;color:#666;margin-top:6px;">o arrastralo acá</div>
+      <div class="group-hdr"><span class="l">Ciudad principal · KML</span></div>
+      <div class="form-stack">
+        <div class="kml-drop" id="kml-drop" onclick="document.getElementById('kml-input').click()">
+          <div class="kml-drop-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3V7z"/><path d="M9 4v14M15 7v14"/></svg>
+          </div>
+          <div class="kml-drop-t">Tocá para subir un archivo <strong>.kml</strong></div>
+          <div class="kml-drop-s">o arrastralo acá</div>
+        </div>
+        <input type="file" id="kml-input" accept=".kml" style="display:none" onchange="onKmlFile(this)">
+        <div id="kml-preview" class="kml-preview" style="display:none"></div>
       </div>
-      <input type="file" id="kml-input" accept=".kml" style="display:none" onchange="onKmlFile(this)">
-      <div id="kml-preview" class="kml-preview" style="display:none"></div>
 
-      <div class="ciudades-extra-hdr">Ciudades extra (opcional)</div>
-      <div id="ciudades-extra-list"></div>
-      <button class="btn-add-grupo" onclick="addCiudadExtra()">+ Agregar ciudad extra</button>
+      <div class="group-hdr"><span class="l">Ciudades extra</span><span class="c">opcional</span></div>
+      <div class="form-stack">
+        <div id="ciudades-extra-list"></div>
+        <button class="btn-add-grupo" onclick="addCiudadExtra()">+ Agregar ciudad extra</button>
+      </div>
 
-      <div class="btn-row">
-        <button class="btn-secondary" onclick="wizardPrev()">← Volver</button>
-        <button class="btn-secondary" onclick="crearCongregacion(true)" style="flex:1;">Omitir KML</button>
-        <button class="btn-primary" id="btn-crear" onclick="crearCongregacion(false)" style="flex:2;" disabled>Crear →</button>
+      <div class="bottom-bar">
+        <button class="btn-sec" onclick="wizardPrev()">← Volver</button>
+        <button class="btn-sec" onclick="crearCongregacion(true)">Omitir KML</button>
+        <button class="btn-pri" id="btn-crear" onclick="crearCongregacion(false)" disabled>Crear →</button>
       </div>
       <div id="wizard-status"></div>
     </div>

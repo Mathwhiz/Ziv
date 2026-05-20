@@ -124,6 +124,8 @@ function onNombreInput() {
   if (!userEditedId) {
     document.getElementById('w-id').value = slugify(document.getElementById('w-nombre').value);
   }
+  // Mantener actualizado el header del wizard mientras se escribe
+  if (typeof renderWizardHeader === 'function') renderWizardHeader();
 }
 function onIdInput() {
   userEditedId = true;
@@ -205,22 +207,60 @@ async function loadDashboard() {
 // ─────────────────────────────────────────
 const PALETA_COLORES = ['#378ADD','#97C459','#7F77DD','#EF9F27','#1D9E75','#D85A30'];
 
+function setWizardCC(hex) {
+  const view = document.getElementById('view-wizard');
+  if (view) view.style.setProperty('--cc', hex || '#7F77DD');
+  const swatch = document.getElementById('wiz-hd-swatch');
+  if (swatch) swatch.style.background = hex || '#7F77DD';
+}
+
+function initials(s) {
+  if (!s) return '+';
+  return s.trim().split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase() || '+';
+}
+
+const STEP_LABELS = ['Datos básicos','Grupos','Territorios'];
+
+function renderWizardHeader() {
+  const isEdit = !!editingCongreId;
+  const nombre = document.getElementById('w-nombre')?.value.trim() || '';
+  document.getElementById('wiz-hd-swatch').textContent = isEdit ? initials(nombre) : '+';
+  document.getElementById('wiz-hd-eyebrow').textContent = isEdit
+    ? `Editando · ${editingCongreId}`
+    : 'Nueva';
+  document.getElementById('wiz-hd-title').textContent = isEdit && nombre
+    ? nombre
+    : 'Nueva congregación';
+  const label = STEP_LABELS[wizardStep] || '';
+  document.getElementById('wiz-hd-sub').textContent = `${label} · ${wizardStep + 1} de 3`;
+  const cur = document.getElementById('step-curr');
+  if (cur) cur.textContent = String(wizardStep + 1);
+}
+
 function renderColorSwatches(selectedColor) {
   const wrap = document.getElementById('w-color-swatches');
   if (!wrap) return;
   const colorInput = document.getElementById('w-color');
-  wrap.innerHTML = PALETA_COLORES.map(c => `
-    <div onclick="selectCongreColor('${c}')" style="
-      width:28px;height:28px;border-radius:8px;background:${c};cursor:pointer;
-      box-shadow:${c === selectedColor ? '0 0 0 2px #fff, 0 0 0 4px '+c : '0 2px 6px rgba(0,0,0,0.3)'};
-      transition:.15s;flex-shrink:0;">
-    </div>`).join('');
   if (colorInput) colorInput.value = selectedColor || '#378ADD';
+  const inPaleta = PALETA_COLORES.includes((selectedColor || '').toUpperCase()) || PALETA_COLORES.includes(selectedColor);
+  wrap.innerHTML = PALETA_COLORES.map(c => `
+    <div class="color-swatch ${c.toLowerCase() === (selectedColor || '').toLowerCase() ? 'sel' : ''}"
+         style="background:${c};color:${c};"
+         data-color="${c}"
+         onclick="selectCongreColor('${c}')"></div>
+  `).join('') + `
+    <div class="color-swatch custom ${!inPaleta && selectedColor ? 'sel' : ''}"
+         title="Color personalizado"
+         ${!inPaleta && selectedColor ? `style="color:${selectedColor};"` : ''}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+      <input type="color" value="${selectedColor || '#7F77DD'}" oninput="selectCongreColor(this.value)">
+    </div>`;
 }
 
 function selectCongreColor(hex) {
   document.getElementById('w-color').value = hex;
   renderColorSwatches(hex);
+  setWizardCC(hex);
 }
 
 const GRUPOS_DEFAULT = [
@@ -239,24 +279,61 @@ let ciudadesExtrasKml = []; // [{ nombre, offset, territories }]
 
 function renderGruposConfig() {
   const gc = document.getElementById('grupos-config');
-  gc.innerHTML = wizardGrupos.map((g, i) => `
-    <div class="grupo-row" data-idx="${i}">
-      <input type="color" class="gc-color" value="${g.color}">
-      <input type="text" class="gc-label" value="${g.label}" placeholder="Nombre del grupo">
-      <input type="text" class="gc-pin" value="${g.pin}" placeholder="PIN" maxlength="4" inputmode="numeric">
-      ${wizardGrupos.length > 1
-        ? `<button class="btn-remove-grupo" onclick="removeGrupo(${i})" title="Eliminar">×</button>`
-        : '<div style="width:28px"></div>'}
-    </div>
-  `).join('') + `<button class="btn-add-grupo" onclick="addGrupo()">+ Agregar grupo</button>`;
+  const showRm = wizardGrupos.length > 1;
+  gc.innerHTML = wizardGrupos.map((g, i) => {
+    const label = (g.label || '').replace(/"/g, '&quot;');
+    const pin   = g.pin || '';
+    const color = g.color || '#888888';
+    const swatches = PALETA_COLORES.map(c => `
+      <div class="grupo-sw ${c.toLowerCase() === color.toLowerCase() ? 'sel' : ''}"
+           data-color="${c}"
+           style="background:${c};color:${c};"
+           onclick="onGrupoColorPick(${i}, '${c}')"></div>
+    `).join('');
+    return `
+    <div class="grupo-card" data-idx="${i}" style="--gc:${color};">
+      <div class="grupo-top">
+        <span class="grupo-badge">${g.id}</span>
+        <input type="text" class="gc-label" value="${label}" placeholder="Nombre del grupo">
+        ${showRm
+          ? `<button class="grupo-rm" onclick="removeGrupo(${i})" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M6 18L18 6"/></svg></button>`
+          : ''}
+      </div>
+      <input type="hidden" class="gc-color" value="${color}">
+      <div class="grupo-row-2">
+        <div class="grupo-col">
+          <div class="grupo-col-lbl">PIN</div>
+          <input type="text" class="gc-pin" value="${pin}" placeholder="• • • •" maxlength="4" inputmode="numeric">
+        </div>
+        <div class="grupo-col">
+          <div class="grupo-col-lbl">Color</div>
+          <div class="grupo-color-mini">${swatches}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('') + `<button class="btn-add-grupo" onclick="addGrupo()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg> Agregar grupo</button>`;
 }
 
 function syncGruposFromDOM() {
-  document.querySelectorAll('#grupos-config .grupo-row').forEach((row, i) => {
+  document.querySelectorAll('#grupos-config .grupo-card').forEach((row, i) => {
     if (!wizardGrupos[i]) return;
     wizardGrupos[i].color = row.querySelector('.gc-color').value;
     wizardGrupos[i].label = row.querySelector('.gc-label').value.trim();
     wizardGrupos[i].pin   = row.querySelector('.gc-pin').value.trim();
+  });
+}
+
+function onGrupoColorPick(i, hex) {
+  if (!wizardGrupos[i]) return;
+  syncGruposFromDOM();
+  wizardGrupos[i].color = hex;
+  const card = document.querySelector(`.grupo-card[data-idx="${i}"]`);
+  if (!card) return;
+  card.style.setProperty('--gc', hex);
+  const hidden = card.querySelector('.gc-color');
+  if (hidden) hidden.value = hex;
+  card.querySelectorAll('.grupo-sw').forEach(sw => {
+    sw.classList.toggle('sel', (sw.dataset.color || '').toLowerCase() === hex.toLowerCase());
   });
 }
 
@@ -291,6 +368,7 @@ function startWizard(prefill = null) {
   renderCiudadesExtra();
   const initColor = prefill?.color || PALETA_COLORES[Math.floor(Math.random() * PALETA_COLORES.length)];
   renderColorSwatches(initColor);
+  setWizardCC(initColor);
   document.getElementById('kml-input').value = '';
   document.getElementById('kml-preview').style.display  = 'none';
   document.getElementById('btn-crear').disabled          = !isEdit;
@@ -298,13 +376,17 @@ function startWizard(prefill = null) {
   document.getElementById('wizard-status').textContent   = '';
   document.getElementById('field-id').style.display      = '';
   document.getElementById('field-id-hint').textContent   = isEdit
-    ? 'Cambiar el ID moverá todos los datos a la nueva dirección.'
-    : 'Solo minúsculas, números y guiones. No se puede cambiar después.';
-  document.getElementById('step0-title').textContent     = isEdit ? 'Editar congregación' : 'Nueva congregación';
-  document.getElementById('step0-sub').textContent       = isEdit ? 'Editando datos básicos' : 'Paso 1 de 3 · Datos básicos';
+    ? '· cambiar el ID moverá todos los datos a la nueva dirección'
+    : '· solo minúsculas, números y guiones';
+  // legacy (hidden), kept for backwards compat
+  const t0 = document.getElementById('step0-title');
+  if (t0) t0.textContent = isEdit ? 'Editar congregación' : 'Nueva congregación';
+  const s0 = document.getElementById('step0-sub');
+  if (s0) s0.textContent = isEdit ? 'Editando datos básicos' : 'Paso 1 de 3 · Datos básicos';
 
   renderGruposConfig();
   showWizardStep(0);
+  renderWizardHeader();
   showView('view-wizard');
 }
 
@@ -373,9 +455,14 @@ async function deleteCongre(id, nombre) {
 function showWizardStep(step) {
   [0, 1, 2].forEach(i => {
     document.getElementById(`step-${i}`).style.display  = i === step ? '' : 'none';
-    document.getElementById(`sdot-${i}`).classList.toggle('active', i <= step);
+    const seg = document.getElementById(`sdot-${i}`);
+    if (seg) {
+      seg.classList.toggle('done',   i < step);
+      seg.classList.toggle('active', i === step);
+    }
   });
   wizardStep = step;
+  renderWizardHeader();
 }
 
 function wizardNext() {
@@ -1479,6 +1566,7 @@ window.wizardNext        = wizardNext;
 window.wizardPrev        = wizardPrev;
 window.addGrupo          = addGrupo;
 window.removeGrupo       = removeGrupo;
+window.onGrupoColorPick  = onGrupoColorPick;
 window.onKmlFile             = onKmlFile;
 window.addCiudadExtra        = addCiudadExtra;
 window.removeCiudadExtra     = removeCiudadExtra;
