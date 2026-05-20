@@ -11,6 +11,21 @@ tools/import_myministry_predicacion.py
 skills-lock.json
 .vscode/
 demo/
+.firebaserc
+.mcp.json
+CLAUDE.md
+docs/
+tools/
+android/
+www/
+sync-www.js
+capacitor.config.json
+package.json
+package-lock.json
+firebase.json
+firestore.rules
+test-welcome.html
+.idea/
 tools/merge_publicadores_duplicados.py
 tools/Copia de Reunión Vida y Ministerio Cristiano.xlsx
 tools/congregacionsur.kml
