@@ -406,3 +406,441 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 }
 .preview-modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
 .preview-modal-body { padding: 12px 16px; }
+
+
+/* ════════════════════════════════════════════════════════
+   v2 REFRESH — paleta vibrante + cards con stripe + glow
+   Todas las reglas usan !important para ganar sobre las
+   anteriores. Si querés rollback, borrá desde acá hasta el
+   final del archivo y cambiá DIA_COLORS/DIA_BG en app.js.
+   ════════════════════════════════════════════════════════ */
+
+/* ── Reunion card (Ver semana + Auto preview + programa) ── */
+.reunion-card {
+  position: relative;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--dc, #7F77DD) 8%, transparent) 0%, transparent 60%),
+    #232628 !important;
+  border: 1px solid color-mix(in srgb, var(--dc, #7F77DD) 38%, #2e3033) !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.28);
+}
+.reunion-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+  background: linear-gradient(180deg, var(--dc, #7F77DD), color-mix(in srgb, var(--dc, #7F77DD) 60%, black));
+  box-shadow: 0 0 24px color-mix(in srgb, var(--dc, #7F77DD) 70%, transparent);
+  z-index: 1;
+}
+.reunion-card .reunion-header {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--dc, #7F77DD) 18%, transparent) 0%, transparent 60%) !important;
+  border-left: 0 !important;
+  padding: 14px 16px 12px 20px !important;
+}
+.reunion-card .reunion-dia {
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.3px;
+  text-shadow: 0 0 14px color-mix(in srgb, var(--dc, #7F77DD) 45%, transparent);
+}
+.reunion-card .reunion-fecha {
+  font-size: 12px !important;
+  color: #888 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.reunion-card .roles-list { padding: 6px 16px 12px 20px !important; }
+.reunion-card .rol-row {
+  padding: 9px 0 !important;
+  border-bottom: none !important;
+  border-top: 1px dashed rgba(255,255,255,0.06);
+}
+.reunion-card .rol-row:first-child { border-top: none; }
+.reunion-card .rol-label {
+  font-size: 11px !important;
+  color: #9c9c9c !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  width: 140px;
+}
+.reunion-card .rol-valor {
+  font-size: 14px !important;
+  color: #f0f0f0 !important;
+  font-weight: 500;
+}
+.reunion-card.cancel .reunion-cancelada,
+.reunion-card .roles-list.reunion-cancelada {
+  padding: 14px 18px !important;
+  font-style: italic;
+  text-align: center;
+  color: #888 !important;
+}
+
+/* ── Asig card (Mi asignación) ── */
+.asig-card {
+  position: relative;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--dc, #7F77DD) 12%, transparent) 0%, transparent 60%),
+    #232628 !important;
+  border: 1px solid color-mix(in srgb, var(--dc, #7F77DD) 38%, #2e3033) !important;
+  border-radius: 14px !important;
+  padding: 14px 16px 14px 22px !important;
+  margin-bottom: 8px;
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+}
+.asig-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+  background: var(--dc, #7F77DD);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--dc, #7F77DD) 60%, transparent);
+}
+.asig-card.asig-libre {
+  background: rgba(255,255,255,0.02) !important;
+  border-color: rgba(255,255,255,0.06) !important;
+  opacity: 0.55;
+}
+.asig-card.asig-libre::before { background: #333; box-shadow: none; }
+.asig-card .asig-dia {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  min-width: 84px;
+  color: var(--dc, #7F77DD) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--dc, #7F77DD) 40%, transparent);
+}
+.asig-card.asig-libre .asig-dia { color: #555 !important; text-shadow: none; }
+.asig-card .asig-fecha {
+  font-size: 11px !important;
+  color: #888 !important;
+  font-family: ui-monospace, monospace;
+  flex: 1;
+}
+.asig-card.asig-libre .asig-fecha { color: #555 !important; }
+.asig-card .asig-rol {
+  font-size: 13px !important;
+  padding: 5px 12px !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--dc, #7F77DD) 16%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--dc, #7F77DD) 35%, transparent) !important;
+  color: color-mix(in srgb, var(--dc, #7F77DD) 88%, white 12%) !important;
+  font-weight: 600;
+}
+.asig-card .asig-rol.asig-rol-libre {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  color: #666 !important;
+}
+
+/* ── Edit card ── */
+.edit-card {
+  position: relative;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--dc, #7F77DD) 7%, transparent) 0%, transparent 60%),
+    #232628 !important;
+  border: 1px solid color-mix(in srgb, var(--dc, #7F77DD) 35%, #2e3033) !important;
+  border-radius: 16px !important;
+  padding: 0 !important;
+  margin-bottom: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.28);
+}
+.edit-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+  background: var(--dc, #7F77DD);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--dc, #7F77DD) 60%, transparent);
+  z-index: 1;
+}
+.edit-card .reunion-header {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--dc, #7F77DD) 18%, transparent) 0%, transparent 60%) !important;
+  border-left: 0 !important;
+  padding: 12px 14px 10px 20px !important;
+  margin-bottom: 0 !important;
+}
+.edit-card .edit-rol-row {
+  padding: 9px 14px 9px 20px !important;
+  margin-bottom: 0 !important;
+  border-top: 1px dashed rgba(255,255,255,0.06);
+}
+.edit-card .edit-rol-row:first-of-type { border-top: 1px solid rgba(255,255,255,0.04); }
+.edit-card .edit-rol-label {
+  font-size: 10px !important;
+  color: #999 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  margin-bottom: 5px !important;
+}
+.edit-card .edit-rol-select {
+  background: rgba(0,0,0,0.25) !important;
+  border: 1px solid color-mix(in srgb, var(--dc, #7F77DD) 18%, rgba(255,255,255,0.06)) !important;
+  border-radius: 8px !important;
+  padding: 8px 10px !important;
+  font-size: 14px !important;
+  color: #f0f0f0 !important;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.edit-card .edit-rol-select:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--dc, #7F77DD) 55%, transparent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dc, #7F77DD) 14%, transparent);
+}
+.edit-card .reunion-cancelada { padding: 14px 18px !important; }
+
+/* ── Semana nav header (nav pill style) ── */
+.semana-nav-header {
+  background: #232628 !important;
+  border: 1px solid #2e3033 !important;
+  border-radius: 14px !important;
+  padding: 8px 12px !important;
+  margin-bottom: 14px;
+  gap: 10px !important;
+}
+.semana-nav-label {
+  font-size: 14px !important;
+  color: #ddd !important;
+  font-weight: 600;
+}
+.semana-nav-btn {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  color: #ccc !important;
+  font-size: 16px !important;
+  padding: 0 !important;
+  display: flex; align-items: center; justify-content: center;
+}
+.semana-nav-btn:hover {
+  background: rgba(127,119,221,0.10) !important;
+  border-color: rgba(127,119,221,0.30) !important;
+  color: #fff !important;
+}
+
+/* ── Auto info card ── */
+.auto-info {
+  background: linear-gradient(180deg, rgba(127,119,221,0.12), rgba(127,119,221,0.02)) !important;
+  border: 1px solid rgba(127,119,221,0.28) !important;
+  border-radius: 14px !important;
+  padding: 14px 16px !important;
+  color: #ccc !important;
+  font-size: 13px !important;
+  line-height: 1.45;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+/* ── Auto chips ── */
+.btn-chip {
+  padding: 8px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600;
+  border-radius: 10px !important;
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  color: #aaa !important;
+}
+.btn-chip:hover {
+  background: rgba(127,119,221,0.08) !important;
+  border-color: rgba(127,119,221,0.32) !important;
+  color: #fff !important;
+}
+
+/* ── Tabla WhatsApp (output image) ── */
+.card-tabla {
+  background:
+    linear-gradient(180deg, rgba(127,119,221,0.08) 0%, transparent 30%),
+    #1c1e22 !important;
+  border: 1px solid #2e3033 !important;
+  border-radius: 18px !important;
+}
+.card-tabla-header {
+  background: transparent !important;
+  border-bottom: 1px solid #2a2d30 !important;
+  padding: 16px 18px !important;
+}
+.card-tabla-top {
+  font-size: 11px !important;
+  color: #b6acff !important;
+  letter-spacing: 0.12em !important;
+  font-weight: 700 !important;
+  margin-bottom: 4px !important;
+}
+.card-tabla-main {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  letter-spacing: -0.2px;
+}
+.tabla-reunion-wrap {
+  padding: 0 18px 12px !important;
+  border-bottom: 1px solid #25272a !important;
+}
+.tabla-reunion-wrap:last-child { border-bottom: none !important; }
+.tabla-dia-header {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 7px 14px 7px 18px !important;
+  margin: 0 -18px 10px !important;
+  background: color-mix(in srgb, var(--dc, #7F77DD) 22%, transparent) !important;
+  color: color-mix(in srgb, var(--dc, #7F77DD) 88%, white 12%) !important;
+  border-bottom: 0 !important;
+  border-left: 4px solid var(--dc, #7F77DD);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--dc, #7F77DD) 50%, transparent);
+}
+.tabla-rol {
+  font-size: 11px !important;
+  color: #888 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  padding: 5px 0 !important;
+}
+.tabla-val {
+  font-size: 13px !important;
+  color: #f0f0f0 !important;
+  padding: 5px 0 !important;
+  font-weight: 500;
+}
+
+/* ── PIN modal refresh ── */
+.pin-modal {
+  background: rgba(15,16,18,0.78) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 20px !important;
+}
+.pin-card {
+  background: #1e2024 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 22px !important;
+  padding: 22px 22px 24px !important;
+  width: auto !important;
+  max-width: 340px !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5) !important;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.pin-lock {
+  width: 64px; height: 64px; border-radius: 18px;
+  background: linear-gradient(160deg, rgba(127,119,221,0.18), rgba(127,119,221,0.04));
+  border: 1px solid rgba(127,119,221,0.30);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 28px rgba(127,119,221,0.20);
+  color: #b6acff;
+  flex-shrink: 0;
+}
+.pin-lock svg { width: 30px; height: 30px; }
+.pin-eyebrow {
+  font-size: 10px;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+}
+.pin-title {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  letter-spacing: -0.4px;
+  margin: 0 !important;
+}
+.pin-sub {
+  font-size: 12px !important;
+  color: #777 !important;
+  margin: 0 !important;
+}
+.pin-dots {
+  gap: 14px !important;
+  margin: 0 !important;
+}
+.pin-dot {
+  width: 12px !important;
+  height: 12px !important;
+  border-color: #555 !important;
+}
+.pin-dot.filled {
+  background: #7F77DD !important;
+  border-color: #7F77DD !important;
+  box-shadow: 0 0 12px rgba(127,119,221,0.5);
+}
+.pin-grid {
+  grid-template-columns: repeat(3, 66px) !important;
+  gap: 10px !important;
+  margin: 0 !important;
+}
+.pin-btn {
+  padding: 0 !important;
+  width: 66px;
+  height: 66px;
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  border-radius: 16px !important;
+  font-size: 24px !important;
+  color: #eee !important;
+  font-family: inherit;
+}
+.pin-btn:hover {
+  background: rgba(127,119,221,0.10) !important;
+  border-color: rgba(127,119,221,0.25) !important;
+  filter: none;
+}
+.pin-btn.pin-del {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #888 !important;
+  font-size: 18px !important;
+}
+.pin-btn.pin-del:hover {
+  background: rgba(255,255,255,0.04) !important;
+  color: #ddd !important;
+}
+.pin-error { margin: 0 !important; }
+.pin-cancel {
+  font-size: 13px !important;
+  color: #888 !important;
+}
+
+/* ── Special banner — punchier ── */
+.especial-banner {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--dc, #7F77DD) 18%, transparent), color-mix(in srgb, var(--dc, #7F77DD) 4%, transparent)) !important;
+  border-left-width: 4px !important;
+  font-weight: 600 !important;
+}
+
+/* ── Buscar suggestions refresh ── */
+.search-box {
+  background: #232628 !important;
+  border: 1px solid #2e3033 !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+}
+.search-suggestions {
+  background: #232628 !important;
+  border: 1px solid #2e3033 !important;
+  border-radius: 12px !important;
+}
+.sugg-item {
+  border-bottom-color: #2a2d30 !important;
+  padding: 11px 14px !important;
+  font-size: 14px !important;
+}
+.sugg-item:hover, .sugg-active {
+  background: rgba(127,119,221,0.08) !important;
+  color: #fff !important;
+}
+
+/* ── buscar-nombre — más grande ── */
+.buscar-nombre {
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.4px;
+  color: #fff !important;
+}

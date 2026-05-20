@@ -78,12 +78,12 @@ const ROLES_OPCIONES = [
 ];
 
 const DIA_COLORS = {
-  'Lunes':'#85B7EB','Martes':'#85B7EB','Miércoles':'#C0DD97',
-  'Jueves':'#FAC775','Viernes':'#C0DD97','Sábado':'#CDB4FF','Domingo':'#F09595',
+  'Lunes':'#5DB1FF','Martes':'#5DB1FF','Miércoles':'#3FD969',
+  'Jueves':'#FFA82E','Viernes':'#3FD969','Sábado':'#8E6BFF','Domingo':'#FF5469',
 };
 const DIA_BG = {
-  'Lunes':'#0c1e33','Martes':'#0c1e33','Miércoles':'#1a2e0a',
-  'Jueves':'#2e1e00','Viernes':'#1a2e0a','Sábado':'#1e1a2e','Domingo':'#2e1a1a',
+  'Lunes':'#0e2238','Martes':'#0e2238','Miércoles':'#0f2a13',
+  'Jueves':'#2a1d05','Viernes':'#0f2a13','Sábado':'#1f1638','Domingo':'#321218',
 };
 
 /* ─── PIN ─── */
@@ -687,7 +687,9 @@ function renderSemana(rows, containerId, especial) {
     if (canceladas.includes(dia)) {
       const label = TIPO_LABELS[especial.tipo] || 'Evento especial';
       const card = document.createElement('div');
-      card.className = 'reunion-card';
+      card.className = 'reunion-card cancel';
+      card.style.setProperty('--dc', diaColor);
+      card.style.setProperty('--db', diaBg);
       card.innerHTML = `
         <div class="reunion-header" style="background:${diaBg};border-left:3px solid ${diaColor};">
           <span class="reunion-dia" style="color:${diaColor};">${dia}</span>
@@ -708,6 +710,8 @@ function renderSemana(rows, containerId, especial) {
 
     const card = document.createElement('div');
     card.className = 'reunion-card';
+    card.style.setProperty('--dc', diaColor);
+    card.style.setProperty('--db', diaBg);
     card.innerHTML = `
       <div class="reunion-header" style="background:${diaBg};border-left:3px solid ${diaColor};">
         <span class="reunion-dia" style="color:${diaColor};">${displayDia}</span>
@@ -822,15 +826,15 @@ async function buscarHermano(nombre) {
         });
         if (rolEncontrado) {
           tieneAlgo = true;
-          html += `<div class="asig-card asig-tiene" style="border-left:3px solid ${diaColor};background:${diaBg}33;">
-            <span class="asig-dia" style="color:${diaColor};">${dia}</span>
+          html += `<div class="asig-card asig-tiene" style="--dc:${diaColor};--db:${diaBg};">
+            <span class="asig-dia">${dia}</span>
             <span class="asig-fecha">${row.fecha}</span>
             <span class="asig-rol">${rolEncontrado}</span>
           </div>`;
         } else {
-          html += `<div class="asig-card asig-libre" style="border-left:3px solid #333;">
-            <span class="asig-dia" style="color:#555;">${dia}</span>
-            <span class="asig-fecha" style="color:#555;">${row.fecha}</span>
+          html += `<div class="asig-card asig-libre">
+            <span class="asig-dia">${dia}</span>
+            <span class="asig-fecha">${row.fecha}</span>
             <span class="asig-rol asig-rol-libre">Sin asignación</span>
           </div>`;
         }
@@ -916,6 +920,8 @@ function renderEditar(rows, lunesDate) {
     const diaBg    = DIA_BG[dia] || '#1e1e1e';
     const div = document.createElement('div');
     div.className = 'edit-card';
+    div.style.setProperty('--dc', diaColor);
+    div.style.setProperty('--db', diaBg);
     div.dataset.fecha = fecha;
     div.dataset.dia = dia;
 
@@ -1107,7 +1113,7 @@ function renderAutoPreview(rows) {
       `<div class="rol-row"><span class="rol-label">${ROLES_LABELS[r]}</span><span class="rol-valor">${row[r]}</span></div>` : ''
     ).filter(Boolean).join('');
     c.innerHTML += `
-      <div class="reunion-card">
+      <div class="reunion-card" style="--dc:${diaColor};--db:${diaBg};">
         <div class="reunion-header" style="background:${diaBg};border-left:3px solid ${diaColor};">
           <span class="reunion-dia" style="color:${diaColor};">${row.dia}</span>
           <span class="reunion-fecha">${row.fecha}</span>
@@ -1171,8 +1177,8 @@ function renderTablaImagen(rows) {
       return `<tr><td class="tabla-rol">${ROLES_LABELS[r]}</td><td class="tabla-val">${val}</td></tr>`;
     }).filter(Boolean).join('');
     c.innerHTML += `
-      <div class="tabla-reunion-wrap">
-        <div class="tabla-dia-header" style="color:${diaColor};border-bottom:1px solid ${diaColor}30;">
+      <div class="tabla-reunion-wrap" style="--dc:${diaColor};">
+        <div class="tabla-dia-header">
           ${dia} <span style="font-size:11px;font-weight:400;color:#888;margin-left:8px;">${row.fecha}</span>
         </div>
         <table class="tabla-roles"><tbody>${rolesHTML}</tbody></table>

@@ -21,12 +21,12 @@ const ROLES_LABELS = {
 };
 const ROLES = Object.keys(ROLES_LABELS);
 const DIA_COLORS = {
-  'Lunes':'#85B7EB','Martes':'#85B7EB','Miércoles':'#C0DD97',
-  'Jueves':'#FAC775','Viernes':'#C0DD97','Sábado':'#CDB4FF','Domingo':'#F09595',
+  'Lunes':'#5DB1FF','Martes':'#5DB1FF','Miércoles':'#3FD969',
+  'Jueves':'#FFA82E','Viernes':'#3FD969','Sábado':'#8E6BFF','Domingo':'#FF5469',
 };
 const DIA_BG = {
-  'Lunes':'#0c1e33','Martes':'#0c1e33','Miércoles':'#1a2e0a',
-  'Jueves':'#2e1e00','Viernes':'#1a2e0a','Sábado':'#1e1a2e','Domingo':'#2e1a1a',
+  'Lunes':'#0e2238','Martes':'#0e2238','Miércoles':'#0f2a13',
+  'Jueves':'#2a1d05','Viernes':'#0f2a13','Sábado':'#1f1638','Domingo':'#321218',
 };
 const TIPO_LABELS = {
   conmemoracion: 'Conmemoración',
@@ -129,7 +129,7 @@ function renderSemana(rows, especial) {
     if (canceladas.includes(dia)) {
       const label = TIPO_LABELS[especial.tipo] || 'Evento especial';
       return `
-        <div class="reunion-card">
+        <div class="reunion-card cancel" style="--dc:${diaColor};--db:${diaBg};">
           <div class="reunion-header" style="background:${diaBg};border-left:3px solid ${diaColor};">
             <span class="reunion-dia" style="color:${diaColor};">${dia}</span>
             <span class="reunion-fecha">${fmtFecha(date)}</span>
@@ -147,7 +147,7 @@ function renderSemana(rows, especial) {
     }).filter(Boolean).join('');
 
     return `
-      <div class="reunion-card">
+      <div class="reunion-card" style="--dc:${diaColor};--db:${diaBg};">
         <div class="reunion-header" style="background:${diaBg};border-left:3px solid ${diaColor};">
           <span class="reunion-dia" style="color:${diaColor};">${displayDia}</span>
           <span class="reunion-fecha">${fmtFecha(date)}</span>
