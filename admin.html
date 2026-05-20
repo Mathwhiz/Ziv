@@ -80,12 +80,90 @@
     .save-bar { position:sticky; bottom:16px; margin-top:12px; }
 
     /* Dashboard */
-    .congre-item { display: flex; align-items: center; gap: 10px; background: #2a2a2a; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
-    .congre-nombre { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .congre-meta { font-size: 11px; color: #666; margin-top: 2px; }
-    .btn-card-action { background: #333; border: none; border-radius: 8px; width: 34px; height: 34px; font-size: 15px; cursor: pointer; flex-shrink: 0; }
-    .btn-card-action:hover { background: #3d3d3d; }
-    .btn-card-delete:hover { background: #4a1e1e; }
+    .dash-list { display: flex; flex-direction: column; gap: 10px; }
+    .dash-card {
+      position: relative;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--cc, #7F77DD) 9%, transparent) 0%, transparent 65%),
+        #232628;
+      border: 1px solid color-mix(in srgb, var(--cc, #7F77DD) 22%, #2e3033);
+      border-radius: 16px;
+      padding: 14px 14px 12px 18px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.02);
+      overflow: hidden;
+    }
+    .dash-card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+      background: linear-gradient(180deg, var(--cc, #7F77DD), color-mix(in srgb, var(--cc, #7F77DD) 55%, black));
+      box-shadow: 0 0 18px color-mix(in srgb, var(--cc, #7F77DD) 50%, transparent);
+    }
+    .dash-card::after {
+      content: ''; position: absolute; right: -60px; top: -60px; width: 180px; height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, color-mix(in srgb, var(--cc, #7F77DD) 14%, transparent) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .dash-card-hd { position: relative; display: flex; align-items: flex-start; gap: 10px; z-index: 1; }
+    .dash-card-nm { font-size: 18px; font-weight: 700; color: #e8e8e8; letter-spacing: -0.3px; line-height: 1.2; }
+    .dash-card-mt { font-size: 12px; color: #6a6a6a; margin-top: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .dash-corner { display: flex; gap: 4px; margin-left: auto; flex-shrink: 0; }
+    .dash-corner button {
+      width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+      color: #888; display: flex; align-items: center; justify-content: center; padding: 0;
+      transition: .15s;
+    }
+    .dash-corner button:hover { color: #ddd; background: rgba(255,255,255,0.06); }
+    .dash-corner button.del:hover { color: #F09595; border-color: rgba(240,149,149,0.25); background: rgba(240,149,149,0.08); }
+    .dash-corner svg { width: 14px; height: 14px; }
+
+    .dash-acts {
+      position: relative; z-index: 1;
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px; margin-top: 12px;
+    }
+    .dash-act {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      height: 54px; cursor: pointer; padding: 0;
+      background: color-mix(in srgb, var(--cc, #7F77DD) 12%, #1c1e21);
+      border: 1px solid color-mix(in srgb, var(--cc, #7F77DD) 25%, transparent);
+      border-radius: 10px;
+      color: color-mix(in srgb, var(--cc, #7F77DD) 70%, white 30%);
+      font-size: 11px; font-weight: 600; letter-spacing: 0.01em;
+      font-family: inherit;
+      transition: .15s;
+    }
+    .dash-act svg { width: 16px; height: 16px; }
+    .dash-act:hover {
+      background: color-mix(in srgb, var(--cc, #7F77DD) 20%, #1c1e21);
+      border-color: color-mix(in srgb, var(--cc, #7F77DD) 45%, transparent);
+      color: #fff;
+    }
+    .dash-act:active { transform: scale(0.97); }
+
+    /* Banner matches pendientes (refresh) */
+    .dash-banner {
+      margin-bottom: 14px; padding: 12px 14px; border-radius: 12px;
+      background: linear-gradient(180deg, rgba(239,159,39,0.10), rgba(239,159,39,0.04));
+      border: 1px solid rgba(239,159,39,0.25);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .dash-banner-ic {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: rgba(239,159,39,0.18);
+      display: flex; align-items: center; justify-content: center; color: #EF9F27; flex-shrink: 0;
+    }
+    .dash-banner-ic svg { width: 16px; height: 16px; }
+    .dash-banner-tx { flex: 1; min-width: 0; }
+    .dash-banner-t1 { font-size: 13px; font-weight: 600; color: #EF9F27; }
+    .dash-banner-t2 { font-size: 11px; color: #999; margin-top: 1px; }
+    .dash-banner button {
+      background: transparent; border: 1px solid rgba(239,159,39,0.35);
+      color: #EF9F27; border-radius: 8px; padding: 7px 12px;
+      font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+      flex-shrink: 0;
+    }
+    .dash-banner button:hover { background: rgba(239,159,39,0.10); }
 
     /* KML */
     .kml-drop { border: 2px dashed #444; border-radius: 12px; padding: 36px 20px; text-align: center; cursor: pointer; color: #888; font-size: 14px; transition: .2s; }
@@ -191,14 +269,15 @@
     <div style="height:52px;"></div>
     <p class="section-title" style="text-align:center;">Congregaciones</p>
     <p class="section-sub" style="text-align:center;">Panel de administración</p>
-    <div id="dash-matches-banner" style="display:none;background:#2a2020;border:1px solid rgba(239,159,39,0.3);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-        <div>
-          <div style="font-size:14px;font-weight:600;color:#EF9F27;">👥 Matches pendientes</div>
-          <div style="font-size:12px;color:#888;margin-top:2px;"><span id="dash-matches-n">0</span> usuario(s) sin publicador confirmado</div>
-        </div>
-        <button class="btn-secondary" onclick="openMatches()" style="flex-shrink:0;font-size:13px;padding:8px 14px;">Resolver</button>
+    <div id="dash-matches-banner" class="dash-banner" style="display:none;">
+      <div class="dash-banner-ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 10-12 0v5l-2 2v1h16v-1l-2-2z"/><path d="M10 21a2 2 0 004 0"/></svg>
       </div>
+      <div class="dash-banner-tx">
+        <div class="dash-banner-t1">Matches pendientes</div>
+        <div class="dash-banner-t2"><span id="dash-matches-n">0</span> usuario(s) sin publicador confirmado</div>
+      </div>
+      <button onclick="openMatches()">Resolver</button>
     </div>
     <div id="dash-loading" class="loading-wrap"><div class="spinner"></div><div>Cargando...</div></div>
     <div id="dash-list" style="display:none"></div>

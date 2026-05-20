@@ -145,24 +145,38 @@ async function loadDashboard() {
     if (snap.empty) {
       list.innerHTML = '<p style="color:#666;font-size:14px;text-align:center;padding:24px 0;">No hay congregaciones todavía.</p>';
     } else {
+      const ICO = {
+        map:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4l-6 2v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
+        users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 11a3 3 0 100-6"/><path d="M21 19a4.5 4.5 0 00-4-4.5"/></svg>',
+        chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>',
+        edit:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>',
+        trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M6 6l1 14a2 2 0 002 2h6a2 2 0 002-2l1-14"/></svg>',
+      };
+      list.classList.add('dash-list');
       snap.forEach(d => {
-        const { nombre, creadoEn } = d.data();
+        const data = d.data();
+        const { nombre, creadoEn, color } = data;
         const fecha = creadoEn
           ? new Date(creadoEn.seconds * 1000).toLocaleDateString('es-AR')
           : '—';
         const nombreSafe = (nombre || '(sin nombre)').replace(/'/g, "\\'");
+        const cc = color || '#7F77DD';
         list.innerHTML += `
-          <div class="congre-item">
-            <div style="flex:1;min-width:0;">
-              <div class="congre-nombre">${nombre || '(sin nombre)'}</div>
-              <div class="congre-meta">${d.id} · ${fecha}</div>
+          <div class="dash-card" style="--cc:${cc};">
+            <div class="dash-card-hd">
+              <div style="flex:1;min-width:0;">
+                <div class="dash-card-nm">${nombre || '(sin nombre)'}</div>
+                <div class="dash-card-mt">/${d.id} · alta ${fecha}</div>
+              </div>
+              <div class="dash-corner">
+                <button onclick="editCongre('${d.id}')" title="Editar">${ICO.edit}</button>
+                <button class="del" onclick="deleteCongre('${d.id}','${nombreSafe}')" title="Eliminar">${ICO.trash}</button>
+              </div>
             </div>
-            <div style="display:flex;gap:6px;flex-shrink:0;">
-              <button class="btn-card-action" onclick="openTerritorios('${d.id}','${nombreSafe}')" title="Territorios">📍</button>
-              <button class="btn-card-action" onclick="openUsuarios('${d.id}','${nombreSafe}')" title="Usuarios">👥</button>
-              <button class="btn-card-action" onclick="openActividad('${d.id}','${nombreSafe}')" title="Actividad">📊</button>
-              <button class="btn-card-action" onclick="editCongre('${d.id}')" title="Editar">✏️</button>
-              <button class="btn-card-action btn-card-delete" onclick="deleteCongre('${d.id}','${nombreSafe}')" title="Eliminar">🗑️</button>
+            <div class="dash-acts">
+              <button class="dash-act" onclick="openTerritorios('${d.id}','${nombreSafe}')" title="Territorios">${ICO.map} Territorios</button>
+              <button class="dash-act" onclick="openUsuarios('${d.id}','${nombreSafe}')" title="Usuarios">${ICO.users} Usuarios</button>
+              <button class="dash-act" onclick="openActividad('${d.id}','${nombreSafe}')" title="Actividad">${ICO.chart} Actividad</button>
             </div>
           </div>`;
       });
