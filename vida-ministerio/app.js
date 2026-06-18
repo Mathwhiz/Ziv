@@ -857,6 +857,7 @@ window.eliminarSemana = async function(fecha) {
     await deleteDoc(doc(db, 'congregaciones', congreId, 'vidaministerio', fecha));
     await deleteDoc(doc(db, 'congregaciones', congreId, 'vm_programa', fecha));
     semanasLista = semanasLista.filter(s => s.fecha !== fecha);
+    _invalidarVmStats();
     renderSemanas(semanasLista);
     uiToast('Semana eliminada', 'success');
   } catch(e) {
@@ -1276,13 +1277,119 @@ async function _confirmarSiModificada() {
   return true;
 }
 
+// ─────────────────────────────────────────
+//   VALIDACIÓN PRE-GUARDADO — Mejora A
+// ─────────────────────────────────────────
+function _slotLabel(semana, key) {
+  const parts = key.split('.');
+  switch (parts[0]) {
+    case 'presidente':      return 'Presidente';
+    case 'oracionApertura': return 'Oración apertura';
+    case 'oracionCierre':   return 'Oración cierre';
+    case 'tesoros':
+      if (parts[1] === 'discurso') return 'Tesoros · Discurso';
+      if (parts[1] === 'joyas')    return 'Perlas escondidas';
+      if (parts[1] === 'lecturaBiblica')
+        return parts[2] === 'ayudante' ? 'Lectura Bíblica (sala aux.)' : 'Lectura Bíblica';
+      return key;
+    case 'ministerio': {
+      const idx = parseInt(parts[1]);
+      let base = `Ministerio ${idx + 1}`;
+      if (parts[2] === 'salaAux') base += parts[3] === 'ayudante' ? ' (sala aux. ayud.)' : ' (sala aux.)';
+      else if (parts[2] === 'ayudante') base += ' (ayudante)';
+      return base;
+    }
+    case 'vidaCristiana': return `Vida Cristiana ${parseInt(parts[1]) + 1}`;
+    case 'estudio':       return 'Conductor del estudio';
+    default: return key;
+  }
+}
+
+// Devuelve { vacios:[], repetidos:[], sexo:[], noDisp:[] } con labels de slots problemáticos.
+function _validarSemana(semana) {
+  const slots = construirSlotsOrdenados(semana);
+  const vacios = [], sexo = [], noDisp = [];
+  const porPub = {}; // pubId → [labels]
+
+  for (const slot of slots) {
+    const pubId = getSlotPubIdFromSemana(semana, slot.key);
+    const label = _slotLabel(semana, slot.key);
+
+    if (!pubId) { vacios.push(label); continue; }
+
+    // Repetidos — excepto presidente = oración de cierre cuando está la opción activa
+    const esCierrePresidente = presidenteEsOradorFinal && slot.key === 'oracionCierre'
+      && pubId === getSlotPubIdFromSemana(semana, 'presidente');
+    if (!esCierrePresidente) {
+      (porPub[pubId] = porPub[pubId] || []).push(label);
+    }
+
+    // Sexo inválido: mujer en rol de solo varón
+    if (LH_ROLES_SOLO_VARON.includes(slot.rolRequerido) && sexoDePub(pubId) === 'M') {
+      sexo.push(`${esc(nombreDePub(pubId) || '?')} → ${label}`);
+    }
+
+    // Asignado pero marcado no disponible esa semana
+    if (noDispEnSemana(pubId, semana.fecha)) {
+      noDisp.push(`${esc(nombreDePub(pubId) || '?')} → ${label}`);
+    }
+  }
+
+  const repetidos = Object.entries(porPub)
+    .filter(([, labels]) => labels.length > 1)
+    .map(([pubId, labels]) => `${esc(nombreDePub(pubId) || '?')}: ${labels.join(', ')}`);
+
+  return { vacios, repetidos, sexo, noDisp };
+}
+
+function _hayProblemas(v) {
+  return v.vacios.length || v.repetidos.length || v.sexo.length || v.noDisp.length;
+}
+
+function _validacionHtml(v) {
+  const bloque = (titulo, items, color) => items.length
+    ? `<div style="margin-top:10px;"><div style="font-weight:700;color:${color};font-size:13px;margin-bottom:4px;">${titulo}</div>`
+      + `<div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${items.map(esc).join('<br>')}</div></div>`
+    : '';
+  return `<div style="text-align:left;">`
+    + bloque(`⚠ Sexo inválido (${v.sexo.length})`, v.sexo, '#F09595')
+    + bloque(`↻ Repetidos en la semana (${v.repetidos.length})`, v.repetidos, '#EF9F27')
+    + bloque(`🚫 No disponibles asignados (${v.noDisp.length})`, v.noDisp, '#EF9F27')
+    + bloque(`○ Sin asignar (${v.vacios.length})`, v.vacios, 'var(--text-muted)')
+    + `</div>`;
+}
+
 window.guardarSemana = async function() {
   if (!semanaData) return;
+
+  // Mejora A — validar antes de guardar
+  const v = _validarSemana(semanaData);
+  // Si la semana no tiene nada asignado todavía (ej. recién importada de WOL),
+  // no molestar con "sin asignar" — solo importan los problemas reales.
+  const algoAsignado = construirSlotsOrdenados(semanaData)
+    .some(s => getSlotPubIdFromSemana(semanaData, s.key));
+  if (!algoAsignado) v.vacios = [];
+  if (_hayProblemas(v)) {
+    const ok = await uiConfirm({
+      title: 'Revisá antes de guardar',
+      msg: _validacionHtml(v),
+      confirmText: 'Guardar igual',
+      cancelText: 'Revisar',
+      type: 'warn',
+    });
+    if (!ok) return;
+  }
+
   uiLoading.show('Guardando…');
   try {
     const ref = doc(db, 'congregaciones', congreId, 'vidaministerio', semanaData.fecha);
     await setDoc(ref, semanaData);
     await setDoc(doc(db, 'congregaciones', congreId, 'vm_programa', semanaData.fecha), toPublicVmSemana(semanaData));
+    // Reflejar el guardado en semanasLista para que las stats (carga/colas) queden frescas
+    const _idxSL = semanasLista.findIndex(s => s.fecha === semanaData.fecha);
+    if (_idxSL >= 0) semanasLista[_idxSL] = semanaData;
+    else { semanasLista.push(semanaData); semanasLista.sort((a, b) => b.fecha.localeCompare(a.fecha)); }
+    _invalidarVmStats();
     _resetModificada();
     uiLoading.hide();
     uiToast('Programa guardado', 'success');
@@ -1625,35 +1732,79 @@ function setSlotPubIdOnSemana(semana, key, pubId) {
   }
 }
 
-// Construye una cola de asignación por rol usando TODO el historial.
-// Ordena cada lista por fecha de última asignación (más antigua primero, nunca asignado primero).
-// Retorna { rolId → [pubId, ...] } — las colas se mutan in-place durante la asignación.
-function calcularColasVM() {
-  // Registrar la fecha más reciente de asignación por rol y pub
-  const ultimaFecha = {}; // { rolId → { pubId → 'YYYY-MM-DD' } }
-  ROLES_VM.forEach(r => { ultimaFecha[r.id] = {}; });
+// ─────────────────────────────────────────
+//   STATS DEL HISTORIAL (memoizadas) — Mejora D
+// ─────────────────────────────────────────
+// Se recalculan desde semanasLista (más robusto que persistir un denormalizado),
+// pero se cachean por "versión" para no recorrer todo el historial en cada llamada.
+// La versión es una firma barata; además se invalida explícitamente al guardar/eliminar.
+let _vmStatsCache = null;
+const VM_CARGA_DIAS = 90; // ventana de "carga reciente" (≈ 3 meses)
+
+function _vmStatsVersion() {
+  const n = semanasLista.length;
+  return `${n}:${semanasLista[0]?.fecha || ''}:${semanasLista[n - 1]?.fecha || ''}`;
+}
+
+function _invalidarVmStats() { _vmStatsCache = null; }
+
+// Fisher-Yates: shuffle uniforme (reemplaza el sort(()=>Math.random()-0.5) sesgado)
+function _shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Recorre TODO el historial una sola vez y devuelve:
+//   ultimaPorRol  { rolId → { pubId → 'YYYY-MM-DD' } }
+//   ultimaGlobal  { pubId → 'YYYY-MM-DD' }      (cualquier rol)
+//   cargaReciente { pubId → nº de partes en los últimos VM_CARGA_DIAS }
+function calcularVmStats() {
+  const ver = _vmStatsVersion();
+  if (_vmStatsCache && _vmStatsCache.version === ver) return _vmStatsCache;
+
+  const ultimaPorRol  = {};
+  ROLES_VM.forEach(r => { ultimaPorRol[r.id] = {}; });
+  const ultimaGlobal  = {};
+  const cargaReciente = {};
+
+  const corte = new Date();
+  corte.setDate(corte.getDate() - VM_CARGA_DIAS);
+  const corteISO = fmtDate(corte);
 
   const ordenadas = [...semanasLista].sort((a, b) => a.fecha.localeCompare(b.fecha));
-
   for (const semana of ordenadas) {
     const slots = construirSlotsOrdenados(semana);
     for (const slot of slots) {
       const pubId = getSlotPubIdFromSemana(semana, slot.key);
-      if (pubId) {
-        if (!ultimaFecha[slot.rolRequerido]) ultimaFecha[slot.rolRequerido] = {};
-        ultimaFecha[slot.rolRequerido][pubId] = semana.fecha;
-      }
+      if (!pubId) continue;
+      if (!ultimaPorRol[slot.rolRequerido]) ultimaPorRol[slot.rolRequerido] = {};
+      ultimaPorRol[slot.rolRequerido][pubId] = semana.fecha;
+      if (!ultimaGlobal[pubId] || semana.fecha > ultimaGlobal[pubId]) ultimaGlobal[pubId] = semana.fecha;
+      if (semana.fecha >= corteISO) cargaReciente[pubId] = (cargaReciente[pubId] || 0) + 1;
     }
   }
 
+  _vmStatsCache = { version: ver, ultimaPorRol, ultimaGlobal, cargaReciente };
+  return _vmStatsCache;
+}
+
+// Construye una cola de asignación por rol usando TODO el historial.
+// Ordena cada lista por fecha de última asignación (más antigua primero, nunca asignado primero).
+// Retorna { rolId → [pubId, ...] } — las colas se mutan in-place durante la asignación.
+function calcularColasVM() {
+  const { ultimaPorRol } = calcularVmStats();
+
   // Para cada rol: ordenar por fecha de última asignación (más antigua → va primero).
-  // Shuffle previo para romper empates de forma aleatoria (evita sesgo alfabético).
+  // Shuffle previo (Fisher-Yates) para romper empates de forma uniforme.
   const colas = {};
   ROLES_VM.forEach(r => {
-    const lista = pubsConRol(r.id);
-    const fechas = ultimaFecha[r.id] || {};
-    const shuffled = [...lista].sort(() => Math.random() - 0.5);
-    const ordenada = shuffled.sort((a, b) => {
+    const lista  = pubsConRol(r.id);
+    const fechas = ultimaPorRol[r.id] || {};
+    const ordenada = _shuffle(lista).sort((a, b) => {
       const fa = fechas[a.id] || '0000-00-00'; // nunca asignado → máxima prioridad
       const fb = fechas[b.id] || '0000-00-00';
       return fa.localeCompare(fb);
@@ -1668,6 +1819,13 @@ function sexoDePub(pubId) {
   if (!pubId) return null;
   const p = publicadores.find(x => x.id === pubId);
   return p ? (p.sexo || null) : null;
+}
+
+// Mejora C — ¿el hermano está marcado como no disponible esa semana (lunes ISO)?
+function noDispEnSemana(pubId, fechaLunes) {
+  if (!pubId || !fechaLunes) return false;
+  const p = publicadores.find(x => x.id === pubId);
+  return !!(p && Array.isArray(p.noDisponible) && p.noDisponible.includes(fechaLunes));
 }
 
 // Asigna publicadores en slots de una semana usando las colas de round-robin.
@@ -1715,6 +1873,8 @@ function autoAsignarSemana(semana, colas, { soloVacios = false } = {}) {
     for (let i = 0; i < cola.length; i++) {
       const candidato = cola[i];
       if (enEstaSemana.has(candidato)) continue;
+      // Mejora C: saltear hermanos marcados no disponibles esta semana
+      if (noDispEnSemana(candidato, semana.fecha)) continue;
       // Restricción de género: si el principal tiene sexo definido y el candidato también,
       // deben coincidir. Si alguno no tiene sexo definido, se permite.
       if (sexoRequerido) {
@@ -1890,6 +2050,7 @@ window.crearSemana = async function() {
   }
 
   semanasLista.sort((a, b) => b.fecha.localeCompare(a.fecha));
+  _invalidarVmStats();
   uiLoading.hide();
 
   if (!primeraFecha) {
@@ -2564,6 +2725,7 @@ let _lhListaVisible      = [];
 let _lhEditandoId        = null;
 let _lhModalSexo         = null;
 let _lhModalPrivilegiado = false; // true si el pub tiene ANCIANO o SIERVO_MINISTERIAL
+let _lhModalNoDisp       = []; // Mejora C — fechas (lunes ISO) en que el hermano no está disponible
 
 function _lhRolLabel(id) {
   return LH_TODOS_ROLES.find(r => r.id === id)?.label || id;
@@ -2590,6 +2752,62 @@ window.goToListaHermanos = async function() {
   _lhFiltrar();
   showView('view-lista-hermanos');
 };
+
+// ─────────────────────────────────────────
+//   CARGA DE HERMANOS — Mejora B
+// ─────────────────────────────────────────
+window.goToCarga = async function() {
+  uiLoading.show('Cargando…');
+  await ensureVmLookupsLoaded();
+  if (!semanasLista.length) await cargarSemanas();
+  uiLoading.hide();
+  document.getElementById('carga-congre-sub').textContent = congreNombre || '—';
+  renderCarga();
+  showView('view-carga');
+};
+
+function renderCarga() {
+  const cont = document.getElementById('carga-list');
+  if (!cont) return;
+  const activos = publicadores.filter(p => p.activo !== false);
+  if (!activos.length) {
+    cont.innerHTML = '<div class="empty-state">No hay hermanos cargados.</div>';
+    return;
+  }
+  const stats     = calcularVmStats();
+  const lunesHoy  = lunesDeHoy();
+
+  const filas = activos.map(p => {
+    const futuras = (Array.isArray(p.noDisponible) ? p.noDisponible : [])
+      .filter(f => f >= lunesHoy);
+    return {
+      p,
+      carga:  stats.cargaReciente[p.id] || 0,
+      ultima: stats.ultimaGlobal[p.id] || null,
+      futuras: futuras.length,
+    };
+  });
+
+  // Más cargados primero; a igualdad, los que hace más no participan; luego alfabético
+  filas.sort((a, b) =>
+    b.carga - a.carga ||
+    (a.ultima || '').localeCompare(b.ultima || '') ||
+    norm(a.p.nombre).localeCompare(norm(b.p.nombre))
+  );
+
+  cont.innerHTML = filas.map(({ p, carga, ultima, futuras }) => {
+    const cls = carga === 0 ? 'vm-carga-c0' : carga >= 4 ? 'vm-carga-chi' : 'vm-carga-clow';
+    const ultimaTxt = ultima ? `Última: ${esc(fmtDisplay(ultima))}` : 'Nunca asignado';
+    const ndTxt = futuras ? ` · <span class="nd">${futuras} sem. no disp.</span>` : '';
+    return `<div class="vm-carga-row">
+      <div class="vm-carga-info">
+        <div class="vm-carga-nombre">${esc(p.nombre)}</div>
+        <div class="vm-carga-sub">${ultimaTxt}${ndTxt}</div>
+      </div>
+      <div class="vm-carga-count ${cls}">${carga}<small>3 MESES</small></div>
+    </div>`;
+  }).join('');
+}
 
 function _lhRenderLista(lista) {
   _lhListaVisible = lista;
@@ -2715,10 +2933,39 @@ window.selectSexoVM = function(s) {
   _lhActualizarRolesSegunSexo();
 };
 
+// ── Mejora C — disponibilidad en el modal de hermano ──
+function _lhRenderNoDisp() {
+  const cont = document.getElementById('lh-nodisp-chips');
+  if (!cont) return;
+  if (!_lhModalNoDisp.length) {
+    cont.innerHTML = '<span class="lh-nodisp-empty">Disponible todas las semanas</span>';
+    return;
+  }
+  const ordenadas = [..._lhModalNoDisp].sort();
+  cont.innerHTML = ordenadas.map(f =>
+    `<span class="lh-nodisp-chip">Sem. ${esc(fmtDisplay(f))}
+      <button type="button" onclick="lhQuitarNoDisp('${f}')" title="Quitar">✕</button></span>`
+  ).join('');
+}
+
+window.lhAgregarNoDisp = async function() {
+  const sel = await uiDatePicker({ label: 'Semana no disponible' });
+  if (!sel) return;
+  const lunes = lunesDeDate(sel); // ya devuelve YYYY-MM-DD (lunes de esa semana)
+  if (!_lhModalNoDisp.includes(lunes)) _lhModalNoDisp.push(lunes);
+  _lhRenderNoDisp();
+};
+
+window.lhQuitarNoDisp = function(fecha) {
+  _lhModalNoDisp = _lhModalNoDisp.filter(f => f !== fecha);
+  _lhRenderNoDisp();
+};
+
 window.abrirNuevoVM = function() {
   _lhEditandoId        = null;
   _lhModalSexo         = null;
   _lhModalPrivilegiado = false;
+  _lhModalNoDisp       = [];
   document.getElementById('lh-modal-titulo').textContent = 'Nuevo hermano';
   document.getElementById('lh-modal-nombre').value = '';
   document.getElementById('lh-modal-status').textContent = '';
@@ -2728,6 +2975,7 @@ window.abrirNuevoVM = function() {
   });
   _lhRenderSexoBtns();
   _lhActualizarRolesSegunSexo();
+  _lhRenderNoDisp();
   document.getElementById('lh-modal-nav-row').style.display = 'none';
   document.getElementById('modal-hermano-vm').style.display = 'flex';
   document.getElementById('lh-modal-nombre').focus();
@@ -2739,6 +2987,7 @@ window.abrirEditarVM = function(id) {
   _lhEditandoId        = id;
   _lhModalSexo         = h.sexo || null;
   _lhModalPrivilegiado = (h.roles || []).some(r => r === 'ANCIANO' || r === 'SIERVO_MINISTERIAL');
+  _lhModalNoDisp       = Array.isArray(h.noDisponible) ? [...h.noDisponible] : [];
   document.getElementById('lh-modal-titulo').textContent = esc(h.nombre);
   document.getElementById('lh-modal-nombre').value = h.nombre;
   document.getElementById('lh-modal-status').textContent = '';
@@ -2748,6 +2997,7 @@ window.abrirEditarVM = function(id) {
   });
   _lhRenderSexoBtns();
   _lhActualizarRolesSegunSexo();
+  _lhRenderNoDisp();
   _lhActualizarNavModal(id);
   document.getElementById('modal-hermano-vm').style.display = 'flex';
 };
@@ -2764,7 +3014,7 @@ async function _lhGuardarSilencioso() {
   const roles = LH_TODOS_ROLES
     .filter(r => document.getElementById('lhcb-' + r.id)?.checked)
     .map(r => r.id);
-  const data = { nombre, roles };
+  const data = { nombre, roles, noDisponible: _lhModalNoDisp };
   if (_lhModalSexo) data.sexo = _lhModalSexo;
   else {
     const existing = publicadores.find(p => p.id === _lhEditandoId);
@@ -2801,7 +3051,7 @@ window.guardarHermanoVM = async function() {
     const roles = LH_TODOS_ROLES
       .filter(r => document.getElementById('lhcb-' + r.id)?.checked)
       .map(r => r.id);
-    const data = { nombre, roles, activo: true };
+    const data = { nombre, roles, activo: true, noDisponible: _lhModalNoDisp };
     if (_lhModalSexo) data.sexo = _lhModalSexo;
     try {
       const ref = await addDoc(_lhPubCol(), data);

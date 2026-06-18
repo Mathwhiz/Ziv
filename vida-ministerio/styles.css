@@ -867,3 +867,49 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 .btn-sexo.btn-sexo-m.btn-sexo-active { background: rgba(247,159,203,0.15); border-color: #F79FCB; color: #F79FCB; }
 .modal-status { font-size: 12px; min-height: 16px; text-align: center; margin: 8px 0; color: var(--text-muted); }
 .modal-btns { display: flex; gap: 8px; margin-top: 4px; }
+
+/* No disponible (Mejora C) */
+.btn-add-nodisp {
+  background: rgba(239,159,39,0.15); color: #EF9F27;
+  border: 0.5px solid rgba(239,159,39,0.4); border-radius: 8px;
+  padding: 5px 11px; font-size: 12px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; font-family: inherit; transition: background 0.12s;
+}
+.btn-add-nodisp:hover { background: rgba(239,159,39,0.25); }
+.lh-nodisp-hint { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.4; }
+.lh-nodisp-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.lh-nodisp-empty { font-size: 12px; color: var(--text-muted); }
+.lh-nodisp-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600;
+  background: rgba(239,159,39,0.12); color: #EF9F27;
+  border: 0.5px solid rgba(239,159,39,0.3); border-radius: 7px;
+  padding: 3px 4px 3px 9px;
+}
+.lh-nodisp-chip button {
+  background: none; border: none; color: #EF9F27; cursor: pointer;
+  font-size: 12px; line-height: 1; padding: 2px 4px; border-radius: 4px;
+  opacity: 0.7; transition: opacity 0.12s, background 0.12s; font-family: inherit;
+}
+.lh-nodisp-chip button:hover { opacity: 1; background: rgba(239,159,39,0.2); }
+
+/* Carga de hermanos (Mejora B) */
+.vm-carga-leyenda { font-size: 12px; color: var(--text-muted); margin: 4px 0 12px; line-height: 1.4; }
+.vm-carga-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 12px;
+  background: var(--bg-card); border: 0.5px solid var(--border-light);
+  margin-bottom: 8px;
+}
+.vm-carga-info { flex: 1; min-width: 0; }
+.vm-carga-nombre { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.vm-carga-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.vm-carga-sub .nd { color: #EF9F27; }
+.vm-carga-count {
+  flex-shrink: 0; min-width: 30px; text-align: center;
+  font-size: 18px; font-weight: 800; line-height: 1;
+}
+.vm-carga-count small { display: block; font-size: 9px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.03em; margin-top: 2px; }
+.vm-carga-c0   { color: #6FCF74; }   /* sin carga reciente */
+.vm-carga-clow { color: var(--text-secondary); }
+.vm-carga-chi  { color: #EF9F27; }   /* sobrecargado */

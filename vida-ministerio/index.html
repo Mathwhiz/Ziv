@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../shared/styles-base.css">
-  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=2.3">
+  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=2.4">
 </head>
 <body>
 
@@ -170,6 +170,20 @@
           <div>
             <div class="cs-module-card-title">Lista de Hermanos</div>
             <div class="cs-module-card-sub">Publicadores y roles VM</div>
+          </div>
+        </button>
+
+        <button class="cs-module-card" style="--card-hover-border:rgba(29,158,117,0.55);--card-hover-bg:#10221c;--card-hover-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 1px rgba(29,158,117,0.55),0 4px 20px rgba(29,158,117,0.12);" onclick="goToCarga()">
+          <div class="cs-module-card-icon" style="background:rgba(29,158,117,0.15);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M3 3v18h18" stroke="#1D9E75" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="7" y="12" width="3" height="6" rx="1" stroke="#1D9E75" stroke-width="1.8"/>
+              <rect x="13" y="8" width="3" height="10" rx="1" stroke="#1D9E75" stroke-width="1.8"/>
+            </svg>
+          </div>
+          <div>
+            <div class="cs-module-card-title">Carga de hermanos</div>
+            <div class="cs-module-card-sub">Partes recientes y disponibilidad</div>
           </div>
         </button>
 
@@ -376,6 +390,27 @@
     </div>
   </div>
 
+  <!-- ── CARGA DE HERMANOS (encargado) ── -->
+  <div id="view-carga" class="view">
+    <div style="padding-top:4px;">
+      <div class="view-header">
+        <button class="btn-back" onclick="goToMenuEnc()">‹</button>
+        <div style="flex:1">
+          <div class="view-title">Carga de hermanos</div>
+          <div class="view-sub" id="carga-congre-sub">—</div>
+        </div>
+      </div>
+      <div class="vm-carga-leyenda">
+        Partes asignadas en los últimos 3 meses, ordenadas de mayor a menor.
+        Sirve para detectar hermanos sobrecargados o que hace mucho no participan.
+      </div>
+      <div id="carga-list">
+        <div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
+      </div>
+      <div style="height:3rem;"></div>
+    </div>
+  </div>
+
   <!-- ── MODAL HERMANO (VM) ── -->
   <div id="modal-hermano-vm" class="modal-overlay" style="display:none;" onclick="if(event.target===this)cerrarModalHermanoVM()">
     <div class="modal-card">
@@ -419,6 +454,13 @@
         <label class="rol-checkbox"><input type="checkbox" id="lhcb-VM_VIDA_CRISTIANA"><span>Vida Cristiana</span></label>
         <label class="rol-checkbox" style="grid-column:span 2"><input type="checkbox" id="lhcb-VM_ESTUDIO_CONDUCTOR"><span>Conductor Estudio</span></label>
       </div>
+
+      <div style="margin:14px 0 8px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <span class="roles-section-titulo roles-titulo-vm">No disponible</span>
+        <button type="button" class="btn-add-nodisp" onclick="lhAgregarNoDisp()">+ Semana</button>
+      </div>
+      <div class="lh-nodisp-hint">Semanas en las que no se le debe asignar nada (la auto-asignación lo saltea).</div>
+      <div id="lh-nodisp-chips" class="lh-nodisp-chips"></div>
 
       <div class="modal-status" id="lh-modal-status"></div>
       <div class="modal-btns">
