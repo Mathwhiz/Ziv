@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../shared/styles-base.css">
-  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=2.8">
+  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=2.9">
 </head>
 <body>
 
@@ -362,6 +362,7 @@
       <select id="lh-rol" class="rol-filter" onchange="filtrarListaHermanosVM()">
         <option value="">— Todos los roles —</option>
         <option value="__sin_roles__">Sin asignación</option>
+        <option value="__inactivos__">🚫 Inactivos</option>
         <optgroup label="Asignaciones">
           <option value="LECTOR">Lector</option>
           <option value="SONIDO">Sonido</option>
@@ -471,6 +472,7 @@
         <button class="btn-secondary" onclick="cerrarModalHermanoVM()">Cancelar</button>
         <button class="btn-primary" onclick="guardarHermanoVM()">Guardar</button>
       </div>
+      <button type="button" id="lh-btn-activo" class="btn-desactivar" onclick="toggleActivoHermanoVM()" style="display:none;">Desactivar hermano</button>
     </div>
   </div>
 

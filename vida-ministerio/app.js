@@ -2866,7 +2866,9 @@ function _lhRenderLista(lista) {
       .map(r => `<span class="vm-rol-chip" style="background:rgba(90,163,217,0.12);color:#5BA3D9;border-color:rgba(90,163,217,0.3);">${esc(_lhRolLabel(r))}</span>`).join('');
     const vmChips = (h.roles || []).filter(r => r.startsWith('VM_'))
       .map(r => `<span class="vm-rol-chip">${esc(_lhRolLabel(r))}</span>`).join('');
-    const chips = (asignChips + vmChips) || '<span style="font-size:11px;color:var(--text-muted);">Sin roles</span>';
+    const inactivoChip = h.activo === false
+      ? '<span class="vm-inactivo-chip">🚫 Inactivo</span>' : '';
+    const chips = (inactivoChip + asignChips + vmChips) || '<span style="font-size:11px;color:var(--text-muted);">Sin roles</span>';
     const sexoChip = h.sexo === 'H'
       ? `<span class="chip-sexo chip-sexo-h" onclick="event.stopPropagation();toggleSexoVM('${h.id}','H')" title="Hombre — clic para cambiar">♂</span>`
       : h.sexo === 'M'
@@ -2890,13 +2892,15 @@ function _lhRenderLista(lista) {
 function _lhFiltrar() {
   const q   = norm(document.getElementById('lh-search')?.value || '');
   const rol = document.getElementById('lh-rol')?.value || '';
-  _lhRenderLista(publicadores.filter(h =>
-    h.activo !== false &&
-    (!q   || norm(h.nombre).includes(q)) &&
-    (!rol || (rol === '__sin_roles__'
-      ? (h.roles || []).length === 0
-      : (h.roles || []).includes(rol)))
-  ));
+  const verInactivos = rol === '__inactivos__';
+  _lhRenderLista(publicadores.filter(h => {
+    const activo = h.activo !== false;
+    if (verInactivos ? activo : !activo) return false;          // activos vs inactivos
+    if (q && !norm(h.nombre).includes(q)) return false;          // búsqueda
+    if (rol === '__sin_roles__') return (h.roles || []).length === 0;
+    if (rol && !verInactivos) return (h.roles || []).includes(rol);
+    return true;
+  }));
 }
 
 window.filtrarListaHermanosVM = _lhFiltrar;
@@ -3015,6 +3019,8 @@ window.abrirNuevoVM = function() {
   _lhRenderSexoBtns();
   _lhActualizarRolesSegunSexo();
   _lhRenderNoDisp();
+  const btnAct = document.getElementById('lh-btn-activo');
+  if (btnAct) btnAct.style.display = 'none';
   document.getElementById('lh-modal-nav-row').style.display = 'none';
   document.getElementById('modal-hermano-vm').style.display = 'flex';
   document.getElementById('lh-modal-nombre').focus();
@@ -3038,6 +3044,13 @@ window.abrirEditarVM = function(id) {
   _lhActualizarRolesSegunSexo();
   _lhRenderNoDisp();
   _lhActualizarNavModal(id);
+  const btnAct = document.getElementById('lh-btn-activo');
+  if (btnAct) {
+    const activo = h.activo !== false;
+    btnAct.style.display = '';
+    btnAct.textContent = activo ? 'Desactivar hermano' : '↩ Reactivar hermano';
+    btnAct.classList.toggle('btn-reactivar', !activo);
+  }
   document.getElementById('modal-hermano-vm').style.display = 'flex';
 };
 
@@ -3107,6 +3120,33 @@ window.guardarHermanoVM = async function() {
   const ok = await _lhGuardarSilencioso();
   if (ok) { cerrarModalHermanoVM(); _lhFiltrar(); uiToast('Guardado', 'success'); }
   else     { status.style.color = '#F09595'; status.textContent = 'Error al guardar'; }
+};
+
+// Desactivar / reactivar — conserva el historial, oculta de lista y auto-asignación
+window.toggleActivoHermanoVM = async function() {
+  if (!_lhEditandoId) return;
+  const h = publicadores.find(p => p.id === _lhEditandoId);
+  if (!h) return;
+  const activo = h.activo !== false;
+  const ok = await uiConfirm({
+    title: activo ? 'Desactivar hermano' : 'Reactivar hermano',
+    msg: activo
+      ? `${esc(h.nombre)} dejará de aparecer en la lista y en la auto-asignación. Su historial se conserva y podés reactivarlo cuando quieras (filtro "Inactivos").`
+      : `${esc(h.nombre)} volverá a aparecer en la lista y en la auto-asignación.`,
+    confirmText: activo ? 'Desactivar' : 'Reactivar',
+    cancelText: 'Cancelar',
+    type: activo ? 'warn' : 'info',
+  });
+  if (!ok) return;
+  const data = activo ? { activo: false, bajaEn: fmtDate(new Date()) } : { activo: true, bajaEn: null };
+  try {
+    await updateDoc(doc(db, 'congregaciones', congreId, 'publicadores', _lhEditandoId), data);
+    const idx = publicadores.findIndex(p => p.id === _lhEditandoId);
+    if (idx >= 0) publicadores[idx] = { ...publicadores[idx], ...data };
+    cerrarModalHermanoVM();
+    _lhFiltrar();
+    uiToast(activo ? 'Hermano desactivado' : 'Hermano reactivado', 'success');
+  } catch(e) { uiToast('Error: ' + e.message, 'error'); }
 };
 
 window.confirmarEliminarVM = async function(id, nombre) {
