@@ -1009,21 +1009,35 @@ window.uiTimePicker = function({ value = '', label = 'Elegir hora' } = {}) {
 
 /* ─────────────────────────────────────────
    CONDUCTOR PICKER
-   uiConductorPicker({ conductores, value, label })
+   uiConductorPicker({ conductores, value, label, ordenPrioridad })
+   ordenPrioridad: array opcional de nombres en orden de prioridad. Si se pasa,
+   muestra un toggle "A–Z / A quién le toca" y un badge de rango en modo prioridad.
    Returns Promise<string|null>
 ───────────────────────────────────────── */
-window.uiConductorPicker = function({ conductores = [], value = '', label = 'Elegir conductor' } = {}) {
+window.uiConductorPicker = function({ conductores = [], value = '', label = 'Elegir conductor', ordenPrioridad = null } = {}) {
   return new Promise(resolve => {
     let sel = value;
     let query = '';
+    let modo = 'abc'; // 'abc' | 'prioridad'
+    const tienePrioridad = Array.isArray(ordenPrioridad) && ordenPrioridad.length > 0;
+    const prioPos  = new Map(tienePrioridad ? ordenPrioridad.map((n, i) => [n, i]) : []);
     const overlay = document.createElement('div');
     overlay.className = 'bs-overlay';
     document.body.appendChild(overlay);
 
+    function ordenar(list) {
+      if (modo !== 'prioridad' || !tienePrioridad) return list;
+      return [...list].sort((a, b) =>
+        (prioPos.has(a) ? prioPos.get(a) : 9999) - (prioPos.has(b) ? prioPos.get(b) : 9999));
+    }
+
     function filtered() {
-      if (!query) return conductores;
-      const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-      return conductores.filter(c => c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(q));
+      let list = conductores;
+      if (query) {
+        const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        list = conductores.filter(c => c.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(q));
+      }
+      return ordenar(list);
     }
 
     function renderList() {
@@ -1044,8 +1058,12 @@ window.uiConductorPicker = function({ conductores = [], value = '', label = 'Ele
               ? `<div class="cp-empty">Sin resultados</div>`
               : lista.map(c => {
                   const initials = c.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+                  const enPrio = modo === 'prioridad' && tienePrioridad;
+                  const rango = enPrio
+                    ? `<span class="cp-rank" style="min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;background:#185FA5;color:#fff;border-radius:50%;font-size:11px;font-weight:700;margin-right:8px;flex:0 0 auto;">${(prioPos.get(c) ?? 0) + 1}</span>`
+                    : '';
                   return `<button class="cp-item ${c===sel?'selected':''}" data-name="${c.replace(/"/g,'&quot;')}">
-                    <span class="cp-item-avatar">${initials}</span>
+                    ${enPrio ? rango : `<span class="cp-item-avatar">${initials}</span>`}
                     <span class="cp-item-name">${c}</span>
                     <span class="cp-item-check">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -1085,6 +1103,11 @@ window.uiConductorPicker = function({ conductores = [], value = '', label = 'Ele
           </span>
           <input class="cp-search-input" type="text" placeholder="Buscar..." autocomplete="off">
         </div>
+        ${tienePrioridad ? `
+        <div class="cp-orden-row" style="display:flex;gap:6px;padding:2px 4px 10px;">
+          <button type="button" class="cp-orden-btn" data-orden="abc" style="flex:1;padding:7px 0;border-radius:9px;border:1px solid var(--border-primary,#333);background:transparent;color:var(--text-muted,#999);font-family:inherit;font-size:13px;cursor:pointer;">A–Z</button>
+          <button type="button" class="cp-orden-btn" data-orden="prioridad" style="flex:1;padding:7px 0;border-radius:9px;border:1px solid var(--border-primary,#333);background:transparent;color:var(--text-muted,#999);font-family:inherit;font-size:13px;cursor:pointer;">★ A quién le toca</button>
+        </div>` : ''}
         <div class="cp-list"></div>
       </div>`;
 
@@ -1092,6 +1115,23 @@ window.uiConductorPicker = function({ conductores = [], value = '', label = 'Ele
     const searchInput = overlay.querySelector('.cp-search-input');
     searchInput.addEventListener('input', e => { query = e.target.value; renderList(); });
     setTimeout(() => searchInput.focus(), 80);
+
+    // Toggle de orden (solo si se pasó ordenPrioridad)
+    function pintarOrdenBtns() {
+      overlay.querySelectorAll('.cp-orden-btn').forEach(b => {
+        const activo = b.dataset.orden === modo;
+        b.style.background  = activo ? 'rgba(24,95,165,0.15)' : 'transparent';
+        b.style.borderColor = activo ? '#185FA5' : 'var(--border-primary,#333)';
+        b.style.color       = activo ? '#5BA3D9' : 'var(--text-muted,#999)';
+        b.style.fontWeight  = activo ? '600' : '400';
+      });
+    }
+    if (tienePrioridad) {
+      overlay.querySelectorAll('.cp-orden-btn').forEach(b => {
+        b.onclick = () => { modo = b.dataset.orden; pintarOrdenBtns(); renderList(); };
+      });
+      pintarOrdenBtns();
+    }
 
     overlay.querySelector('.bs-close-btn').onclick = () => { overlay.remove(); resolve(null); };
     overlay.addEventListener('click', e => { if (e.target===overlay){overlay.remove();resolve(null);} });

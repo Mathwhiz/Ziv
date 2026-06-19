@@ -1218,13 +1218,71 @@ window.onInstruccionChange = function(key, value) {
   }
 };
 
+// Orden de prioridad de los hermanos elegibles para un slot, usando el MISMO
+// criterio que la auto-asignación (rotación, descanso, privilegio, balance de
+// salas) en el contexto de la semana abierta. Devuelve un array de NOMBRES.
+// Las penalizaciones blandas (ya tiene parte esta semana, no disponible, sexo
+// distinto en ayudante) empujan a la persona abajo pero no la ocultan.
+function _ordenPrioridadNombresSlot(key) {
+  if (!semanaData) return null;
+  const rol = getRolParaSlot(key);
+  if (!rol) return null;
+  const elegibles = pubsConRol(rol);
+  const cola      = calcularColasVM()[rol] || [];
+  const posEnCola = new Map(cola.map((id, i) => [id, i]));
+  const stats     = calcularVmStats();
+  const fecha     = semanaData.fecha;
+
+  const todosSlots = construirSlotsOrdenados(semanaData);
+  const slot       = todosSlots.find(s => s.key === key);
+  const salaSlot   = slot ? slotSalaMinisterio(slot) : null;
+  const rolPriv    = ROLES_VM_SOLO_PRIVILEGIADO.includes(rol);
+
+  // Quiénes ya tienen alguna parte esta semana (excluyendo este mismo slot)
+  const enSemana = new Set();
+  todosSlots.forEach(s => {
+    if (s.key === key) return;
+    const pid = getSlotPubIdFromSemana(semanaData, s.key);
+    if (pid) enSemana.add(pid);
+  });
+
+  // Ayudante: preferir mismo sexo que el titular ya asignado
+  let sexoReq = null;
+  if (slot?.esAyudante) {
+    sexoReq = sexoDePub(getSlotPubIdFromSemana(semanaData, key.replace(/\.ayudante$/, '')));
+  }
+
+  const scored = elegibles.map(p => {
+    const cand = p.id;
+    let score = (posEnCola.has(cand) ? posEnCola.get(cand) : 9999) * 0.001;
+    if (rolPriv && !esPrivilegiadoPub(cand)) score += 100000;
+    const ult = stats.ultimaGlobal[cand];
+    if (ult) {
+      const d = _diasEntre(fecha, ult);
+      if (d < VM_DESCANSO_DIAS) score += 1000 + (VM_DESCANSO_DIAS - d);
+    }
+    if (salaSlot) {
+      const sc = stats.salaCount[cand] || { prin: 0, aux: 0 };
+      const diff = salaSlot === 'aux' ? (sc.aux - sc.prin) : (sc.prin - sc.aux);
+      if (diff > 0) score += VM_SALA_PESO * diff;
+    }
+    if (enSemana.has(cand)) score += 50000;
+    if (noDispEnSemana(cand, fecha)) score += 200000;
+    if (sexoReq) { const sc = sexoDePub(cand); if (sc && sc !== sexoReq) score += 300000; }
+    return { nombre: p.nombre, score };
+  });
+  scored.sort((a, b) => a.score - b.score || a.nombre.localeCompare(b.nombre));
+  return scored.map(s => s.nombre);
+}
+
 window.asignarSlot = async function(key) {
   const rol = getRolParaSlot(key);
   const conductores = rol ? pubNombresConRol(rol) : publicadores.filter(p => p.activo !== false).map(p => p.nombre);
+  const ordenPrioridad = rol ? _ordenPrioridadNombresSlot(key) : null;
   const currentId = getSlotPubId(key);
   const currentNombre = nombreDePub(currentId) || '';
 
-  const result = await uiConductorPicker({ conductores, value: currentNombre, label: 'Asignar hermano' });
+  const result = await uiConductorPicker({ conductores, value: currentNombre, label: 'Asignar hermano', ordenPrioridad });
   if (result === null) return;
 
   const pubId = result ? pubIdDeNombre(result) : null;
