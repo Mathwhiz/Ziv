@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../shared/styles-base.css">
-  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=2.7">
+  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=2.8">
 </head>
 <body>
 
@@ -296,10 +296,14 @@
         <button class="btn-nav-sem" id="btn-sem-next" onclick="navSemana(1)" title="Semana siguiente">›</button>
       </div>
       <div class="vm-action-bar" id="vm-action-bar">
-        <button class="btn-wol" onclick="reimportarDeWOL()">↓ WOL</button>
+        <button class="btn-wol" onclick="reimportarDeWOL()" title="Reimportar programa de WOL" aria-label="Reimportar de WOL">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+        </button>
         <button class="btn-primary" onclick="guardarSemana()">Guardar</button>
         <button class="btn-autocomplete" onclick="autocompletarHermanos()">✦ Auto</button>
-        <button id="btn-sheet-semana" class="btn-sheets-sm" style="display:none;" onclick="exportarSemanaActualASheets()">→ Sheets</button>
+        <button id="btn-sheet-semana" class="btn-sheets-sm" style="display:none;" onclick="exportarSemanaActualASheets()" title="Exportar a Excel (Google Sheets)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>Excel
+        </button>
         <button class="btn-s89" onclick="generarS89Semana()">S-89</button>
         <button class="btn-danger-outline btn-sm" onclick="eliminarSemanaActual()">Eliminar</button>
       </div>

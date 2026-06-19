@@ -217,12 +217,14 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 .guardar-btn { margin-top: 8px; }
 
 .btn-wol {
-  background: transparent; border: 1px solid rgba(239,159,39,0.3);
-  border-radius: 10px; color: #EF9F27; font-size: 13px; font-weight: 600;
+  background: #EF9F27; border: none;
+  border-radius: 10px; color: #1a1c1f; font-size: 13px; font-weight: 700;
   padding: 10px; cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  display: flex; align-items: center; justify-content: center;
+  transition: filter 0.15s;
 }
-.btn-wol:hover { background: rgba(239,159,39,0.08); border-color: rgba(239,159,39,0.6); }
+.btn-wol:hover { filter: brightness(1.08); }
+.btn-wol:active { filter: brightness(0.92); }
 .btn-danger-outline {
   background: transparent; border: 1px solid rgba(220,60,60,0.3);
   border-radius: 10px; color: #e05050; font-size: 13px; font-weight: 600;
@@ -245,19 +247,21 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 }
 .vm-action-bar button { flex: 1; margin: 0; }
 .btn-autocomplete {
-  background: rgba(127,119,221,0.1); border: 1px solid rgba(127,119,221,0.28);
-  border-radius: 10px; color: #7F77DD; font-size: 13px; font-weight: 600;
+  background: #378ADD; border: none;
+  border-radius: 10px; color: #fff; font-size: 13px; font-weight: 700;
   padding: 10px 8px; cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: filter 0.15s;
 }
-.btn-autocomplete:hover { background: rgba(127,119,221,0.2); border-color: rgba(127,119,221,0.6); }
+.btn-autocomplete:hover { filter: brightness(1.08); }
+.btn-autocomplete:active { filter: brightness(0.92); }
 .btn-s89 {
-  background: rgba(91,141,222,0.1); border: 1px solid rgba(91,141,222,0.3);
-  border-radius: 10px; color: #5B8DDE; font-size: 13px; font-weight: 600;
+  background: #D85A30; border: none;
+  border-radius: 10px; color: #fff; font-size: 13px; font-weight: 700;
   padding: 10px 8px; cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: filter 0.15s;
 }
-.btn-s89:hover { background: rgba(91,141,222,0.2); border-color: rgba(91,141,222,0.6); }
+.btn-s89:hover { filter: brightness(1.08); }
+.btn-s89:active { filter: brightness(0.92); }
 
 /* ── Tipo chip + instruccion (partes de ministerio) ── */
 .parte-tipo-row { margin-bottom: 5px; }
@@ -343,12 +347,14 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 
 /* ── Botón → Sheets en action bar de semana ── */
 .btn-sheets-sm {
-  background: rgba(29,158,117,0.1); border: 1px solid rgba(29,158,117,0.3); border-radius: 8px;
-  color: #5DCAA5; font-size: 12px; font-weight: 600; padding: 6px 10px;
+  background: #1D9E75; border: none; border-radius: 10px;
+  color: #fff; font-size: 13px; font-weight: 700; padding: 10px 8px;
   cursor: pointer; white-space: nowrap;
-  transition: background 0.15s;
+  display: flex; align-items: center; justify-content: center;
+  transition: filter 0.15s;
 }
-.btn-sheets-sm:hover { background: rgba(29,158,117,0.2); }
+.btn-sheets-sm:hover { filter: brightness(1.08); }
+.btn-sheets-sm:active { filter: brightness(0.92); }
 .btn-sheets-sm:disabled { opacity: 0.5; cursor: default; }
 
 /* ── S-89 Slip (réplica exacta del formulario) ── */

@@ -826,15 +826,11 @@ function renderSemanas(semanas) {
         </button>`;
       }
       if (vmScriptUrl) {
-        acciones += `<button class="vm-mes-action-btn vm-mes-sheets-btn" onclick="exportarMesASheets('${key}')" title="Exportar a Sheets">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Sheets
+        acciones += `<button class="vm-mes-action-btn vm-mes-sheets-btn" onclick="exportarMesASheets('${key}')" title="Exportar a Excel (Google Sheets)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+          Excel
         </button>`;
       }
-      acciones += `<button class="vm-mes-action-btn vm-mes-img-btn" onclick="exportarMesImagen('${key}')" title="Exportar como imagen">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        Img
-      </button>`;
       acciones += `<button class="vm-mes-action-btn vm-mes-s89-btn" onclick="generarS89('${key}')" title="Formulario S-89">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         S-89
