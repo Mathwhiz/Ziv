@@ -875,6 +875,8 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 }
 .btn-sexo.btn-sexo-h.btn-sexo-active { background: rgba(124,200,248,0.15); border-color: #7CC8F8; color: #7CC8F8; }
 .btn-sexo.btn-sexo-m.btn-sexo-active { background: rgba(247,159,203,0.15); border-color: #F79FCB; color: #F79FCB; }
+.btn-sala { font-size: 13px; }
+.btn-sala.btn-sala-active { background: rgba(151,196,89,0.15); border-color: #97C459; color: #97C459; }
 .modal-status { font-size: 12px; min-height: 16px; text-align: center; margin: 8px 0; color: var(--text-muted); }
 .modal-btns { display: flex; gap: 8px; margin-top: 4px; }
 

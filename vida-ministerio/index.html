@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../shared/styles-base.css">
-  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=2.9">
+  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=3.0">
 </head>
 <body>
 
@@ -436,14 +436,17 @@
         <button type="button" id="lh-btn-sexo-M" class="btn-sexo btn-sexo-m" onclick="selectSexoVM('M')">♀ Mujer</button>
       </div>
 
-      <div id="lh-seccion-asign">
-        <div style="margin-bottom:8px;margin-top:14px;">
-          <span class="roles-section-titulo roles-titulo-asign">Asignaciones</span>
+      <div id="lh-seccion-sala" style="display:none;">
+        <label class="modal-campo-label" style="margin-top:6px;">Sala en Ministerio</label>
+        <div class="sexo-row" style="margin-bottom:4px;">
+          <button type="button" id="lh-btn-sala-ambas" class="btn-sexo btn-sala" onclick="selectSalaVM('ambas')">Ambas</button>
+          <button type="button" id="lh-btn-sala-principal" class="btn-sexo btn-sala" onclick="selectSalaVM('principal')">Solo Principal</button>
+          <button type="button" id="lh-btn-sala-auxiliar" class="btn-sexo btn-sala" onclick="selectSalaVM('auxiliar')">Solo Auxiliar</button>
         </div>
-        <div class="roles-grid" id="lh-modal-roles-asign-grid" style="margin-bottom:18px;"></div>
+        <div class="lh-nodisp-hint">Por defecto el sistema equilibra ambas salas. Elegí una sola para fijarlo ahí.</div>
       </div>
 
-      <div style="margin-bottom:8px;">
+      <div style="margin-bottom:8px;margin-top:14px;">
         <span class="roles-section-titulo roles-titulo-vm">Vida y Ministerio</span>
       </div>
       <div class="roles-grid" style="margin-bottom:8px;">

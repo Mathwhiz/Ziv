@@ -32,9 +32,12 @@ const ROLES_VM_SOLO_VARON = [
 
 // Roles VM que además requieren privilegio (anciano o siervo ministerial).
 // La auto-asignación los prioriza fuertemente para estos roles.
+// NOTA: VM_MINISTERIO_DISCURSO NO va acá — el discurso de "Seamos Mejores
+// Maestros" es una parte de estudiante que puede dar cualquier varón capacitado
+// (≠ del Discurso de Tesoros de 10 min, que sí es VM_TESOROS y privilegiado).
 const ROLES_VM_SOLO_PRIVILEGIADO = [
   'VM_PRESIDENTE','VM_ORACION','VM_TESOROS','VM_JOYAS',
-  'VM_MINISTERIO_DISCURSO','VM_VIDA_CRISTIANA','VM_ESTUDIO_CONDUCTOR',
+  'VM_VIDA_CRISTIANA','VM_ESTUDIO_CONDUCTOR',
 ];
 
 // Tipo de parte ministerio → rol VM requerido
@@ -1786,6 +1789,9 @@ function calcularVmStats() {
   ROLES_VM.forEach(r => { ultimaPorRol[r.id] = {}; });
   const ultimaGlobal  = {};
   const cargaReciente = {};
+  // Balance de salas: cuántas veces cada hermano dio en Principal vs Auxiliar
+  // (solo cuenta slots de Ministerio, que es donde existe la sala auxiliar).
+  const salaCount = {}; // { pubId → { prin, aux } }
 
   const corte = new Date();
   corte.setDate(corte.getDate() - VM_CARGA_DIAS);
@@ -1801,10 +1807,15 @@ function calcularVmStats() {
       ultimaPorRol[slot.rolRequerido][pubId] = semana.fecha;
       if (!ultimaGlobal[pubId] || semana.fecha > ultimaGlobal[pubId]) ultimaGlobal[pubId] = semana.fecha;
       if (semana.fecha >= corteISO) cargaReciente[pubId] = (cargaReciente[pubId] || 0) + 1;
+      const sala = slotSalaMinisterio(slot);
+      if (sala) {
+        if (!salaCount[pubId]) salaCount[pubId] = { prin: 0, aux: 0 };
+        salaCount[pubId][sala]++;
+      }
     }
   }
 
-  _vmStatsCache = { version: ver, ultimaPorRol, ultimaGlobal, cargaReciente };
+  _vmStatsCache = { version: ver, ultimaPorRol, ultimaGlobal, cargaReciente, salaCount };
   return _vmStatsCache;
 }
 
@@ -1859,6 +1870,33 @@ function _diasEntre(isoA, isoB) {
 // parte en los últimos N días (se relaja si no hay alternativa).
 const VM_DESCANSO_DIAS = 21;
 
+// Peso de la preferencia de balance de salas (Principal vs Auxiliar).
+// Escalonado entre la rotación fina (≈0.001) y el descanso (≥1000): equilibra
+// las salas pero cede ante el descanso y el privilegio.
+const VM_SALA_PESO = 15;
+
+// Sala de un slot, SOLO para partes de Ministerio (único lugar con sala auxiliar).
+// Devuelve 'prin' | 'aux' | null (null = no aplica balance/fijado de sala).
+function slotSalaMinisterio(slot) {
+  if (!slot.key.startsWith('ministerio.')) return null;
+  return slot.esSalaAux ? 'aux' : 'prin';
+}
+
+// Sala fija configurada en la ficha del hermano (override manual).
+// publicadores/{id}.vmSala === 'principal' | 'auxiliar' (cualquier otra cosa = ambas).
+function salaFijaDePub(pubId) {
+  const p = publicadores.find(x => x.id === pubId);
+  const v = p?.vmSala;
+  return (v === 'principal' || v === 'auxiliar') ? v : null;
+}
+
+// Copia profunda de un mapa de conteo de salas { pubId → { prin, aux } }.
+function _clonSalaCount(src) {
+  const out = {};
+  for (const k in src) out[k] = { prin: src[k].prin, aux: src[k].aux };
+  return out;
+}
+
 // Asigna publicadores en slots de una semana.
 // colas: { rolId → [pubId, ...] } ordenadas por rotación de rol — se mutan in-place.
 // soloVacios: respeta slots ya asignados y solo rellena los null.
@@ -1872,10 +1910,14 @@ const VM_DESCANSO_DIAS = 21;
 //       privilegio en roles que lo requieren  (peso alto)
 //       descanso global: tuvo parte hace < VM_DESCANSO_DIAS  (peso medio)
 //       rotación por rol: orden en la cola  (desempate fino)
-function autoAsignarSemana(semana, colas, { soloVacios = false, ultimaGlobal = null } = {}) {
+function autoAsignarSemana(semana, colas, { soloVacios = false, ultimaGlobal = null, salaGlobal = null } = {}) {
   const slots = construirSlotsOrdenados(semana);
   const enEstaSemana = new Set();
-  const ultGlob = ultimaGlobal || { ...calcularVmStats().ultimaGlobal };
+  const _stats  = calcularVmStats();
+  const ultGlob = ultimaGlobal || { ..._stats.ultimaGlobal };
+  // Conteo de salas (Principal/Auxiliar) running — en generación masiva se comparte
+  // entre semanas para que el balance se acumule semana a semana.
+  const salaRun = salaGlobal || _clonSalaCount(_stats.salaCount);
 
   if (soloVacios) {
     for (const slot of slots) {
@@ -1906,6 +1948,7 @@ function autoAsignarSemana(semana, colas, { soloVacios = false, ultimaGlobal = n
     }
     const rolPriv = ROLES_VM_SOLO_PRIVILEGIADO.includes(rolId);
     const rolVaron = ROLES_VM_SOLO_VARON.includes(rolId);
+    const salaSlot = slotSalaMinisterio(slot); // 'prin' | 'aux' | null
 
     let mejor = null, mejorScore = Infinity, mejorPos = -1;
     for (let i = 0; i < cola.length; i++) {
@@ -1918,6 +1961,13 @@ function autoAsignarSemana(semana, colas, { soloVacios = false, ultimaGlobal = n
         const sc = sexoDePub(cand);
         if (sc && sc !== sexoRequerido) continue;
       }
+      // Sala fija del hermano (override manual, solo Ministerio): si está fijado a
+      // una sala, no se le asigna ningún slot de la otra.
+      if (salaSlot) {
+        const fija = salaFijaDePub(cand);
+        if (fija === 'principal' && salaSlot === 'aux')  continue;
+        if (fija === 'auxiliar'  && salaSlot === 'prin') continue;
+      }
       // ── Preferencias BLANDAS (puntaje) ──
       let score = i * 0.001; // desempate: respeta la rotación por rol de la cola
       if (rolPriv && !esPrivilegiadoPub(cand)) score += 100000;
@@ -1926,6 +1976,13 @@ function autoAsignarSemana(semana, colas, { soloVacios = false, ultimaGlobal = n
         const dias = _diasEntre(semana.fecha, ult);
         if (dias < VM_DESCANSO_DIAS) score += 1000 + (VM_DESCANSO_DIAS - dias);
       }
+      // Balance de salas: penaliza darle a alguien la sala en la que ya está
+      // sobre-representado, para que con el tiempo nadie quede atrapado en A o B.
+      if (salaSlot) {
+        const sc = salaRun[cand] || { prin: 0, aux: 0 };
+        const diff = salaSlot === 'aux' ? (sc.aux - sc.prin) : (sc.prin - sc.aux);
+        if (diff > 0) score += VM_SALA_PESO * diff;
+      }
       if (score < mejorScore) { mejorScore = score; mejor = cand; mejorPos = i; }
     }
 
@@ -1933,6 +1990,10 @@ function autoAsignarSemana(semana, colas, { soloVacios = false, ultimaGlobal = n
       setSlotPubIdOnSemana(semana, slot.key, mejor);
       enEstaSemana.add(mejor);
       ultGlob[mejor] = semana.fecha; // actualizar recencia global para slots/semanas siguientes
+      if (salaSlot) {
+        if (!salaRun[mejor]) salaRun[mejor] = { prin: 0, aux: 0 };
+        salaRun[mejor][salaSlot]++;
+      }
       cola.splice(mejorPos, 1);
       cola.push(mejor);
     }
@@ -2012,6 +2073,8 @@ window.crearSemana = async function() {
   const colasAA       = autoAsignar ? calcularColasVM() : null;
   // Recencia global compartida entre las semanas del lote (para el descanso)
   const ultGlobAA     = autoAsignar ? { ...calcularVmStats().ultimaGlobal } : null;
+  // Conteo de salas compartido entre las semanas del lote (para el balance A/B)
+  const salaGlobAA    = autoAsignar ? _clonSalaCount(calcularVmStats().salaCount) : null;
 
   let primeraFecha = null;
 
@@ -2073,7 +2136,7 @@ window.crearSemana = async function() {
 
     // Auto-asignar hermanos si está activo
     if (autoAsignar && colasAA && !debeSkipAutoAsignar(fecha)) {
-      autoAsignarSemana(semanaData, colasAA, { ultimaGlobal: ultGlobAA });
+      autoAsignarSemana(semanaData, colasAA, { ultimaGlobal: ultGlobAA, salaGlobal: salaGlobAA });
     }
 
     // Guardar en Firestore
@@ -2771,6 +2834,7 @@ let _lhEditandoId        = null;
 let _lhModalSexo         = null;
 let _lhModalPrivilegiado = false; // true si el pub tiene ANCIANO o SIERVO_MINISTERIAL
 let _lhModalNoDisp       = []; // Mejora C — fechas (lunes ISO) en que el hermano no está disponible
+let _lhModalSala         = null; // override de sala fija en Ministerio: 'principal' | 'auxiliar' | null (ambas)
 
 function _lhRolLabel(id) {
   return LH_TODOS_ROLES.find(r => r.id === id)?.label || id;
@@ -2787,13 +2851,9 @@ window.goToListaHermanos = async function() {
   document.getElementById('lista-hermanos-sub').textContent = congreNombre || '—';
   document.getElementById('lh-search').value = '';
   document.getElementById('lh-rol').value = '';
-  // Construir checkboxes de asignaciones (sin grupos, simplificado)
-  const grid = document.getElementById('lh-modal-roles-asign-grid');
-  if (grid && !grid.children.length) {
-    grid.innerHTML = LH_ROLES_ASIGN.map(r =>
-      `<label class="rol-checkbox"><input type="checkbox" id="lhcb-${r.id}"><span>${r.label}</span></label>`
-    ).join('');
-  }
+  // VM solo edita roles de la Escuela (VM_*). Los roles de Asignaciones y
+  // privilegio (anciano/siervo/conductores) se gestionan en Administrador y
+  // se preservan intactos al guardar desde acá.
   _lhFiltrar();
   showView('view-lista-hermanos');
 };
@@ -2922,6 +2982,22 @@ function _lhRenderSexoBtns() {
   });
 }
 
+// Selector de sala fija (override de Ministerio). Solo se muestra si tieneAuxiliar.
+function _lhRenderSalaBtns() {
+  const sec = document.getElementById('lh-seccion-sala');
+  if (sec) sec.style.display = tieneAuxiliar ? '' : 'none';
+  const map = { ambas: null, principal: 'principal', auxiliar: 'auxiliar' };
+  Object.entries(map).forEach(([key, val]) => {
+    document.getElementById('lh-btn-sala-' + key)
+      ?.classList.toggle('btn-sala-active', _lhModalSala === val);
+  });
+}
+
+window.selectSalaVM = function(val) {
+  _lhModalSala = (val === 'principal' || val === 'auxiliar') ? val : null;
+  _lhRenderSalaBtns();
+};
+
 // Roles VM que requieren ser varón (alias de la constante canónica de arriba)
 const LH_ROLES_SOLO_VARON = ROLES_VM_SOLO_VARON;
 // Roles VM que además requieren ser anciano o siervo ministerial
@@ -2930,16 +3006,6 @@ const LH_ROLES_SOLO_PRIVILEGIADO = ROLES_VM_SOLO_PRIVILEGIADO;
 function _lhActualizarRolesSegunSexo() {
   const esMujer = _lhModalSexo === 'M';
   const esVaronNoPriv = _lhModalSexo === 'H' && !_lhModalPrivilegiado;
-
-  // Sección entera de Asignaciones (solo mujeres no pueden)
-  const seccionAsign = document.getElementById('lh-seccion-asign');
-  if (seccionAsign) seccionAsign.style.display = esMujer ? 'none' : '';
-  if (esMujer) {
-    LH_ROLES_ASIGN.forEach(r => {
-      const cb = document.getElementById('lhcb-' + r.id);
-      if (cb) cb.checked = false;
-    });
-  }
 
   // Roles VM solo para varón
   LH_ROLES_SOLO_VARON.forEach(rolId => {
@@ -3009,14 +3075,16 @@ window.abrirNuevoVM = function() {
   _lhModalSexo         = null;
   _lhModalPrivilegiado = false;
   _lhModalNoDisp       = [];
+  _lhModalSala         = null;
   document.getElementById('lh-modal-titulo').textContent = 'Nuevo hermano';
   document.getElementById('lh-modal-nombre').value = '';
   document.getElementById('lh-modal-status').textContent = '';
-  LH_TODOS_ROLES.forEach(r => {
+  LH_ROLES_VM.forEach(r => {
     const cb = document.getElementById('lhcb-' + r.id);
     if (cb) cb.checked = false;
   });
   _lhRenderSexoBtns();
+  _lhRenderSalaBtns();
   _lhActualizarRolesSegunSexo();
   _lhRenderNoDisp();
   const btnAct = document.getElementById('lh-btn-activo');
@@ -3033,14 +3101,16 @@ window.abrirEditarVM = function(id) {
   _lhModalSexo         = h.sexo || null;
   _lhModalPrivilegiado = (h.roles || []).some(r => r === 'ANCIANO' || r === 'SIERVO_MINISTERIAL');
   _lhModalNoDisp       = Array.isArray(h.noDisponible) ? [...h.noDisponible] : [];
+  _lhModalSala         = (h.vmSala === 'principal' || h.vmSala === 'auxiliar') ? h.vmSala : null;
   document.getElementById('lh-modal-titulo').textContent = esc(h.nombre);
   document.getElementById('lh-modal-nombre').value = h.nombre;
   document.getElementById('lh-modal-status').textContent = '';
-  LH_TODOS_ROLES.forEach(r => {
+  LH_ROLES_VM.forEach(r => {
     const cb = document.getElementById('lhcb-' + r.id);
     if (cb) cb.checked = (h.roles || []).includes(r.id);
   });
   _lhRenderSexoBtns();
+  _lhRenderSalaBtns();
   _lhActualizarRolesSegunSexo();
   _lhRenderNoDisp();
   _lhActualizarNavModal(id);
@@ -3059,19 +3129,26 @@ window.cerrarModalHermanoVM = function() {
   _lhEditandoId = null;
 };
 
+// Roles a guardar desde la ficha VM: toma los VM_* marcados en el form y
+// PRESERVA intactos todos los roles no-VM (asignaciones, anciano/siervo,
+// conductores, superintendente) — esos se gestionan en Administrador.
+function _lhRolesParaGuardar(existingRoles) {
+  const seleccionVM = LH_ROLES_VM
+    .filter(r => document.getElementById('lhcb-' + r.id)?.checked)
+    .map(r => r.id);
+  const otros = (existingRoles || []).filter(rid => !rid.startsWith('VM_'));
+  return [...otros, ...seleccionVM];
+}
+
 async function _lhGuardarSilencioso() {
   if (!_lhEditandoId) return true;
   const nombre = document.getElementById('lh-modal-nombre').value.trim();
   if (!nombre) return false;
-  const roles = LH_TODOS_ROLES
-    .filter(r => document.getElementById('lhcb-' + r.id)?.checked)
-    .map(r => r.id);
-  const data = { nombre, roles, noDisponible: _lhModalNoDisp };
+  const existing = publicadores.find(p => p.id === _lhEditandoId);
+  const roles = _lhRolesParaGuardar(existing?.roles);
+  const data = { nombre, roles, noDisponible: _lhModalNoDisp, vmSala: _lhModalSala || null };
   if (_lhModalSexo) data.sexo = _lhModalSexo;
-  else {
-    const existing = publicadores.find(p => p.id === _lhEditandoId);
-    if (existing?.sexo) data.sexo = null;
-  }
+  else if (existing?.sexo) data.sexo = null;
   try {
     await updateDoc(doc(db, 'congregaciones', congreId, 'publicadores', _lhEditandoId), data);
     const idx = publicadores.findIndex(p => p.id === _lhEditandoId);
@@ -3100,11 +3177,10 @@ window.guardarHermanoVM = async function() {
   const status = document.getElementById('lh-modal-status');
   status.style.color = '#888'; status.textContent = 'Guardando…';
   if (!_lhEditandoId) {
-    const roles = LH_TODOS_ROLES
-      .filter(r => document.getElementById('lhcb-' + r.id)?.checked)
-      .map(r => r.id);
+    const roles = _lhRolesParaGuardar(null);
     const data = { nombre, roles, activo: true, noDisponible: _lhModalNoDisp };
     if (_lhModalSexo) data.sexo = _lhModalSexo;
+    if (_lhModalSala) data.vmSala = _lhModalSala;
     try {
       const ref = await addDoc(_lhPubCol(), data);
       publicadores.push({ id: ref.id, ...data });
