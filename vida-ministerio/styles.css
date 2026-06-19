@@ -301,13 +301,15 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 /* ── Encabezado de mes con acciones ── */
 .semanas-mes-hdr-row {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  margin: 22px 0 10px;
-  border-left: 3px solid #EF9F27; padding-left: 10px;
+  margin: 22px 0 12px;
 }
 .semanas-mes-hdr-row:first-child { margin-top: 4px; }
 .semanas-mes-hdr-txt {
-  font-size: 15px; font-weight: 800; color: var(--text-secondary); letter-spacing: 0.08em;
+  font-size: 14px; font-weight: 800; letter-spacing: 0.08em;
   text-transform: uppercase; flex-shrink: 0;
+  background: #EF9F27; color: #1a1c1f;
+  padding: 6px 13px; border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(239,159,39,0.25);
 }
 .semanas-mes-acciones {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
@@ -945,6 +947,14 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 
   /* Filas de la vista Carga: más aire */
   .vm-carga-row { padding: 12px 16px; }
+
+  /* Header de mes y sus botones más grandes en PC */
+  .semanas-mes-hdr-txt { font-size: 16px; padding: 7px 15px; }
+  .semanas-mes-acciones { gap: 8px; }
+  .vm-mes-aux-btn,
+  .vm-mes-action-btn { font-size: 13px; padding: 7px 13px; gap: 6px; }
+  .vm-mes-aux-btn svg,
+  .vm-mes-action-btn svg { width: 14px; height: 14px; }
 }
 
 /* Pantallas grandes: un poco más de ancho todavía */
