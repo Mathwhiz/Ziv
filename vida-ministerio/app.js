@@ -30,6 +30,13 @@ const ROLES_VM_SOLO_VARON = [
   'VM_MINISTERIO_DISCURSO','VM_VIDA_CRISTIANA','VM_ESTUDIO_CONDUCTOR',
 ];
 
+// Roles VM que además requieren privilegio (anciano o siervo ministerial).
+// La auto-asignación los prioriza fuertemente para estos roles.
+const ROLES_VM_SOLO_PRIVILEGIADO = [
+  'VM_PRESIDENTE','VM_ORACION','VM_TESOROS','VM_JOYAS',
+  'VM_MINISTERIO_DISCURSO','VM_VIDA_CRISTIANA','VM_ESTUDIO_CONDUCTOR',
+];
+
 // Tipo de parte ministerio → rol VM requerido
 const TIPO_MIN_ROL = {
   'conversacion':   'VM_MINISTERIO_CONVERSACION',
@@ -1837,14 +1844,39 @@ function noDispEnSemana(pubId, fechaLunes) {
   return !!(p && Array.isArray(p.noDisponible) && p.noDisponible.includes(fechaLunes));
 }
 
-// Asigna publicadores en slots de una semana usando las colas de round-robin.
-// colas: { rolId → [pubId, ...] } — se mutan in-place (el asignado pasa al final).
-// soloVacios: si true, respeta los slots ya asignados y solo rellena los null.
-function autoAsignarSemana(semana, colas, { soloVacios = false } = {}) {
+// ¿El hermano es anciano o siervo ministerial?
+function esPrivilegiadoPub(pubId) {
+  const p = publicadores.find(x => x.id === pubId);
+  return !!(p && (p.roles || []).some(r => r === 'ANCIANO' || r === 'SIERVO_MINISTERIAL'));
+}
+
+// Días entre dos fechas ISO (YYYY-MM-DD)
+function _diasEntre(isoA, isoB) {
+  return Math.abs(new Date(isoA + 'T12:00:00') - new Date(isoB + 'T12:00:00')) / 86400000;
+}
+
+// Ventana de "descanso": se intenta no repetir a alguien que tuvo cualquier
+// parte en los últimos N días (se relaja si no hay alternativa).
+const VM_DESCANSO_DIAS = 21;
+
+// Asigna publicadores en slots de una semana.
+// colas: { rolId → [pubId, ...] } ordenadas por rotación de rol — se mutan in-place.
+// soloVacios: respeta slots ya asignados y solo rellena los null.
+// ultimaGlobal: { pubId → fechaISO } última parte de cualquier rol; se actualiza in-place
+//   (en generación masiva se comparte entre semanas para acumular el "descanso").
+//
+// Selección por PUNTAJE (menor = mejor):
+//   · Restricciones DURAS (descartan): ya asignado esta semana, no disponible,
+//     sexo inválido (mujer en rol solo-varón / ayudante de distinto sexo).
+//   · Preferencias BLANDAS (suman puntaje, se relajan solas si no hay alternativa):
+//       privilegio en roles que lo requieren  (peso alto)
+//       descanso global: tuvo parte hace < VM_DESCANSO_DIAS  (peso medio)
+//       rotación por rol: orden en la cola  (desempate fino)
+function autoAsignarSemana(semana, colas, { soloVacios = false, ultimaGlobal = null } = {}) {
   const slots = construirSlotsOrdenados(semana);
   const enEstaSemana = new Set();
+  const ultGlob = ultimaGlobal || { ...calcularVmStats().ultimaGlobal };
 
-  // Pre-cargar en el Set los ya asignados para no repetirlos en slots libres
   if (soloVacios) {
     for (const slot of slots) {
       const actual = getSlotPubIdFromSemana(semana, slot.key);
@@ -1859,7 +1891,6 @@ function autoAsignarSemana(semana, colas, { soloVacios = false } = {}) {
     if (presidenteEsOradorFinal && slot.key === 'oracionCierre') {
       const presId = getSlotPubIdFromSemana(semana, 'presidente');
       if (presId) setSlotPubIdOnSemana(semana, 'oracionCierre', presId);
-      // No agregamos al Set para no bloquear al presidente en otros slots
       continue;
     }
 
@@ -1867,43 +1898,43 @@ function autoAsignarSemana(semana, colas, { soloVacios = false } = {}) {
     const cola = colas[rolId];
     if (!cola || cola.length === 0) continue;
 
-    // Para ayudantes: el principal ya fue asignado en esta misma iteración,
-    // así que lo leemos desde semana y exigimos mismo sexo.
+    // Ayudante: debe coincidir el sexo con el titular ya asignado.
     let sexoRequerido = null;
     if (slot.esAyudante) {
       const principalKey = slot.key.replace(/\.ayudante$/, '');
-      const principalId = getSlotPubIdFromSemana(semana, principalKey);
-      sexoRequerido = sexoDePub(principalId); // null si el principal no tiene sexo definido
+      sexoRequerido = sexoDePub(getSlotPubIdFromSemana(semana, principalKey));
     }
+    const rolPriv = ROLES_VM_SOLO_PRIVILEGIADO.includes(rolId);
+    const rolVaron = ROLES_VM_SOLO_VARON.includes(rolId);
 
-    // Buscar el primero de la cola que cumpla todas las restricciones
-    let asignado = null;
-    let posUsada = -1;
+    let mejor = null, mejorScore = Infinity, mejorPos = -1;
     for (let i = 0; i < cola.length; i++) {
-      const candidato = cola[i];
-      if (enEstaSemana.has(candidato)) continue;
-      // Mejora C: saltear hermanos marcados no disponibles esta semana
-      if (noDispEnSemana(candidato, semana.fecha)) continue;
-      // Fix #1: roles de solo varón nunca pueden ser ocupados por una mujer explícita
-      // (red de seguridad — aplica tanto al titular como al ayudante del rol)
-      if (ROLES_VM_SOLO_VARON.includes(rolId) && sexoDePub(candidato) === 'M') continue;
-      // Restricción de género: si el principal tiene sexo definido y el candidato también,
-      // deben coincidir. Si alguno no tiene sexo definido, se permite.
+      const cand = cola[i];
+      // ── Restricciones DURAS ──
+      if (enEstaSemana.has(cand)) continue;
+      if (noDispEnSemana(cand, semana.fecha)) continue;
+      if (rolVaron && sexoDePub(cand) === 'M') continue;
       if (sexoRequerido) {
-        const sexoCandidato = sexoDePub(candidato);
-        if (sexoCandidato && sexoCandidato !== sexoRequerido) continue;
+        const sc = sexoDePub(cand);
+        if (sc && sc !== sexoRequerido) continue;
       }
-      asignado = candidato;
-      posUsada = i;
-      break;
+      // ── Preferencias BLANDAS (puntaje) ──
+      let score = i * 0.001; // desempate: respeta la rotación por rol de la cola
+      if (rolPriv && !esPrivilegiadoPub(cand)) score += 100000;
+      const ult = ultGlob[cand];
+      if (ult) {
+        const dias = _diasEntre(semana.fecha, ult);
+        if (dias < VM_DESCANSO_DIAS) score += 1000 + (VM_DESCANSO_DIAS - dias);
+      }
+      if (score < mejorScore) { mejorScore = score; mejor = cand; mejorPos = i; }
     }
 
-    if (asignado) {
-      setSlotPubIdOnSemana(semana, slot.key, asignado);
-      enEstaSemana.add(asignado);
-      // Mover al final → el siguiente en recibir ese rol será el próximo de la cola
-      cola.splice(posUsada, 1);
-      cola.push(asignado);
+    if (mejor) {
+      setSlotPubIdOnSemana(semana, slot.key, mejor);
+      enEstaSemana.add(mejor);
+      ultGlob[mejor] = semana.fecha; // actualizar recencia global para slots/semanas siguientes
+      cola.splice(mejorPos, 1);
+      cola.push(mejor);
     }
   }
 }
@@ -1979,6 +2010,8 @@ window.crearSemana = async function() {
   const reemplazar    = document.getElementById('nueva-reemplazar').checked;
   const autoAsignar   = document.getElementById('nueva-auto-asignar').checked;
   const colasAA       = autoAsignar ? calcularColasVM() : null;
+  // Recencia global compartida entre las semanas del lote (para el descanso)
+  const ultGlobAA     = autoAsignar ? { ...calcularVmStats().ultimaGlobal } : null;
 
   let primeraFecha = null;
 
@@ -2040,7 +2073,7 @@ window.crearSemana = async function() {
 
     // Auto-asignar hermanos si está activo
     if (autoAsignar && colasAA && !debeSkipAutoAsignar(fecha)) {
-      autoAsignarSemana(semanaData, colasAA);
+      autoAsignarSemana(semanaData, colasAA, { ultimaGlobal: ultGlobAA });
     }
 
     // Guardar en Firestore
@@ -2888,10 +2921,7 @@ function _lhRenderSexoBtns() {
 // Roles VM que requieren ser varón (alias de la constante canónica de arriba)
 const LH_ROLES_SOLO_VARON = ROLES_VM_SOLO_VARON;
 // Roles VM que además requieren ser anciano o siervo ministerial
-const LH_ROLES_SOLO_PRIVILEGIADO = [
-  'VM_PRESIDENTE','VM_ORACION','VM_TESOROS','VM_JOYAS',
-  'VM_MINISTERIO_DISCURSO','VM_VIDA_CRISTIANA','VM_ESTUDIO_CONDUCTOR'
-];
+const LH_ROLES_SOLO_PRIVILEGIADO = ROLES_VM_SOLO_PRIVILEGIADO;
 
 function _lhActualizarRolesSegunSexo() {
   const esMujer = _lhModalSexo === 'M';
