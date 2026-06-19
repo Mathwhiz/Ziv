@@ -1218,16 +1218,40 @@ window.onInstruccionChange = function(key, value) {
   }
 };
 
-// Orden de prioridad de los hermanos elegibles para un slot, usando el MISMO
-// criterio que la auto-asignación (rotación, descanso, privilegio, balance de
-// salas) en el contexto de la semana abierta. Devuelve un array de NOMBRES.
-// Las penalizaciones blandas (ya tiene parte esta semana, no disponible, sexo
-// distinto en ayudante) empujan a la persona abajo pero no la ocultan.
-function _ordenPrioridadNombresSlot(key) {
+// Hermanos elegibles para un slot, con filtros DUROS (no se muestran los demás):
+//   · Rol (pubsConRol ya excluye mujeres en roles solo-varón).
+//   · Privilegio: en roles privilegiados, solo anciano/siervo ministerial.
+//     Con fallback: si nadie privilegiado tiene el rol, se muestran todos.
+//   · Sexo del ayudante: debe coincidir con el titular ya asignado (sin fallback;
+//     mujer→solo mujeres, varón→solo varones). Sexo desconocido (null) pasa.
+// Devuelve array de pubs.
+function _elegiblesParaSlot(key) {
+  const rol = getRolParaSlot(key);
+  let base = rol ? pubsConRol(rol) : publicadores.filter(p => p.activo !== false);
+
+  // Privilegio (con fallback si no hay ninguno privilegiado con el rol)
+  if (rol && ROLES_VM_SOLO_PRIVILEGIADO.includes(rol)) {
+    const priv = base.filter(p => esPrivilegiadoPub(p.id));
+    if (priv.length) base = priv;
+  }
+
+  // Ayudante: mismo sexo que el titular ya asignado
+  if (key.endsWith('.ayudante') && semanaData) {
+    const sexoReq = sexoDePub(getSlotPubIdFromSemana(semanaData, key.replace(/\.ayudante$/, '')));
+    if (sexoReq) base = base.filter(p => !p.sexo || p.sexo === sexoReq);
+  }
+  return base;
+}
+
+// Orden de prioridad (mismo criterio que la auto-asignación: rotación, descanso,
+// balance de salas) sobre el conjunto YA filtrado de elegibles. Las penalizaciones
+// blandas (ya tiene parte esta semana, no disponible) empujan abajo sin ocultar.
+// Devuelve un array de NOMBRES.
+function _ordenPrioridadNombresSlot(key, elegibles) {
   if (!semanaData) return null;
   const rol = getRolParaSlot(key);
   if (!rol) return null;
-  const elegibles = pubsConRol(rol);
+  const lista     = elegibles || _elegiblesParaSlot(key);
   const cola      = calcularColasVM()[rol] || [];
   const posEnCola = new Map(cola.map((id, i) => [id, i]));
   const stats     = calcularVmStats();
@@ -1236,7 +1260,6 @@ function _ordenPrioridadNombresSlot(key) {
   const todosSlots = construirSlotsOrdenados(semanaData);
   const slot       = todosSlots.find(s => s.key === key);
   const salaSlot   = slot ? slotSalaMinisterio(slot) : null;
-  const rolPriv    = ROLES_VM_SOLO_PRIVILEGIADO.includes(rol);
 
   // Quiénes ya tienen alguna parte esta semana (excluyendo este mismo slot)
   const enSemana = new Set();
@@ -1246,16 +1269,9 @@ function _ordenPrioridadNombresSlot(key) {
     if (pid) enSemana.add(pid);
   });
 
-  // Ayudante: preferir mismo sexo que el titular ya asignado
-  let sexoReq = null;
-  if (slot?.esAyudante) {
-    sexoReq = sexoDePub(getSlotPubIdFromSemana(semanaData, key.replace(/\.ayudante$/, '')));
-  }
-
-  const scored = elegibles.map(p => {
+  const scored = lista.map(p => {
     const cand = p.id;
     let score = (posEnCola.has(cand) ? posEnCola.get(cand) : 9999) * 0.001;
-    if (rolPriv && !esPrivilegiadoPub(cand)) score += 100000;
     const ult = stats.ultimaGlobal[cand];
     if (ult) {
       const d = _diasEntre(fecha, ult);
@@ -1268,7 +1284,6 @@ function _ordenPrioridadNombresSlot(key) {
     }
     if (enSemana.has(cand)) score += 50000;
     if (noDispEnSemana(cand, fecha)) score += 200000;
-    if (sexoReq) { const sc = sexoDePub(cand); if (sc && sc !== sexoReq) score += 300000; }
     return { nombre: p.nombre, score };
   });
   scored.sort((a, b) => a.score - b.score || a.nombre.localeCompare(b.nombre));
@@ -1277,8 +1292,9 @@ function _ordenPrioridadNombresSlot(key) {
 
 window.asignarSlot = async function(key) {
   const rol = getRolParaSlot(key);
-  const conductores = rol ? pubNombresConRol(rol) : publicadores.filter(p => p.activo !== false).map(p => p.nombre);
-  const ordenPrioridad = rol ? _ordenPrioridadNombresSlot(key) : null;
+  const elegibles = _elegiblesParaSlot(key);
+  const conductores = elegibles.map(p => p.nombre);
+  const ordenPrioridad = rol ? _ordenPrioridadNombresSlot(key, elegibles) : null;
   const currentId = getSlotPubId(key);
   const currentNombre = nombreDePub(currentId) || '';
 
