@@ -24,6 +24,12 @@ const ROLES_VM = [
   { id: 'VM_ESTUDIO_CONDUCTOR',         label: 'Conductor Estudio' },
 ];
 
+// Roles VM que requieren ser varón (mujeres nunca pueden ocuparlos)
+const ROLES_VM_SOLO_VARON = [
+  'VM_PRESIDENTE','VM_ORACION','VM_TESOROS','VM_JOYAS','VM_LECTURA',
+  'VM_MINISTERIO_DISCURSO','VM_VIDA_CRISTIANA','VM_ESTUDIO_CONDUCTOR',
+];
+
 // Tipo de parte ministerio → rol VM requerido
 const TIPO_MIN_ROL = {
   'conversacion':   'VM_MINISTERIO_CONVERSACION',
@@ -254,10 +260,13 @@ function esc(s) {
 //   PUBLICADORES
 // ─────────────────────────────────────────
 function pubsConRol(rol) {
-  const filtrados = publicadores.filter(p => p.activo !== false && (p.roles || []).includes(rol));
+  let base = publicadores.filter(p => p.activo !== false && (p.roles || []).includes(rol));
   // Fallback a todos los activos si nadie tiene ese rol VM todavía
-  if (filtrados.length === 0) return publicadores.filter(p => p.activo !== false);
-  return filtrados;
+  if (base.length === 0) base = publicadores.filter(p => p.activo !== false);
+  // Roles de solo varón: nunca incluir mujeres explícitas (sexo === 'M'),
+  // ni siquiera vía fallback. Evita asignar una hermana a Lectura/Tesoros/etc.
+  if (ROLES_VM_SOLO_VARON.includes(rol)) base = base.filter(p => p.sexo !== 'M');
+  return base;
 }
 
 function pubNombresConRol(rol) {
@@ -1658,7 +1667,11 @@ function construirSlotsOrdenados(semana) {
     slots.push({ key: `vidaCristiana.${i}`, rolRequerido: 'VM_VIDA_CRISTIANA' });
   });
 
-  slots.push({ key: 'estudio.conductor', rolRequerido: 'VM_ESTUDIO_CONDUCTOR' });
+  // Fix #2: en la semana del superintendente el estudio se reemplaza por su
+  // discurso → no hay conductor de estudio que asignar/validar/contar.
+  if (vmEspeciales[semana.fecha]?.tipo !== 'superintendente') {
+    slots.push({ key: 'estudio.conductor', rolRequerido: 'VM_ESTUDIO_CONDUCTOR' });
+  }
 
   return slots;
 }
@@ -1875,6 +1888,9 @@ function autoAsignarSemana(semana, colas, { soloVacios = false } = {}) {
       if (enEstaSemana.has(candidato)) continue;
       // Mejora C: saltear hermanos marcados no disponibles esta semana
       if (noDispEnSemana(candidato, semana.fecha)) continue;
+      // Fix #1: roles de solo varón nunca pueden ser ocupados por una mujer explícita
+      // (red de seguridad — aplica tanto al titular como al ayudante del rol)
+      if (ROLES_VM_SOLO_VARON.includes(rolId) && sexoDePub(candidato) === 'M') continue;
       // Restricción de género: si el principal tiene sexo definido y el candidato también,
       // deben coincidir. Si alguno no tiene sexo definido, se permite.
       if (sexoRequerido) {
@@ -2873,11 +2889,8 @@ function _lhRenderSexoBtns() {
   });
 }
 
-// Roles VM que requieren ser varón
-const LH_ROLES_SOLO_VARON = [
-  'VM_PRESIDENTE','VM_ORACION','VM_TESOROS','VM_JOYAS','VM_LECTURA',
-  'VM_MINISTERIO_DISCURSO','VM_VIDA_CRISTIANA','VM_ESTUDIO_CONDUCTOR'
-];
+// Roles VM que requieren ser varón (alias de la constante canónica de arriba)
+const LH_ROLES_SOLO_VARON = ROLES_VM_SOLO_VARON;
 // Roles VM que además requieren ser anciano o siervo ministerial
 const LH_ROLES_SOLO_PRIVILEGIADO = [
   'VM_PRESIDENTE','VM_ORACION','VM_TESOROS','VM_JOYAS',
