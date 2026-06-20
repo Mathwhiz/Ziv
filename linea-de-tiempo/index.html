@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Línea de Tiempo</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #181818;
+    --bg3: #222222;
+    --border: #2e2e2e;
+    --text: #e8e4dc;
+    --text2: #888;
+    --text3: #555;
+    --accent: #c4a35a;
+    --accent2: #8b5cf6;
+    --radius: 10px;
+    --font-display: 'Lora', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 28px; border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .header-title { font-family: var(--font-display); font-size: 18px; font-weight: 600; letter-spacing: 0.01em; }
+  #ev-count { font-size: 12px; color: var(--text2); }
+
+  nav { display: flex; gap: 0; padding: 0 28px; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .tab { padding: 12px 18px; font-size: 13px; cursor: pointer; border: none; background: none; color: var(--text2); border-bottom: 2px solid transparent; transition: all 0.15s; font-family: var(--font-body); letter-spacing: 0.02em; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  .content { padding: 24px 28px; }
+
+  /* Cat pills */
+  .cat-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .cat-pill { padding: 5px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; font-weight: 500; letter-spacing: 0.03em; }
+  .cat-pill.all { background: var(--bg3); color: var(--text2); border-color: var(--border); }
+  .cat-pill.all.active { background: var(--accent); color: #0f0f0f; border-color: var(--accent); }
+
+  /* vis timeline dark styling */
+  #vis-container { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+  .vis-timeline { background: var(--bg2) !important; border: none !important; }
+  .vis-panel.vis-center, .vis-panel.vis-left, .vis-panel.vis-right,
+  .vis-panel.vis-top, .vis-panel.vis-bottom { border-color: var(--border) !important; }
+  .vis-time-axis .vis-text { color: var(--text2) !important; font-family: var(--font-body) !important; font-size: 11px !important; }
+  .vis-time-axis .vis-grid.vis-minor { border-color: var(--border) !important; }
+  .vis-time-axis .vis-grid.vis-major { border-color: #3a3a3a !important; }
+  .vis-label { color: var(--text2) !important; font-family: var(--font-body) !important; }
+  .vis-current-time { background: var(--accent) !important; opacity: 0.6; }
+
+  /* Toolbar */
+  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .toolbar-left { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .search-input, .filter-select {
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+    font-size: 13px; background: var(--bg2); color: var(--text); outline: none;
+    font-family: var(--font-body); transition: border 0.15s;
+  }
+  .search-input { width: 210px; }
+  .search-input:focus, .filter-select:focus { border-color: var(--accent); }
+
+  .btn-primary {
+    display: flex; align-items: center; gap: 6px; padding: 8px 16px;
+    background: var(--accent); color: #0f0f0f; border: none; border-radius: var(--radius);
+    font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-body); transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+
+  /* Card table */
+  .card-table { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 14px; font-weight: 500; font-size: 11px; color: var(--text3); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.07em; }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .color-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .btn-icon { background: none; border: none; cursor: pointer; padding: 5px 7px; border-radius: 6px; color: var(--text2); transition: all 0.15s; font-size: 14px; }
+  .btn-icon:hover { background: var(--bg3); color: var(--text); }
+  .btn-icon.danger:hover { color: #e05555; }
+  .empty-state { text-align: center; padding: 44px 20px; color: var(--text3); font-size: 13px; }
+
+  /* Modal */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(2px); }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--bg2); border-radius: 14px; border: 1px solid var(--border); padding: 28px; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 22px; color: var(--text); }
+  .form-group { margin-bottom: 15px; }
+  .form-label { display: block; font-size: 11px; font-weight: 500; color: var(--text2); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 13px; background: var(--bg3); color: var(--text);
+    outline: none; font-family: var(--font-body); transition: border 0.15s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+  .form-textarea { min-height: 70px; resize: vertical; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .year-group { display: flex; }
+  .year-group input { flex: 1; border-radius: 8px 0 0 8px; }
+  .year-group select { border-left: none; border-radius: 0 8px 8px 0; width: auto; min-width: 80px; background: var(--bg); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 22px; }
+  .btn-cancel { padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; background: none; color: var(--text); font-size: 13px; cursor: pointer; font-family: var(--font-body); }
+  .btn-cancel:hover { background: var(--bg3); }
+  .btn-save { padding: 8px 16px; background: var(--accent); color: #0f0f0f; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-body); }
+  .btn-save:hover { opacity: 0.85; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="header-icon">⏳</div>
+    <span class="header-title">Línea de Tiempo</span>
+  </div>
+  <span id="ev-count">0 eventos</span>
+</header>
+
+<nav>
+  <button class="tab active" onclick="switchTab('timeline')">🗓 Timeline</button>
+  <button class="tab" onclick="switchTab('eventos')">📋 Eventos</button>
+  <button class="tab" onclick="switchTab('categorias')">🏷 Categorías</button>
+</nav>
+
+<div class="content">
+
+  <!-- TIMELINE -->
+  <div id="tab-timeline">
+    <div class="cat-filters" id="cat-pills"></div>
+    <div id="vis-container" style="height:400px;"></div>
+    <p style="font-size:11px;color:var(--text3);margin-top:10px;text-align:center;">Arrastrá para navegar · Scroll para zoom · Clic en un evento para ver detalles</p>
+  </div>
+
+  <!-- EVENTOS -->
+  <div id="tab-eventos" style="display:none">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <input type="text" class="search-input" placeholder="Buscar eventos..." oninput="setSearch(this.value)" />
+        <select class="filter-select" id="filter-cat" onchange="setCatFilter(this.value)">
+          <option value="">Todas las categorías</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="openEventModal()">+ Nuevo evento</button>
+    </div>
+    <div class="card-table">
+      <table>
+        <thead><tr><th>Título</th><th>Inicio</th><th>Fin</th><th>Categoría</th><th></th></tr></thead>
+        <tbody id="events-tbody"></tbody>
+      </table>
+      <div class="empty-state" id="ev-empty" style="display:none">Sin eventos. ¡Creá el primero!</div>
+    </div>
+  </div>
+
+  <!-- CATEGORIAS -->
+  <div id="tab-categorias" style="display:none">
+    <div class="toolbar">
+      <span style="font-size:13px;color:var(--text2)">Administrá las categorías de tus eventos</span>
+      <button class="btn-primary" onclick="openCatModal()">+ Nueva categoría</button>
+    </div>
+    <div class="card-table">
+      <table>
+        <thead><tr><th>Nombre</th><th>Color</th><th>Eventos</th><th></th></tr></thead>
+        <tbody id="cats-tbody"></tbody>
+      </table>
+      <div class="empty-state" id="cat-empty" style="display:none">Sin categorías.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- EVENT MODAL -->
+<div class="modal-backdrop" id="event-modal" onclick="handleBdClick(event,'event-modal')">
+  <div class="modal">
+    <div class="modal-title" id="ev-modal-title">Nuevo evento</div>
+    <div class="form-group">
+      <label class="form-label">Título *</label>
+      <input type="text" class="form-input" id="f-title" placeholder="Nombre del evento" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descripción</label>
+      <textarea class="form-textarea" id="f-desc" placeholder="Descripción..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Año inicio *</label>
+        <div class="year-group">
+          <input type="number" class="form-input" id="f-start-year" placeholder="Ej: 33" min="-9999" max="9999" />
+          <select class="form-select" id="f-start-era">
+            <option value="ce">d.C.</option>
+            <option value="bce">a.e.C.</option>
+          </select>
+        </div>
+        <div class="form-hint">Mes y día opcionales: formato MM-DD (ej: 11-13 = 13 de noviembre)</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mes-Día inicio</label>
+        <input type="text" class="form-input" id="f-start-md" placeholder="MM-DD (opcional)" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Año fin</label>
+        <div class="year-group">
+          <input type="number" class="form-input" id="f-end-year" placeholder="opcional" min="-9999" max="9999" />
+          <select class="form-select" id="f-end-era">
+            <option value="ce">d.C.</option>
+            <option value="bce">a.e.C.</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mes-Día fin</label>
+        <input type="text" class="form-input" id="f-end-md" placeholder="MM-DD (opcional)" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categoría</label>
+      <select class="form-select" id="f-cat"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('event-modal')">Cancelar</button>
+      <button class="btn-save" onclick="saveEvent()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAT MODAL -->
+<div class="modal-backdrop" id="cat-modal" onclick="handleBdClick(event,'cat-modal')">
+  <div class="modal">
+    <div class="modal-title" id="cat-modal-title">Nueva categoría</div>
+    <div class="form-group">
+      <label class="form-label">Nombre *</label>
+      <input type="text" class="form-input" id="fc-name" placeholder="Ej: Historia..." />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Color</label>
+      <select class="form-select" id="fc-color">
+        <option value="#c4a35a">Dorado</option>
+        <option value="#8b5cf6">Violeta</option>
+        <option value="#378ADD">Azul</option>
+        <option value="#1D9E75">Verde</option>
+        <option value="#D85A30">Naranja</option>
+        <option value="#D4537E">Rosa</option>
+        <option value="#E24B4A">Rojo</option>
+        <option value="#888780">Gris</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('cat-modal')">Cancelar</button>
+      <button class="btn-save" onclick="saveCat()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+<script>
+const SK_EVENTS = 'lt_events_v1';
+const SK_CATS   = 'lt_cats_v1';
+
+let events = [], cats = [], editEvId = null, editCatId = null;
+let searchQ = '', filterCat = '', tlCatFilter = 'all', tlInstance = null;
+
+const DEFAULT_CATS = [
+  { id: 1, name: 'Personal', color: '#378ADD' },
+  { id: 2, name: 'Bíblico',  color: '#8b5cf6' },
+];
+const DEFAULT_EVENTS = [
+  { id: 1, title: 'Creación según el Génesis', desc: 'Inicio del relato bíblico', startYear: -4000, endYear: null, catId: 2 },
+  { id: 2, title: 'Éxodo de Egipto', desc: 'Moisés guía al pueblo de Israel', startYear: -1446, endYear: -1406, catId: 2 },
+  { id: 3, title: 'Ministerio de Jesús', desc: 'Vida y ministerio de Jesús de Nazaret', startYear: -4, endYear: 30, catId: 2 },
+];
+
+function load() {
+  try { cats   = JSON.parse(localStorage.getItem(SK_CATS))   || DEFAULT_CATS;   } catch { cats   = DEFAULT_CATS;   }
+  try { events = JSON.parse(localStorage.getItem(SK_EVENTS)) || DEFAULT_EVENTS; } catch { events = DEFAULT_EVENTS; }
+  renderAll();
+}
+
+function save() {
+  localStorage.setItem(SK_CATS,   JSON.stringify(cats));
+  localStorage.setItem(SK_EVENTS, JSON.stringify(events));
+}
+
+function makeDate(year, md) {
+  // Vis.js tiene un bug conocido con fechas negativas usando string ISO.
+  // La solución correcta es usar Date.UTC directamente.
+  let month = 6, day = 15;
+  if (md && /^\d{2}-\d{2}$/.test(md)) {
+    const parts = md.split('-');
+    month = parseInt(parts[0], 10);
+    day   = parseInt(parts[1], 10);
+  }
+  // Para años a.e.C. usamos setFullYear después de crear la fecha,
+  // porque el constructor de Date no maneja bien años < 100 ni negativos vía string.
+  const d = new Date(0);
+  d.setUTCFullYear(year, month - 1, day);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
+function displayYear(y) {
+  if (y == null) return '—';
+  return y < 0 ? `${Math.abs(y)} a.e.C.` : `${y} d.C.`;
+}
+
+function getCat(id) { return cats.find(c => c.id === id) || null; }
+
+function renderAll() {
+  renderPills(); renderTimeline(); renderEventsTable(); renderCatsTable(); refreshSelects();
+  document.getElementById('ev-count').textContent = `${events.length} evento${events.length !== 1 ? 's' : ''}`;
+}
+
+function renderPills() {
+  const el = document.getElementById('cat-pills');
+  let html = `<button class="cat-pill all ${tlCatFilter === 'all' ? 'active' : ''}" onclick="setTlCat('all')">Todos</button>`;
+  cats.forEach(c => {
+    const active = tlCatFilter === c.id;
+    html += `<button class="cat-pill" style="background:${active ? c.color : c.color+'22'};color:${active ? '#0f0f0f' : c.color};border-color:${c.color}66" onclick="setTlCat(${c.id})">${c.name}</button>`;
+  });
+  el.innerHTML = html;
+}
+
+function setTlCat(v) { tlCatFilter = v; renderPills(); renderTimeline(); }
+
+function renderTimeline() {
+  const filtered = tlCatFilter === 'all' ? events : events.filter(e => e.catId === tlCatFilter);
+  const items = new vis.DataSet(filtered.map(e => {
+    const cat = getCat(e.catId);
+    const color = cat ? cat.color : '#888';
+    const startDate = makeDate(e.startYear, e.startMD);
+    const hasRange = e.endYear != null && !(e.endYear === e.startYear && e.endMD === e.startMD);
+    const endDate = hasRange ? makeDate(e.endYear, e.endMD) : undefined;
+    return {
+      id: e.id,
+      content: `<span style="font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif">${e.title}</span>`,
+      start: startDate,
+      end: endDate,
+      type: hasRange ? 'range' : 'point',
+      title: `<b>${e.title}</b><br>${displayYear(e.startYear)}${hasRange ? ' -> ' + displayYear(e.endYear) : ''}${e.desc ? '<br><span style="color:#aaa">' + e.desc + '</span>' : ''}`,
+      style: `background:${color}22;border-color:${color};color:${color};border-radius:4px;padding:2px 8px;font-family:'DM Sans',sans-serif;`
+    };
+  }));
+  const container = document.getElementById('vis-container');
+  const opts = { height: '380px', zoomMin: 1000*60*60*24*30, zoomMax: 1000*60*60*24*365.25*10000, moveable: true, showCurrentTime: false };
+  if (tlInstance) {
+    tlInstance.setItems(items);
+    if (filtered.length) setTimeout(() => tlInstance.fit(), 100);
+  } else {
+    tlInstance = new vis.Timeline(container, items, opts);
+    if (filtered.length) setTimeout(() => tlInstance.fit(), 100);
+  }
+}
+
+function renderEventsTable() {
+  const tbody = document.getElementById('events-tbody');
+  const filtered = events.filter(e => {
+    const mq = !searchQ || e.title.toLowerCase().includes(searchQ);
+    const mc = !filterCat || e.catId === Number(filterCat);
+    return mq && mc;
+  });
+  tbody.innerHTML = '';
+  document.getElementById('ev-empty').style.display = filtered.length === 0 ? 'block' : 'none';
+  filtered.forEach(e => {
+    const cat = getCat(e.catId);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span style="font-weight:500">${e.title}</span>${e.desc ? `<br><span style="font-size:11px;color:var(--text2)">${e.desc.substring(0,60)}${e.desc.length>60?'...':''}</span>` : ''}</td>
+      <td style="white-space:nowrap;font-size:12px;color:var(--text2)">${displayYear(e.startYear)}</td>
+      <td style="white-space:nowrap;font-size:12px;color:var(--text2)">${e.endYear != null ? displayYear(e.endYear) : '<span style="color:var(--text3)">—</span>'}</td>
+      <td>${cat ? `<span class="badge" style="background:${cat.color}22;color:${cat.color}"><span class="color-dot" style="background:${cat.color}"></span>${cat.name}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-icon" onclick="openEventModal(${e.id})" title="Editar">✏️</button>
+        <button class="btn-icon danger" onclick="deleteEvent(${e.id})" title="Eliminar">🗑</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderCatsTable() {
+  const tbody = document.getElementById('cats-tbody');
+  tbody.innerHTML = '';
+  document.getElementById('cat-empty').style.display = cats.length === 0 ? 'block' : 'none';
+  cats.forEach(c => {
+    const count = events.filter(e => e.catId === c.id).length;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:500">${c.name}</td>
+      <td><span class="badge" style="background:${c.color}22;color:${c.color}"><span class="color-dot" style="background:${c.color}"></span>${c.color}</span></td>
+      <td><span style="font-size:12px;color:var(--text2)">${count} evento${count!==1?'s':''}</span></td>
+      <td>
+        <button class="btn-icon" onclick="openCatModal(${c.id})" title="Editar">✏️</button>
+        ${count === 0 ? `<button class="btn-icon danger" onclick="deleteCat(${c.id})" title="Eliminar">🗑</button>` : ''}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function refreshSelects() {
+  const fc = document.getElementById('f-cat');
+  const pv = fc.value;
+  fc.innerHTML = '<option value="">Sin categoría</option>';
+  cats.forEach(c => fc.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+  if (pv) fc.value = pv;
+
+  const fs = document.getElementById('filter-cat');
+  const pvf = fs.value;
+  fs.innerHTML = '<option value="">Todas las categorías</option>';
+  cats.forEach(c => fs.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+  if (pvf) fs.value = pvf;
+}
+
+function switchTab(t) {
+  ['timeline','eventos','categorias'].forEach((n, i) => {
+    document.getElementById('tab-'+n).style.display = n===t ? 'block' : 'none';
+    document.querySelectorAll('.tab')[i].classList.toggle('active', n===t);
+  });
+  if (t === 'timeline' && tlInstance) setTimeout(() => tlInstance.fit(), 50);
+}
+
+function setSearch(v) { searchQ = v.toLowerCase(); renderEventsTable(); }
+function setCatFilter(v) { filterCat = v; renderEventsTable(); }
+
+function openEventModal(id) {
+  editEvId = id || null;
+  refreshSelects();
+  document.getElementById('ev-modal-title').textContent = id ? 'Editar evento' : 'Nuevo evento';
+  if (id) {
+    const e = events.find(x => x.id === id);
+    document.getElementById('f-title').value = e.title;
+    document.getElementById('f-desc').value = e.desc || '';
+    document.getElementById('f-start-year').value = Math.abs(e.startYear);
+    document.getElementById('f-start-era').value = e.startYear < 0 ? 'bce' : 'ce';
+    document.getElementById('f-start-md').value = e.startMD || '';
+    document.getElementById('f-end-year').value = e.endYear != null ? Math.abs(e.endYear) : '';
+    document.getElementById('f-end-era').value = (e.endYear != null && e.endYear < 0) ? 'bce' : 'ce';
+    document.getElementById('f-end-md').value = e.endMD || '';
+    document.getElementById('f-cat').value = e.catId || '';
+  } else {
+    ['f-title','f-desc','f-start-year','f-start-md','f-end-year','f-end-md'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('f-start-era').value = 'ce';
+    document.getElementById('f-end-era').value = 'ce';
+    document.getElementById('f-cat').value = '';
+  }
+  document.getElementById('event-modal').classList.add('open');
+}
+
+function saveEvent() {
+  const title = document.getElementById('f-title').value.trim();
+  const syRaw = document.getElementById('f-start-year').value;
+  if (!title || !syRaw) { alert('El título y el año de inicio son obligatorios.'); return; }
+  const sEra = document.getElementById('f-start-era').value;
+  const startYear = sEra === 'bce' ? -Math.abs(parseInt(syRaw)) : Math.abs(parseInt(syRaw));
+  const eyRaw = document.getElementById('f-end-year').value;
+  let endYear = null;
+  if (eyRaw) {
+    const eEra = document.getElementById('f-end-era').value;
+    endYear = eEra === 'bce' ? -Math.abs(parseInt(eyRaw)) : Math.abs(parseInt(eyRaw));
+  }
+  const catVal = document.getElementById('f-cat').value;
+  const data = {
+    id: editEvId || Date.now(), title,
+    desc: document.getElementById('f-desc').value.trim(),
+    startYear, startMD: document.getElementById('f-start-md').value.trim() || null,
+    endYear, endMD: document.getElementById('f-end-md').value.trim() || null,
+    catId: catVal ? Number(catVal) : null,
+  };
+  events = editEvId ? events.map(e => e.id === editEvId ? data : e) : [...events, data];
+  save(); renderAll(); closeModal('event-modal');
+}
+
+function deleteEvent(id) {
+  if (!confirm('¿Eliminar este evento?')) return;
+  events = events.filter(e => e.id !== id);
+  save(); renderAll();
+}
+
+function openCatModal(id) {
+  editCatId = id || null;
+  document.getElementById('cat-modal-title').textContent = id ? 'Editar categoría' : 'Nueva categoría';
+  if (id) {
+    const c = cats.find(x => x.id === id);
+    document.getElementById('fc-name').value = c.name;
+    document.getElementById('fc-color').value = c.color;
+  } else {
+    document.getElementById('fc-name').value = '';
+    document.getElementById('fc-color').value = '#c4a35a';
+  }
+  document.getElementById('cat-modal').classList.add('open');
+}
+
+function saveCat() {
+  const name = document.getElementById('fc-name').value.trim();
+  if (!name) { alert('El nombre es obligatorio.'); return; }
+  const data = { id: editCatId || Date.now(), name, color: document.getElementById('fc-color').value };
+  cats = editCatId ? cats.map(c => c.id === editCatId ? data : c) : [...cats, data];
+  save(); renderAll(); closeModal('cat-modal');
+}
+
+function deleteCat(id) {
+  if (!confirm('¿Eliminar esta categoría?')) return;
+  cats = cats.filter(c => c.id !== id);
+  save(); renderAll();
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function handleBdClick(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+load();
+</script>
+</body>
+</html>
