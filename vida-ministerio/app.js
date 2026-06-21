@@ -2389,10 +2389,12 @@ function _modalidadMin(p) {
 
 function formatSemanaParaSheets(s) {
   const rows = [];
-  const wk  = _semanaHeaderText(s.fecha);                  // col D = Semana_ID
+  const wk  = _semanaHeaderText(s.fecha);
   const n   = id => (id && nombreDePub(id)) || '';
   const par = (pid, aid) => { const sp = n(pid); const ay = n(aid); return sp ? (ay ? `${sp} - ${ay}` : sp) : ''; };
-  const push = (a, b, c) => rows.push([a, b || '', c || '', wk]);
+  // 3 columnas (A/B/C). La columna D "Semana_ID" la calcula el Apps Script
+  // por fill-down del header de semana → desacoplado, no se rompe por versión.
+  const push = (a, b, c) => rows.push([a, b || '', c || '']);
 
   push(wk, '', '');
   push('Oración',                          n(s.oracionApertura));
