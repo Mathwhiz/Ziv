@@ -2365,50 +2365,69 @@ function _semanaHeaderText(iso) {
   const [y, m, d] = iso.split('-').map(Number);
   const start = new Date(y, m - 1, d);
   const end   = new Date(y, m - 1, d + 6);
-  const ds = String(start.getDate()).padStart(2, '0');
-  const de = String(end.getDate()).padStart(2, '0');
-  return `Semana del ${ds} al ${de} de ${MESES_ES[start.getMonth()]} de ${y}`;
+  const ds = start.getDate();           // sin cero a la izquierda (como el sheet oficial)
+  const de = end.getDate();
+  const mesIni = MESES_ES[start.getMonth()];
+  const mesFin = MESES_ES[end.getMonth()];
+  // Semana dentro del mismo mes vs. semana que cruza de mes
+  if (start.getMonth() === end.getMonth())
+    return `Semana del ${ds} al ${de} de ${mesIni} de ${y}`;
+  return `Semana del ${ds} de ${mesIni} al ${de} de ${mesFin} de ${y}`;
+}
+
+// Modalidad de predicación para partes de ministerio (como el sheet oficial:
+// "DE CASA EN CASA", "PREDICACIÓN INFORMAL", "PREDICACIÓN PÚBLICA").
+// Sale de la instrucción de WOL. Si no hay coincidencia clara → no agrega nada
+// (nunca pone una modalidad equivocada).
+function _modalidadMin(p) {
+  const txt = ((p.titulo || '') + ' ' + (p.instruccion || '')).toLowerCase();
+  if (/casa\s+en\s+casa/.test(txt)) return '. DE CASA EN CASA';
+  if (/informal/.test(txt))         return '. PREDICACIÓN INFORMAL';
+  if (/p[úu]blic/.test(txt))        return '. PREDICACIÓN PÚBLICA';
+  return '';
 }
 
 function formatSemanaParaSheets(s) {
   const rows = [];
+  const wk  = _semanaHeaderText(s.fecha);                  // col D = Semana_ID
   const n   = id => (id && nombreDePub(id)) || '';
   const par = (pid, aid) => { const sp = n(pid); const ay = n(aid); return sp ? (ay ? `${sp} - ${ay}` : sp) : ''; };
+  const push = (a, b, c) => rows.push([a, b || '', c || '', wk]);
 
-  rows.push([_semanaHeaderText(s.fecha), '', '']);
-  rows.push(['Oración: ',                  n(s.oracionApertura), '']);
-  rows.push(['Palabras de Introducción',   n(s.presidente),      '']);
+  push(wk, '', '');
+  push('Oración',                          n(s.oracionApertura));
+  push('1 mins. Palabras de Introducción', n(s.presidente));
 
-  rows.push(['Tesoros de la Biblia', '', '']);
+  push('Tesoros de la Biblia', '', '');
   const disc  = s.tesoros?.discurso        || {};
   const joyas = s.tesoros?.joyas           || {};
   const lb    = s.tesoros?.lecturaBiblica  || {};
-  rows.push([`1. ${disc.duracion  ?? 10} mins. ${disc.titulo  || 'Discurso'}`, n(disc.pubId),  '']);
-  rows.push([`2. ${joyas.duracion ?? 10} mins. Busquemos perlas escondidas`,   n(joyas.pubId), '']);
-  if (tieneAuxiliar) rows.push(['', 'Sala Principal', 'Sala Auxiliar']);
-  rows.push([`3. ${lb.duracion ?? 4} mins. Lectura de la Biblia`,
-    n(lb.pubId), tieneAuxiliar ? n(lb.ayudante) : '']);
+  push(`1. ${disc.duracion  ?? 10} mins. ${disc.titulo  || 'Discurso'}`, n(disc.pubId));
+  push(`2. ${joyas.duracion ?? 10} mins. Busquemos perlas escondidas`,   n(joyas.pubId));
+  if (tieneAuxiliar) push('', 'Sala Principal', 'Sala Auxiliar');
+  push(`3. ${lb.duracion ?? 4} mins. Lectura de la Biblia`,
+    n(lb.pubId), tieneAuxiliar ? n(lb.ayudante) : '');
 
-  rows.push(['Seamos Mejores Maestros', '', '']);
+  push('Seamos Mejores Maestros', '', '');
   let num = 4;
   (s.ministerio || []).forEach(p => {
-    const t  = `${num}. ${p.duracion ?? 3} mins. ${p.titulo || 'Parte'}`;
+    const t  = `${num}. ${p.duracion ?? 3} mins. ${p.titulo || 'Parte'}${_modalidadMin(p)}`;
     const sp = par(p.pubId, p.ayudante);
     const sa = tieneAuxiliar ? (p.tipo === 'discurso' ? n(p.salaAux?.pubId) : par(p.salaAux?.pubId, p.salaAux?.ayudante)) : '';
-    rows.push([t, sp, sa]);
+    push(t, sp, sa);
     num++;
   });
 
-  rows.push(['Nuestra Vida Cristiana', '', '']);
+  push('Nuestra Vida Cristiana', '', '');
   (s.vidaCristiana || []).forEach(p => {
-    rows.push([`${num}. ${p.duracion ?? 10} mins. ${p.titulo || 'Parte'}`, n(p.pubId), '']);
+    push(`${num}. ${p.duracion ?? 10} mins. ${p.titulo || 'Parte'}`, n(p.pubId));
     num++;
   });
   const est = s.estudioBiblico || {};
-  rows.push([`${num}. ${est.duracion ?? 30} mins. Estudio bíblico de la congregación`, n(est.conductor), '']);
+  push(`${num}. ${est.duracion ?? 30} mins. Estudio bíblico de la congregación`, n(est.conductor));
 
-  rows.push(['3 mins. Palabras de conclusión', n(s.presidente),    '']);
-  rows.push(['Oración',                        n(s.oracionCierre), '']);
+  push('3 mins. Palabras de conclusión', n(s.presidente));
+  push('Oración',                        n(s.oracionCierre));
   return rows;
 }
 
