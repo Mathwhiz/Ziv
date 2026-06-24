@@ -80,6 +80,7 @@ let semanasLista      = [];  // cache para navegación encargado (orden desc)
 let pubFecha          = null; // fecha activa en vista pública
 let vmEspeciales      = {};   // { 'YYYY-MM-DD' (lunes) → { tipo, fechaEvento } }
 let vmScriptUrl       = null; // Apps Script URL para exportar a Sheets
+let vmSheetUrl        = null; // URL de la planilla (solo lectura) para verificar el export
 let vmMesesCache      = {};   // { 'YYYY-MM': { encargadoSalaAuxId } }
 let vmPublicadoresLoaded = false;
 let vmEspecialesLoaded = false;
@@ -2349,7 +2350,7 @@ const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 function apiFetchVM(payload) {
-  // Fire-and-forget: no-cors no permite leer la respuesta de igual modo
+  // Fire-and-forget: no-cors no permite leer la respuesta del POST
   console.log('[VM export] fetch enviando (fire & forget)…', payload.action);
   fetch(vmScriptUrl, {
     method:    'POST',
@@ -2359,6 +2360,106 @@ function apiFetchVM(payload) {
     body:      JSON.stringify(payload),
   }).then(() => console.log('[VM export] fetch completó'))
     .catch(err => console.warn('[VM export] fetch error (ignorado):', err));
+  // El POST es ciego (no-cors). Verificamos LEYENDO la planilla después: el endpoint
+  // gviz/CSV es legible anónimo y NO requiere permiso de edición ni avisa al propietario.
+  _verificarExportSheets(payload);
+}
+
+// Extrae el ID de planilla de una URL de Google Sheets (o lo devuelve si ya es un ID)
+function _sheetIdFromUrl(url) {
+  if (!url) return null;
+  const m = String(url).match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  return /^[a-zA-Z0-9_-]{30,}$/.test(url) ? url : null;
+}
+
+// Lee la pestaña del mes vía gviz/CSV y compara con lo que se mandó. No bloquea el export
+// ni lanza errores hacia afuera: si no hay URL de planilla configurada, no hace nada.
+async function _verificarExportSheets(payload) {
+  const sheetId = _sheetIdFromUrl(vmSheetUrl);
+  if (!sheetId || !payload || !payload.hoja || !Array.isArray(payload.semanas)) return;
+
+  // Filas esperadas en orden (concatenación de todas las semanas del payload).
+  const expFilas = [];
+  payload.semanas.forEach(s => (s.filas || []).forEach(f => expFilas.push(f)));
+  const norm = v => String(v == null ? '' : v).trim().toLowerCase();
+  const headerEsp = norm(_semanaHeaderText(payload.semanas[0].fecha));
+
+  const base = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(payload.hoja)}`;
+  console.log(`[VM verify] "${payload.hoja}" — ${expFilas.length} filas a confirmar (posicional)`);
+  uiLoading.show('Verificando la planilla…');
+
+  // El Apps Script tarda ~5-10s y gviz puede cachear unos segundos → reintentos espaciados.
+  // Comparación POSICIONAL fila por fila (col A/B/C): se ubica el encabezado de la primera
+  // semana en el CSV y se cotejan las filas en orden. Así un nombre que cambió de lugar NO
+  // pasa como OK aunque exista en otra fila (el bug del `includes` suelto).
+  const espera = [4000, 4000, 4000];
+  let leyoCsv = false, ultDif = 0;
+  for (let intento = 0; intento < espera.length; intento++) {
+    await new Promise(r => setTimeout(r, espera[intento]));
+    let filasCsv;
+    try {
+      const resp = await fetch(`${base}&_=${Date.now()}`, { cache: 'no-store' });
+      if (!resp.ok) { console.log(`[VM verify] intento ${intento+1}: HTTP ${resp.status}`); continue; }
+      if (!(resp.headers.get('content-type') || '').includes('csv')) { console.log(`[VM verify] intento ${intento+1}: no es CSV (¿planilla sin acceso de lectura?)`); continue; }
+      leyoCsv = true;
+      filasCsv = _parseCsv(await resp.text());
+    } catch (e) { console.log(`[VM verify] intento ${intento+1}: fetch error`, e); continue; }
+
+    const startIdx = filasCsv.findIndex(r => norm(r[0]) === headerEsp);
+    if (startIdx < 0) { console.log(`[VM verify] intento ${intento+1}: no encuentro el encabezado de la semana en el CSV`); continue; }
+
+    const dif = [];
+    for (let i = 0; i < expFilas.length; i++) {
+      const e = expFilas[i] || [], c = filasCsv[startIdx + i] || [];
+      if (norm(e[0]) !== norm(c[0]) || norm(e[1]) !== norm(c[1]) || norm(e[2]) !== norm(c[2]))
+        dif.push(`fila ${i+1}: esperaba [${norm(e[0])}|${norm(e[1])}|${norm(e[2])}] hay [${norm(c[0])}|${norm(c[1])}|${norm(c[2])}]`);
+    }
+    console.log(`[VM verify] intento ${intento+1}: ${dif.length} diferencias`, dif.slice(0, 4));
+    ultDif = dif.length;
+    if (dif.length === 0) {
+      uiLoading.hide();
+      uiToast(`✓ Planilla "${payload.hoja}" verificada`, 'success', 4000);
+      return;
+    }
+  }
+
+  uiLoading.hide();
+  if (!leyoCsv) {
+    // No se pudo leer la planilla → no podemos confirmar (no afirmamos que falló)
+    uiToast(`No se pudo verificar "${payload.hoja}" (no se pudo leer la planilla).`, 'error', 7000);
+    return;
+  }
+
+  // La planilla NO refleja lo que se mandó → popup modal (más visible que un toast)
+  const reintentar = await uiConfirm({
+    title: 'No se guardó en la planilla',
+    msg: `El programa de "${payload.hoja}" no llegó a Google Sheets (se detectaron ${ultDif} diferencia${ultDif === 1 ? '' : 's'}). Lo más probable es falta de permiso de edición sobre la planilla. Revisá el acceso y reintentá.`,
+    confirmText: 'Reintentar',
+    cancelText: 'Cerrar',
+    type: 'warn',
+  });
+  if (reintentar) apiFetchVM(payload);
+}
+
+// Parser CSV (RFC4180): maneja comillas, comas y saltos de línea dentro de campos.
+function _parseCsv(text) {
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQ = false;
+      } else field += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else if (c !== '\r') field += c;
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows;
 }
 
 function _semanaHeaderText(iso) {
@@ -2458,7 +2559,7 @@ window.exportarMesASheets = async function(mesISO) {
     semanas: semanasData,
   });
 
-  uiToast(`Enviando "${hojaName}" a Sheets… revisá la planilla en unos segundos`, 'success');
+  // El feedback ahora lo da el overlay "Verificando la planilla…" + resultado (verde/modal)
 };
 
 window.exportarMesImagen = async function(mesISO) {
@@ -2860,7 +2961,7 @@ window.exportarSemanaActualASheets = function() {
     encargadoAux: encargadoNombre,
     semanas: [{ fecha: semanaData.fecha, filas: formatSemanaParaSheets(semanaData) }],
   });
-  uiToast(`Enviando semana a "${hojaName}"… revisá en unos segundos`, 'success');
+  // El feedback ahora lo da el overlay "Verificando la planilla…" + resultado (verde/modal)
 };
 
 // ─────────────────────────────────────────
@@ -2894,6 +2995,7 @@ window.exportarSemanaActualASheets = function() {
     tieneAuxiliar           = data.tieneAuxiliar === true;
     presidenteEsOradorFinal = data.presidenteEsOradorFinal === true;
     vmScriptUrl = mergedConfig.vmScriptUrl || null;
+    vmSheetUrl  = mergedConfig.vmSheetUrl || null;  // opt-in explícito: sin esto, no se verifica (no usar sheetsUrl como fallback)
     vmInitReady = true;
   } catch(e) {
     console.error('Error al inicializar:', e);
