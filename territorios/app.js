@@ -1138,22 +1138,22 @@ function generatePreview() {
     const cond  = document.getElementById('sal-cond-'  + s.id)?.value || '—';
     const enc   = document.getElementById('sal-enc-'   + s.id)?.value || '—';
     if (s.tipo === 'tel') {
-      rows.push({ enc, terr:'TELEFÓNICA', tel:true, badge:getDiaBadge(fecha), fecha:formatShortFull(fecha).replace(/\//g,'-'), cond, hora:hora.replace(':','.') });
+      rows.push({ enc, terr:'TELEFÓNICA', tel:true, badge:getDiaBadge(fecha), fechaISO:fecha, fecha:formatShortFull(fecha).replace(/\//g,'-'), cond, hora:hora.replace(':','.') });
     } else {
       const mainTerr = document.getElementById('sal-terr-' + s.id)?.value || '—';
       const extraContainer = document.getElementById('extra-terrs-' + s.id);
       const extraSelects = extraContainer ? extraContainer.querySelectorAll('input[type="hidden"]') : [];
       const extraTerrs = [...extraSelects].map(inp => inp.value).filter(v => v && v !== '—');
       const allTerrs = [mainTerr, ...extraTerrs].filter(v => v && v !== '—');
-      rows.push({ enc, terr: allTerrs.join(', ') || '—', tel:false, badge:getDiaBadge(fecha), fecha:formatShortFull(fecha).replace(/\//g,'-'), cond, hora:hora.replace(':','.') });
+      rows.push({ enc, terr: allTerrs.join(', ') || '—', tel:false, badge:getDiaBadge(fecha), fechaISO:fecha, fecha:formatShortFull(fecha).replace(/\//g,'-'), cond, hora:hora.replace(':','.') });
     }
   });
 
   rows.sort((a, b) => {
-    if (a.tel && !a.fecha) return -1;
-    if (b.tel && !b.fecha) return 1;
-    const fechaA = a.fecha || '';
-    const fechaB = b.fecha || '';
+    if (a.tel && !a.fechaISO) return -1;
+    if (b.tel && !b.fechaISO) return 1;
+    const fechaA = a.fechaISO || '';
+    const fechaB = b.fechaISO || '';
     if (fechaA !== fechaB) return fechaA.localeCompare(fechaB);
     return (a.hora||'').replace('.', ':').localeCompare((b.hora||'').replace('.', ':'));
   });
