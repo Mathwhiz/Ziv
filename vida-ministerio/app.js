@@ -2749,7 +2749,16 @@ async function _verificarExportSheets(payload) {
     ultDif = dif.length;
     if (dif.length === 0) {
       uiLoading.hide();
-      uiToast(`✓ Planilla "${payload.hoja}" verificada`, 'success', 4000);
+      // La semana llegó bien, pero la pestaña puede ser la del año anterior renombrada a mano
+      // ("Octubre 25" → "Octubre 26") con las semanas viejas todavía adentro, o haber quedado
+      // desordenada: con el chequeo posicional eso pasaba en verde. Exportar el mes la limpia.
+      const problema = _pestanaSheetsSucia(filasCsv, payload.semanas[0].fecha);
+      if (problema) {
+        console.log(`[VM verify] "${payload.hoja}": ${problema}`);
+        uiToast(`Se guardó, pero la pestaña "${payload.hoja}" ${problema}. Exportá el mes completo para dejarla limpia.`, 'error', 9000);
+      } else {
+        uiToast(`✓ Planilla "${payload.hoja}" verificada`, 'success', 4000);
+      }
       return;
     }
   }
@@ -2770,6 +2779,28 @@ async function _verificarExportSheets(payload) {
     type: 'warn',
   });
   if (reintentar) apiFetchVM(payload);
+}
+
+// Revisa los encabezados "Semana del …" de la pestaña leída por CSV. Devuelve la descripción
+// del problema (para el toast) o null si está sana: todas las semanas del mismo año que la
+// exportada y en orden cronológico. Tolera encabezados escritos a mano ("Semana del 06 al 12
+// de Octubre de 2025", "Semana del 27 Octubre al 02 de Noviembre de 2025"): el mes de inicio
+// es el primer nombre de mes del texto (si no hay, se asume el de la semana exportada).
+function _pestanaSheetsSucia(filasCsv, fechaISO) {
+  const anio   = String(fechaISO).slice(0, 4);
+  const mesExp = Number(String(fechaISO).slice(5, 7));
+  const headers = filasCsv.map(r => String(r[0] || '').trim()).filter(h => /^semana del/i.test(h));
+  const otrosAnios = [...new Set(headers.map(h => (h.match(/(\d{4})\s*$/) || [])[1]).filter(a => a && a !== anio))];
+  if (otrosAnios.length) return `también tiene semanas de ${otrosAnios.join(' y ')}`;
+  const reMes  = new RegExp(`\\b(${MESES_ES.join('|')})\\b`, 'i');
+  const claves = headers.map(h => {
+    const dia  = Number((h.match(/semana del\s+(\d{1,2})/i) || [])[1]);
+    const mesM = h.match(reMes);   // primer mes por posición en el texto (no por orden del array)
+    const mes  = mesM ? MESES_ES.findIndex(m => m.toLowerCase() === mesM[1].toLowerCase()) + 1 : 0;
+    return (mes || mesExp) * 100 + dia;
+  }).filter(Number.isFinite);
+  if (claves.some((c, i) => i > 0 && c <= claves[i - 1])) return 'quedó con las semanas desordenadas';
+  return null;
 }
 
 // Parser CSV (RFC4180): maneja comillas, comas y saltos de línea dentro de campos.
