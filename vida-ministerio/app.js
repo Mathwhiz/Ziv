@@ -2625,7 +2625,7 @@ window.compartirSemanaFoto = function() {
 window.abrirPickerAuxMes = async function(mesISO) {
   if (!modoEncargado || !tieneAuxiliar) return;
 
-  // Presidentes del mes (excluir)
+  // Presidentes del mes (van al fondo de la lista)
   const presidentesDelMes = new Set(
     semanasLista
       .filter(s => s.fecha.startsWith(mesISO))
@@ -2633,33 +2633,38 @@ window.abrirPickerAuxMes = async function(mesISO) {
       .filter(Boolean)
   );
 
-  // Solo ancianos que no sean presidentes en alguna semana del mes
-  const candidatos = publicadores.filter(p =>
-    p.activo !== false &&
-    (p.roles || []).includes('ANCIANO') &&
-    !presidentesDelMes.has(p.id)
+  // Ancianos activos: primero los que no presiden en el mes, al fondo los que sí
+  // (se pueden elegir igual por si surge un imprevisto)
+  const ancianos = publicadores.filter(p =>
+    p.activo !== false && (p.roles || []).includes('ANCIANO')
   );
+  const porNombre = (a, b) => a.nombre.localeCompare(b.nombre, 'es');
+  const libres    = ancianos.filter(p => !presidentesDelMes.has(p.id)).sort(porNombre);
+  const ocupados  = ancianos.filter(p =>  presidentesDelMes.has(p.id)).sort(porNombre);
+  const candidatos = [...libres, ...ocupados];
 
   if (!candidatos.length) {
-    await uiAlert('No hay ancianos disponibles para este mes (todos están asignados como presidente en alguna semana).', 'Sin candidatos');
+    await uiAlert('No hay ancianos activos cargados.', 'Sin candidatos');
     return;
   }
 
+  const etiqueta = p => presidentesDelMes.has(p.id) ? `${p.nombre} (preside este mes)` : p.nombre;
+
   const auxActualId  = vmMesesCache[mesISO]?.encargadoSalaAuxId || null;
-  const auxActualNom = auxActualId ? (nombreDePub(auxActualId) || '') : '';
+  const auxActual    = auxActualId ? candidatos.find(p => p.id === auxActualId) : null;
+  const auxActualNom = auxActual ? etiqueta(auxActual) : '';
 
   // uiConductorPicker espera array de strings (nombres)
-  const nombres = candidatos.map(p => p.nombre);
   const result  = await uiConductorPicker({
-    conductores: nombres,
+    conductores: candidatos.map(etiqueta),
     value: auxActualNom,
     label: 'Encargado Sala Auxiliar',
   });
 
   if (result === undefined || result === null) return; // cancelado
 
-  // Mapear nombre elegido de vuelta a pubId
-  const elegido  = candidatos.find(p => p.nombre === result) || null;
+  // Mapear etiqueta elegida de vuelta a pubId
+  const elegido  = candidatos.find(p => etiqueta(p) === result) || null;
   const nuevoId  = elegido?.id || null;
   try {
     await setDoc(vmMesRef(mesISO), { encargadoSalaAuxId: nuevoId }, { merge: true });
