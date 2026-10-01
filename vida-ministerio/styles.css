@@ -996,9 +996,8 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 /* Pantallas muy anchas: la lista de semanas en dos columnas de meses (cada mes = encabezado + grilla de semanas) */
 @media (min-width: 1400px) {
   .app-inner { max-width: 1500px; padding: 0 28px; }
-  #semanas-list { column-count: 2; column-gap: 36px; }
-  #semanas-list .semanas-mes-hdr-row { break-after: avoid; break-inside: avoid; }
-  #semanas-list .semanas-mes-grid { break-inside: avoid; }
+  /* Orden por filas (izquierda a derecha): Oct | Sep, Ago | Jul… — en columnas el orden bajaba por la primera y seguía por la segunda, y a la derecha aparecía enero */
+  #semanas-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 36px; align-items: start; }
   /* Editar una semana: las secciones en dos columnas en vez de un formulario de 1400px de ancho */
   #semana-content { column-count: 2; column-gap: 28px; }
   #semana-content > * { break-inside: avoid; }

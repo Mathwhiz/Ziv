@@ -951,11 +951,13 @@ function renderSemanas(semanas) {
       </button>`;
     }
 
-    return `<div class="semanas-mes-hdr-row">
+    return `<section class="semanas-mes">
+    <div class="semanas-mes-hdr-row">
       <span class="semanas-mes-hdr-txt">${label}</span>
       ${acciones ? `<div class="semanas-mes-acciones">${acciones}</div>` : ''}
     </div>
-    <div class="semanas-mes-grid">${cards}</div>`;
+    <div class="semanas-mes-grid">${cards}</div>
+    </section>`;
   }).join('');
 }
 
