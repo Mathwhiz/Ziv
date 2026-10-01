@@ -372,7 +372,78 @@ window.setTipo = function(tipo) {
   document.getElementById('wrap-pub-select').style.display    = tipo === 'salida'  ? '' : 'none';
   document.getElementById('conf-congre-label').textContent =
     tipo === 'entrada' ? 'Congregación de origen' : 'Congregación de destino';
+  renderChipsDiscursos();
 };
+
+// ── Hermano que sale: picker propio (el <select> nativo se veía diminuto al lado de los campos) ──
+function nombrePub(id) {
+  return _publicadores.find(p => p.id === id)?.nombre || '';
+}
+
+function actualizarPubBtn() {
+  const id  = document.getElementById('conf-pub-select').value;
+  const txt = document.getElementById('conf-pub-btn-txt');
+  txt.textContent = id ? (nombrePub(id) || id) : 'Elegir hermano';
+  txt.classList.toggle('empty', !id);
+  renderChipsDiscursos();
+}
+
+window.elegirOradorSalida = async function() {
+  const oradores = getOradores();
+  const actual   = nombrePub(document.getElementById('conf-pub-select').value);
+  const elegido  = await window.uiConductorPicker({ conductores: oradores.map(p => p.nombre), value: actual, label: '¿Quién sale?' });
+  if (elegido === null || elegido === undefined) return;
+  const pb = oradores.find(p => p.nombre === elegido);
+  document.getElementById('conf-pub-select').value = pb ? pb.id : '';
+  actualizarPubBtn();
+};
+
+// Los discursos que tiene preparados el hermano elegido: tocar uno completa N° y título
+function renderChipsDiscursos() {
+  const cont = document.getElementById('conf-disc-chips');
+  if (!cont) return;
+  const id = document.getElementById('conf-pub-select').value;
+  const ds = _editandoTipo === 'salida' && id
+    ? ((_publicadores.find(p => p.id === id)?.discursos) || []).slice().sort((a, b) => a.numero - b.numero)
+    : [];
+  if (!ds.length) { cont.innerHTML = ''; return; }
+  const num = document.getElementById('conf-disc-num');
+  const marcar = () => cont.querySelectorAll('.conf-chip').forEach((b, i) =>
+    b.classList.toggle('activo', String(ds[i].numero) === String(num.value)));
+  cont.innerHTML = '<span class="conf-chips-lbl">Sus discursos:</span>' + ds.map(d =>
+    `<button type="button" class="conf-chip" title="${esc(d.titulo || '')}">${d.numero}</button>`).join('');
+  cont.querySelectorAll('.conf-chip').forEach((b, i) => {
+    b.onclick = () => {
+      num.value = ds[i].numero;
+      document.getElementById('conf-disc-titulo').value = ds[i].titulo || '';
+      marcar();
+    };
+  });
+  marcar();
+}
+
+// ── Congregación: sugerencias propias (el <datalist> nativo no se puede agrandar) ──
+function initSugsCongre() {
+  const inp = document.getElementById('conf-congre-nombre');
+  const box = document.getElementById('conf-congre-sugs');
+  if (!inp || !box || inp.dataset.sugs) return;
+  inp.dataset.sugs = '1';
+  const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const pintar = () => {
+    const q = norm(inp.value.trim());
+    const lista = _congregaciones.filter(c => !q || norm(c.nombre).includes(q)).filter(c => norm(c.nombre) !== q).slice(0, 8);
+    if (!lista.length) { box.style.display = 'none'; return; }
+    box.innerHTML = lista.map(c =>
+      `<button type="button" class="sug-item" data-n="${esc(c.nombre)}">${esc(c.nombre)}${c.contacto ? `<small>${esc(c.contacto)}</small>` : ''}</button>`).join('');
+    box.style.display = 'block';
+    box.querySelectorAll('.sug-item').forEach(b => {
+      b.onpointerdown = e => { e.preventDefault(); inp.value = b.dataset.n; box.style.display = 'none'; };
+    });
+  };
+  inp.addEventListener('focus', pintar);
+  inp.addEventListener('input', pintar);
+  inp.addEventListener('blur', () => setTimeout(() => { box.style.display = 'none'; }, 150));
+}
 
 window.abrirNuevaConf = function(fecha) {
   if (!_puedeEditar) return;
@@ -386,6 +457,7 @@ window.abrirNuevaConf = function(fecha) {
   document.getElementById('conf-disc-titulo').value   = '';
   document.getElementById('conf-notas').value         = '';
   window.setTipo('entrada');
+  actualizarPubBtn();
   document.getElementById('modal-conf').style.display = 'flex';
 };
 
@@ -403,6 +475,7 @@ window.abrirEditarConf = function(id) {
   document.getElementById('conf-disc-titulo').value   = c.discursoTitulo  || '';
   document.getElementById('conf-notas').value         = c.notas || '';
   window.setTipo(c.tipo || 'entrada');
+  actualizarPubBtn();
   document.getElementById('modal-conf').style.display = 'flex';
 };
 
@@ -631,9 +704,7 @@ window.eliminarCirc = async function(id) {
 };
 
 function poblarDatalistCirc() {
-  const dl = document.getElementById('circ-datalist');
-  if (!dl) return;
-  dl.innerHTML = _congregaciones.map(c => `<option value="${esc(c.nombre)}">`).join('');
+  initSugsCongre();   // las sugerencias leen _congregaciones al escribir: alcanza con enganchar una vez
 }
 
 // ─────────────────────────────────────────
@@ -659,14 +730,6 @@ async function init() {
 
   await cargarDatos();
   logActividad(CONGRE_ID, 'conferencias', 'apertura');
-
-  // Poblar select de oradores propios
-  const sel = document.getElementById('conf-pub-select');
-  if (sel) {
-    const oradores = getOradores();
-    sel.innerHTML = '<option value="">— Seleccionar hermano —</option>' +
-      oradores.map(p => `<option value="${esc(p.id)}">${esc(p.nombre)}</option>`).join('');
-  }
 
   poblarDatalistCirc();
   renderMes();

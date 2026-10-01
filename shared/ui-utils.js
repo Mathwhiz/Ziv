@@ -1811,6 +1811,25 @@ body.light-mode .cs-module-card:hover {
     #ziv-session {
       position: fixed; top: 12px; right: 12px; z-index: 300;
     }
+    /* Barra superior reservada: el chip del usuario y la casita viven ahí, así que ningún encabezado
+       de módulo queda debajo de ellos (antes se tapaban el botón de volver / compartir / las flechas). */
+    :root { --ziv-bar-h: 0px; }
+    body.ziv-barra { --ziv-bar-h: 48px; padding-top: 48px !important; }
+    #ziv-topbar {
+      position: fixed; top: 0; left: 0; right: 0; height: 48px; z-index: 90;
+      background: color-mix(in srgb, var(--bg-primary, #1a1c1f) 92%, transparent);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-primary, #2e3033);
+    }
+    body.ziv-barra #ziv-session { top: 7px; right: 10px; }
+    body.ziv-barra .btn-home, body.ziv-barra .btn-mapa-float {
+      position: fixed !important; top: 6px !important; right: auto !important;
+      width: 36px !important; height: 36px !important; border-radius: 10px !important; z-index: 120 !important;
+      font-size: 0 !important; gap: 0 !important;
+    }
+    body.ziv-barra .btn-home { left: 10px !important; }
+    body.ziv-barra .btn-mapa-float { left: 54px !important; }
+    body.ziv-barra .btn-home svg, body.ziv-barra .btn-mapa-float svg { width: 18px !important; height: 18px !important; }
     .ziv-sBtn {
       display: flex; align-items: center; gap: 6px;
       background: rgba(35,38,40,0.9);
@@ -1936,9 +1955,22 @@ window.updateSessionHeader = function(user) {
   const perfil = document.getElementById('ziv-sPerfil');
   if (!el) return;
 
-  if (!user) { el.style.display = 'none'; return; }
+  if (!user) {
+    el.style.display = 'none';
+    document.body.classList.remove('ziv-barra');
+    document.getElementById('ziv-topbar')?.remove();
+    return;
+  }
 
   el.style.display = 'block';
+  // index.html (menú de módulos) tiene su propio chip del usuario dentro de la pantalla: sin barra reservada
+  const esRaiz = /^\/(index\.html)?$/.test(location.pathname);
+  if (!esRaiz) document.body.classList.add('ziv-barra');
+  if (!esRaiz && !document.getElementById('ziv-topbar')) {
+    const bar = document.createElement('div');
+    bar.id = 'ziv-topbar';
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
 
   if (user.isAnonymous) {
     wrap.innerHTML = `
@@ -2088,7 +2120,7 @@ window.sessionSignOut = async function() {
     const el = document.createElement('div');
     el.id = 'ziv-update';
     el.setAttribute('role', 'status');
-    el.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:10000;display:flex;align-items:center;gap:12px;'
+    el.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:10000;display:flex;align-items:center;gap:12px;width:max-content;'
       + 'padding:10px 14px;border-radius:14px;font:500 13px system-ui,sans-serif;max-width:calc(100vw - 32px);'
       + 'background:var(--bg-modal,#232628);color:var(--text-primary,#e8e8e8);border:1px solid var(--border-light,#3a3d42);box-shadow:0 8px 28px rgba(0,0,0,.35);';
     el.innerHTML = '<span>Hay una versión nueva de la app</span>'

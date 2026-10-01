@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Vista celular — Ziv</title><meta name="robots" content="noindex, nofollow">
+<style>
+  body { margin: 0; background: #777; font-family: system-ui, sans-serif; padding: 10px; }
+  .barra { color: #fff; font-size: 13px; margin-bottom: 10px; }
+  .barra input { width: min(760px, 90vw); padding: 6px 8px; border-radius: 8px; border: none; }
+  .fila { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+  iframe { width: 390px; height: 780px; border: 0; background: #fff; border-radius: 10px; }
+</style></head><body>
+<div class="barra">Vista celular (iframes de 390px). Páginas separadas por coma:
+  <input id="q" value="conferencias/index.html,hermanos/index.html,territorios/index.html" onchange="armar()"></div>
+<div class="fila" id="fila"></div>
+<script>
+  function armar() {
+    const fila = document.getElementById('fila'); fila.innerHTML = '';
+    document.getElementById('q').value.split(',').map(s => s.trim()).filter(Boolean).forEach(m => {
+      const f = document.createElement('iframe'); f.src = '/' + m.replace(/^\//, ''); fila.appendChild(f);
+    });
+  }
+  armar();
+</script></body></html>

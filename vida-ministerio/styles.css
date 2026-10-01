@@ -239,7 +239,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   padding: 8px 10px 10px;
   /* Se pega debajo de los botones fijos (casita / perfil) para que no los
      tape al scrollear en el teléfono. En PC se resetea a top:0 más abajo. */
-  position: sticky; top: 62px;
+  position: sticky; top: calc(var(--ziv-bar-h, 0px) + 4px);
   background: var(--bg-primary); z-index: 10;
   border-bottom: 1px solid var(--border-primary);
   border-radius: 14px;
@@ -962,7 +962,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 
   /* Action bar de la semana: botones más altos y legibles.
      En PC los botones de las esquinas no estorban → vuelve a top:0 */
-  .vm-action-bar { gap: 10px; top: 0; border-radius: 0 0 14px 14px; }
+  .vm-action-bar { gap: 10px; top: var(--ziv-bar-h, 0px); border-radius: 0 0 14px 14px; }
   .vm-action-bar button { padding: 11px 8px; font-size: 14px; }
 
   /* Formulario "Generar Semanas" */

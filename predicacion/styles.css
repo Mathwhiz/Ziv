@@ -679,3 +679,6 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   #tab-tiempo .pred-body > :nth-child(4) { grid-column: 2; grid-row: 1; }
   #tab-tiempo .pred-body > :nth-child(5) { grid-column: 2; grid-row: 2 / span 2; }
 }
+
+/* El cronómetro (00:00:00) se salía de la pantalla en celulares angostos */
+.timer-display { font-size: clamp(34px, 12.5vw, 64px); }

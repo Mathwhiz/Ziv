@@ -808,7 +808,7 @@ body.light-mode .section-sub   { color: #67626f; }
 .informe-nav {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 16px; border-bottom: 0.5px solid var(--k-bd-2e2e2e, #2e2e2e);
-  background: var(--bg-primary, #1a1c1f); position: sticky; top: 0; z-index: 10;
+  background: var(--bg-primary, #1a1c1f); position: sticky; top: var(--ziv-bar-h, 0px); z-index: 10;
 }
 .informe-back-btn {
   background: var(--k-bg-2a2a2a, #2a2a2a); border: 0.5px solid var(--k-bd-444444, #444); color: var(--k-tx-cccccc, #ccc);

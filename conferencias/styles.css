@@ -10,7 +10,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   display: flex; align-items: center; gap: 10px;
   padding: 12px 16px 10px;
   border-bottom: 0.5px solid var(--border-primary);
-  position: sticky; top: 0; z-index: 10;
+  position: sticky; top: var(--ziv-bar-h, 0px); z-index: 10;
   background: var(--bg-primary);
 }
 .conf-back-link {
@@ -303,3 +303,38 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   }
   #oradores-list .orador-card, #circuito-list .circ-card { margin-bottom: 0; }
 }
+
+/* ── Pickers propios del modal (mismo tamaño que los campos de texto) ── */
+.pick-btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: 10px;
+  padding: 10px 12px; font-size: 15px; color: var(--text-primary); font-family: inherit;
+  cursor: pointer; text-align: left; transition: border-color 0.15s;
+}
+.pick-btn:hover, .pick-btn:focus-visible { border-color: #0DB6CC; outline: none; }
+.pick-btn-txt.empty { color: var(--text-muted); }
+.pick-btn-chev { color: var(--text-muted); font-size: 12px; }
+
+.sug-wrap { position: relative; }
+.sug-list {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30;
+  background: var(--bg-modal); border: 1px solid var(--border-light); border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); max-height: 260px; overflow: auto;
+}
+.sug-item {
+  display: block; width: 100%; text-align: left; padding: 11px 14px; font-size: 15px; font-family: inherit;
+  color: var(--text-primary); background: none; border: none; border-bottom: 1px solid var(--border-primary); cursor: pointer;
+}
+.sug-item:last-child { border-bottom: none; }
+.sug-item:hover { background: var(--bg-hover); }
+.sug-item small { display: block; font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+.conf-disc-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+.conf-disc-chips:empty { display: none; }
+.conf-chips-lbl { font-size: 11px; color: var(--text-muted); }
+.conf-chip {
+  font: inherit; font-size: 13px; font-weight: 600; padding: 5px 13px; border-radius: 99px; cursor: pointer;
+  background: var(--bg-card); border: 1px solid var(--border-light); color: var(--text-secondary);
+}
+.conf-chip:hover { border-color: #0DB6CC; color: var(--text-primary); }
+.conf-chip.activo { border-color: #0DB6CC; color: var(--text-primary); background: rgba(13, 182, 204, 0.12); }
