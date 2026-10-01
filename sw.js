@@ -1,4 +1,6 @@
-const CACHE = 'ziv-v2';
+// Subir este número en cada deploy importante: el service worker nuevo se instala solo y
+// las pestañas abiertas avisan (ver 'Actualización de la app' en shared/ui-utils.js).
+const CACHE = 'ziv-v3';
 
 // Archivos estáticos que se pre-cachean al instalar
 const SHELL = [
@@ -39,12 +41,13 @@ self.addEventListener('activate', e => {
 // Fetch: network-first para mismo origen (garantiza archivos frescos)
 // Firebase, CDN (Leaflet, Firebase SDK, PostHog) son cross-origin → pasan directo a red
 self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
 
   // Network first: intenta red, actualiza cache, cae en cache si está offline
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: 'no-cache' })
       .then(response => {
         if (response.ok) {
           const clone = response.clone();

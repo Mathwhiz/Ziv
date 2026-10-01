@@ -2117,3 +2117,55 @@ window.sessionSignOut = async function() {
   if (typeof window.signOutUser === 'function') await window.signOutUser();
   window.location.replace('/');
 };
+
+/* ─────────────────────────────────────────
+   ACTUALIZACIÓN DE LA APP
+   sw.js se instala solo cuando cambia (skipWaiting + clients.claim). Acá se detecta el cambio de
+   controlador: si la pestaña recién se abrió y la persona no está escribiendo, se recarga sola; si
+   no, aparece un aviso con botón (recargar a la fuerza pierde lo que se esté cargando).
+───────────────────────────────────────── */
+(function initActualizacionApp() {
+  if (!('serviceWorker' in navigator)) return;
+  const teniaControlador = !!navigator.serviceWorker.controller;
+  const abierta = Date.now();
+  let avisado = false;
+
+  function escribiendo() {
+    const a = document.activeElement;
+    return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+  }
+
+  function mostrarAviso() {
+    if (document.getElementById('ziv-update')) return;
+    const el = document.createElement('div');
+    el.id = 'ziv-update';
+    el.setAttribute('role', 'status');
+    el.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:10000;display:flex;align-items:center;gap:12px;'
+      + 'padding:10px 14px;border-radius:14px;font:500 13px system-ui,sans-serif;max-width:calc(100vw - 32px);'
+      + 'background:var(--bg-modal,#232628);color:var(--text-primary,#e8e8e8);border:1px solid var(--border-light,#3a3d42);box-shadow:0 8px 28px rgba(0,0,0,.35);';
+    el.innerHTML = '<span>Hay una versión nueva de la app</span>'
+      + '<button type="button" style="font:600 13px system-ui,sans-serif;padding:6px 12px;border-radius:10px;border:none;cursor:pointer;background:#7F77DD;color:#fff;">Actualizar</button>';
+    el.querySelector('button').onclick = () => location.reload();
+    document.body.appendChild(el);
+  }
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!teniaControlador || avisado) return;   // primera instalación: no hay nada viejo que reemplazar
+    avisado = true;
+    let ultima = 0;
+    try { ultima = +sessionStorage.getItem('ziv-upd') || 0; } catch (e) {}
+    // a lo sumo una recarga automática por minuto: si algo raro hiciera cambiar el service worker en
+    // cada carga, esto evita un bucle y cae al aviso
+    if (Date.now() - abierta < 20000 && !escribiendo() && Date.now() - ultima > 60000) {
+      try { sessionStorage.setItem('ziv-upd', String(Date.now())); } catch (e) {}
+      location.reload();
+    } else {
+      mostrarAviso();
+    }
+  });
+
+  // La PWA puede quedar abierta días: al volver a la pestaña se pregunta si hay versión nueva
+  const buscar = () => navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {});
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') buscar(); });
+  setInterval(buscar, 30 * 60 * 1000);
+})();

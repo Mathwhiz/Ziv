@@ -1545,7 +1545,7 @@
 
 
   <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js?v=2');
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 
     const btnInstalar = document.getElementById('btn-instalar');
     const btnPwaDemo = document.getElementById('pwa-btn');
@@ -1591,7 +1591,7 @@
     }
     syncInstallButtons();
   </script>
-  <script src="shared/ui-utils.js?v=2.6"></script>
+  <script src="shared/ui-utils.js?v=2.7"></script>
   <script type="module">
     import { db } from './shared/firebase.js';
     import './shared/auth.js';
