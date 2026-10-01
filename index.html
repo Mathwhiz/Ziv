@@ -1391,15 +1391,6 @@
 
   <!-- ── VISTA: ELEGIR MÓDULO ── -->
   <div id="view-menu" class="view" style="display:none">
-    <button class="btn-theme btn-theme-float" onclick="window.uiToggleTheme(); syncThemeButtonUI()" aria-label="Cambiar tema">
-      <svg data-theme-sun width="16" height="16" viewBox="0 0 24 24" fill="none" style="display:none;">
-        <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.8"/>
-        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-      </svg>
-      <svg data-theme-moon width="16" height="16" viewBox="0 0 24 24" fill="none">
-        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
     <div class="menu-wrap">
       <header class="demo-menu-head">
         <div class="demo-menu-top">
@@ -1591,7 +1582,7 @@
     }
     syncInstallButtons();
   </script>
-  <script src="shared/ui-utils.js?v=2.7"></script>
+  <script src="shared/ui-utils.js?v=2.8"></script>
   <script type="module">
     import { db } from './shared/firebase.js';
     import './shared/auth.js';

@@ -51,4 +51,7 @@
    perfil (ui-utils.js lo guarda en localStorage y lo pone inline en <html>, que le gana a esto).
    El min-height compensa el zoom para que 100vh no genere scroll de más. */
 @media (min-width: 1100px) { :root { --ziv-z: 1.2; } }
+@media (min-width: 1280px) { :root { --ziv-z: 1.35; } }
+@media (min-width: 1500px) { :root { --ziv-z: 1.5; } }
+@media (min-width: 1900px) { :root { --ziv-z: 1.75; } }
 body { zoom: var(--ziv-z, 1); min-height: calc(100vh / var(--ziv-z, 1)) !important; }

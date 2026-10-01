@@ -262,30 +262,6 @@ body.light-mode {
 /* ── Escala global: misma regla que shared/styles-base.css (acá para las páginas que no lo cargan) ── */
 body { zoom: var(--ziv-z, 1); min-height: calc(100vh / var(--ziv-z, 1)) !important; }
 
-/* ── Botón toggle tema ── */
-.theme-toggle {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  width: 44px;
-  height: 44px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
-  border-radius: 12px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-  transition: background .15s, border-color .15s, color .15s;
-}
-.theme-toggle:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-light);
-  color: var(--text-primary);
-}
-body.en-menu .theme-toggle { display: none !important; }
 `;
   document.head.appendChild(style);
 })();
@@ -300,17 +276,21 @@ body.en-menu .theme-toggle { display: none !important; }
 
 /* ─────────────────────────────────────────
    TAMAÑO DE LETRA — escala global (menú del usuario)
-   Se guarda en localStorage 'ziv-escala'. Sin valor guardado: 1.2 en PC (>=1100px), 1 en el resto.
+   Se guarda en localStorage 'ziv-escala2'. Sin valor guardado: según el ancho (1.2 desde 1100px hasta 1.75 desde 1900px), 1 en el resto.
    Pone --ziv-z en <html>; styles-base.css lo usa como `zoom` del body, así que escala todo junto
    (texto, botones, espacios). Las páginas sin styles-base no se escalan.
 ───────────────────────────────────────── */
-window.ZIV_ESCALAS = [0.9, 1, 1.1, 1.2, 1.35, 1.5];
+window.ZIV_ESCALAS = [0.9, 1, 1.1, 1.2, 1.35, 1.5, 1.75, 2];
 // admin.html tiene un picker con Leaflet, que se lleva mal con el zoom: ahí no se escala
 window.ZIV_SIN_ESCALA = /\/admin\.html$/.test(location.pathname);
-window.zivEscalaPorDefecto = function() { return window.innerWidth >= 1100 ? 1.2 : 1; };
+// Pantallas anchas = columna de 480px chica: se agranda según el ancho (mismos cortes que styles-base.css)
+window.zivEscalaPorDefecto = function() {
+  const w = window.innerWidth;
+  return w >= 1900 ? 1.75 : w >= 1500 ? 1.5 : w >= 1280 ? 1.35 : w >= 1100 ? 1.2 : 1;
+};
 window.zivEscalaActual = function() {
   try {
-    const v = parseFloat(localStorage.getItem('ziv-escala'));
+    const v = parseFloat(localStorage.getItem('ziv-escala2'));
     if (ZIV_ESCALAS.includes(v)) return v;
   } catch (e) {}
   return window.zivEscalaPorDefecto();
@@ -323,11 +303,11 @@ window.zivAplicarEscala = function(e) {
 window.zivCambiarEscala = function(delta) {
   const i = ZIV_ESCALAS.indexOf(window.zivEscalaActual());
   const n = ZIV_ESCALAS[Math.min(ZIV_ESCALAS.length - 1, Math.max(0, (i < 0 ? 1 : i) + delta))];
-  try { localStorage.setItem('ziv-escala', String(n)); } catch (e) {}
+  try { localStorage.setItem('ziv-escala2', String(n)); } catch (e) {}
   window.zivAplicarEscala(n);
 };
 window.zivRestablecerEscala = function() {
-  try { localStorage.removeItem('ziv-escala'); } catch (e) {}
+  try { localStorage.removeItem('ziv-escala2'); } catch (e) {}
   window.zivAplicarEscala(window.zivEscalaPorDefecto());
 };
 // Refresca los controles del menú del usuario (porcentaje, límites, etiqueta del tema)
@@ -367,35 +347,6 @@ window.uiToggleTheme = function() {
   if (window.zivSyncAjustes) window.zivSyncAjustes();
 };
 
-// Insertar botón toggle cuando el DOM esté listo
-// SOLO en el index.html raíz (página de congregaciones)
-function shouldShowThemeToggle() {
-  const path = window.location.pathname;
-  // Mostrar solo en /index.html o / (raíz), NO en subcarpetas como /territorios/index.html
-  return path === '/' || path === '/index.html';
-}
-
-function insertThemeToggle() {
-  if (document.querySelector('[data-theme-sun], [data-theme-moon]')) return;
-  if (!shouldShowThemeToggle()) return;
-  if (document.getElementById('btn-theme')) return;
-  const btn = document.createElement('button');
-  btn.className = 'theme-toggle';
-  btn.id = 'btn-theme';
-  btn.title = 'Cambiar tema';
-  btn.onclick = window.uiToggleTheme;
-  btn.innerHTML = `
-    <svg id="theme-icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" style="display:${document.body.classList.contains('light-mode') ? '' : 'none'};">
-      <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.8"/>
-      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-    </svg>
-    <svg id="theme-icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" style="display:${document.body.classList.contains('light-mode') ? 'none' : ''};">
-      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`;
-  document.body.appendChild(btn);
-}
-if (document.body) insertThemeToggle();
-else document.addEventListener('DOMContentLoaded', insertThemeToggle);
 
 /* ─────────────────────────────────────────
    CSS GLOBAL
