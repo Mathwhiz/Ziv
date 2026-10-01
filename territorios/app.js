@@ -366,7 +366,8 @@ function goToModo() {
   const grupoLabel = grupoObj ? grupoObj.label : selectedGrupo;
   const grupoColor = GROUP_COLORS[selectedGrupo] || '#97C459';
 
-  document.getElementById('modo-grupo-label').textContent = grupoLabel;
+  // el título ya dice "Grupo ": si la etiqueta viene como "Grupo 3" quedaba "Grupo Grupo 3"
+  document.getElementById('modo-grupo-label').textContent = String(grupoLabel).replace(/^Grupo\s+/i, '');
   document.querySelector('.modo-wrap').style.setProperty('--grupo-color', grupoColor);
 
   const supEl = document.getElementById('modo-sup-label');
@@ -530,6 +531,10 @@ function _applyGrupoColorToBtn(btn, id) {
   btn.style.setProperty('--gc-bg-sel',      hexToRgba(c, 0.16));
   btn.style.setProperty('--gc-badge',       hexToRgba(c, 0.2));
   btn.style.setProperty('--grupo-hover-bg', hexToRgba(c, 0.13));
+  // color del número sobre la insignia sólida: oscuro si el color de grupo es claro, blanco si es oscuro
+  const n = parseInt(c.replace('#', ''), 16);
+  const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  btn.style.setProperty('--gc-on', lum > 0.62 ? '#1d1e22' : '#ffffff');
 }
 
 cargarGrupos();

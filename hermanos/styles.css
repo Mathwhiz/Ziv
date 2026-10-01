@@ -737,7 +737,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 /* ── ESCRITORIO: aprovechar el ancho (lista en grilla, grupos y responsabilidades en columnas) ── */
 @media (min-width: 1000px) {
   #view-main, #view-grupos, #view-responsabilidades, #view-especiales, #view-duplicados { max-width: 1400px; margin: 0 auto; }
-  .app { max-width: 1400px; padding: 1.5rem 28px; }
+  .app { max-width: 1400px; padding: 1rem 28px; }
   #view-main .toolbar { max-width: 620px; }
   #hermanos-list {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 10px; align-items: start;

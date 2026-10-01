@@ -240,35 +240,41 @@ label { font-size: 12px; color: var(--k-tx-888888, #888); display: block; margin
 .cover-subtitle { font-size: 22px; color: var(--k-tx-639922, #639922); letter-spacing: 0.04em; margin-bottom: 52px; }
 .grupo-label { font-size: 20px; font-weight: 500; color: var(--k-tx-cccccc, #ccc); margin-bottom: 16px; }
 .grupo-grid { display: flex; gap: 10px; margin-bottom: 36px; flex-wrap: wrap; justify-content: center; width: 100%; }
+/* Botones de grupo (rediseño 2026-10-01): insignia con el color del grupo en SÓLIDO y número en blanco/oscuro
+   según el color (--gc-on lo calcula app.js). Antes eran pasteles translúcidos que en el tema claro casi no se veían. */
 .grupo-btn {
-  border-radius: 16px; border: 1.5px solid var(--gc, #444);
-  background: var(--gc-bg, #2a2a2a); cursor: pointer;
+  border-radius: 16px; border: 1.5px solid color-mix(in srgb, var(--gc, #888) 80%, var(--border-light, #3a3d42));
+  background: color-mix(in srgb, var(--gc, #888) 7%, var(--bg-card, #232628)); cursor: pointer;
   position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 14px 8px; min-height: 110px;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
 }
-.grupo-btn:hover { transform: scale(1.03); background: var(--grupo-hover-bg, #2f2f2f); }
+.grupo-btn:hover { transform: translateY(-2px); background: color-mix(in srgb, var(--gc, #888) 14%, var(--bg-card, #232628)); box-shadow: 0 8px 18px color-mix(in srgb, var(--gc, #888) 22%, transparent); }
 .grupo-btn:active { transform: scale(0.97); }
-.grupo-btn.selected { border-width: 2px; background: var(--gc-bg-sel, rgba(100,100,100,0.16)); }
+.grupo-btn:focus-visible { outline: 3px solid color-mix(in srgb, var(--gc, #888) 60%, transparent); outline-offset: 2px; }
+.grupo-btn.selected {
+  border-color: var(--gc, #888); border-width: 2px;
+  background: color-mix(in srgb, var(--gc, #888) 18%, var(--bg-card, #232628));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gc, #888) 28%, transparent);
+}
 
 .gbcard-badge {
-  width: 56px; height: 56px; border-radius: 13px;
-  background: var(--gc-badge, rgba(136,136,136,0.18));
+  width: 56px; height: 56px; border-radius: 14px;
+  background: var(--gc, #888);
   display: flex; align-items: center; justify-content: center;
   align-self: center;
-  font-size: 28px; font-weight: 700; color: var(--gc, #aaa);
+  font-size: 28px; font-weight: 800; color: var(--gc-on, #fff);
   line-height: 1; text-align: center;
-  transition: background 0.15s, color 0.15s;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--gc, #888) 35%, transparent);
 }
-.grupo-btn.selected .gbcard-badge { background: var(--gc, #888); color: #fff; }
 
 .gbcard-check {
   position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
   width: 20px; height: 20px; border-radius: 50%;
   background: var(--gc, #888);
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 11px; font-weight: 700;
+  color: var(--gc-on, #fff); font-size: 11px; font-weight: 700;
   opacity: 0; transition: opacity 0.15s;
 }
 .grupo-btn.selected .gbcard-check { opacity: 1; }
@@ -563,8 +569,6 @@ body.light-mode .btn-mapa-float:hover {
   color: #4e44af;
 }
 
-body.light-mode .grupo-btn { background: var(--gc-bg, #e8e3f1); border-color: var(--gc, #c9bfe2); }
-body.light-mode .grupo-btn:hover { background: var(--grupo-hover-bg, #dcd5ec); }
 body.light-mode .gbcard-label { color: #2d2d2d; }
 body.light-mode .cover { background: transparent; }
 body.light-mode .section-title { color: #2d2d2d; }
@@ -786,7 +790,7 @@ body.light-mode .section-sub   { color: #67626f; }
 /* ═══ WEB LAYOUT >= 900px ═══ */
 @media (min-width: 900px) {
   body { padding: 0; }
-  .app { max-width: 1400px; margin: 0 auto; padding: 0; min-height: 100vh; }
+  .app { max-width: 1400px; margin: 0 auto; padding: 0; min-height: calc(100vh / var(--ziv-z, 1) - var(--ziv-bar-h, 0px) - 2rem); }
   #view-config { padding: 28px 36px 40px; max-width: 960px; margin: 0 auto; }
   .plan-header { padding-right: 0; margin-bottom: 18px; }
   .plan-titulo { font-size: 24px; font-weight: 600; }

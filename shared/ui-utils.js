@@ -1697,10 +1697,10 @@ _uiObserver.observe(document.body, { childList: true, subtree: true });
   const style = document.createElement('style');
   style.textContent = `
 .cs-module-cover {
-  min-height: calc(100vh - 2rem);
+  min-height: calc(100vh / var(--ziv-z, 1) - var(--ziv-bar-h, 0px) - 2rem);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 10px; padding: 2rem 1rem;
+  gap: 10px; padding: 1.25rem 1rem;
   max-width: 340px; margin: 0 auto;
 }
 .cs-module-icon-wrap {

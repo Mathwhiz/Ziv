@@ -18,7 +18,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   display: flex; flex-direction: column; align-items: center;
   text-align: center; padding: 3rem 2rem;
   max-width: 340px; margin: 0 auto;
-  min-height: 100vh; justify-content: center;
+  min-height: calc(100vh / var(--ziv-z, 1) - var(--ziv-bar-h, 0px)); justify-content: center;
 }
 .noauth-icon {
   width: 72px; height: 72px; border-radius: 20px;
@@ -683,7 +683,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   .pred-header, .tabs-bar { max-width: 1060px; }
   .tabs-bar .tab-btn { flex: 0 0 auto; padding: 10px 22px; }
   /* Las demás pestañas con el mismo ancho que el encabezado (si no, quedaban en una columna centrada) */
-  .pred-body { max-width: 1060px; }
+  .pred-body { max-width: 1060px; padding-bottom: 24px; }
   #tab-contactos .pred-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; align-items: start; }
   #metas-container .metas-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
   #salidas-semana-wrap { max-width: 560px; }
