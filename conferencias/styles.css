@@ -279,3 +279,27 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   pointer-events: none;
   z-index: -1;
 }
+
+/* ── Meses dentro de la lista: el título solo se ve cuando hay varios a la vez ── */
+.mes-bloque-titulo { display: none; }
+#sabados-list.multi .mes-bloque-titulo {
+  display: block; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-secondary); padding: 0 2px 10px;
+}
+
+/* ── ESCRITORIO: aprovechar el ancho (varios meses a la vez, listas en grilla) ── */
+@media (min-width: 1000px) {
+  .app { max-width: 1480px; }
+  .conf-header { padding: 14px 28px 12px; }
+  .tabs-bar { padding: 0 28px; max-width: 520px; }
+  .pred-body { padding: 18px 28px 0; }
+  .mes-nav { max-width: 520px; margin-left: auto; margin-right: auto; }
+  #sabados-list {
+    display: grid; grid-template-columns: repeat(var(--meses, 2), minmax(0, 1fr));
+    gap: 26px; align-items: start;
+  }
+  #oradores-list, #circuito-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; align-items: start;
+  }
+  #oradores-list .orador-card, #circuito-list .circ-card { margin-bottom: 0; }
+}

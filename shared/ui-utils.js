@@ -276,18 +276,15 @@ body { zoom: var(--ziv-z, 1); min-height: calc(100vh / var(--ziv-z, 1)) !importa
 
 /* ─────────────────────────────────────────
    TAMAÑO DE LETRA — escala global (menú del usuario)
-   Se guarda en localStorage 'ziv-escala2'. Sin valor guardado: según el ancho (1.2 desde 1100px hasta 1.75 desde 1900px), 1 en el resto.
+   Se guarda en localStorage 'ziv-escala2'. Sin valor guardado: 1 (sin zoom); es una preferencia personal.
    Pone --ziv-z en <html>; styles-base.css lo usa como `zoom` del body, así que escala todo junto
    (texto, botones, espacios). Las páginas sin styles-base no se escalan.
 ───────────────────────────────────────── */
 window.ZIV_ESCALAS = [0.9, 1, 1.1, 1.2, 1.35, 1.5, 1.75, 2];
 // admin.html tiene un picker con Leaflet, que se lleva mal con el zoom: ahí no se escala
 window.ZIV_SIN_ESCALA = /\/admin\.html$/.test(location.pathname);
-// Pantallas anchas = columna de 480px chica: se agranda según el ancho (mismos cortes que styles-base.css)
-window.zivEscalaPorDefecto = function() {
-  const w = window.innerWidth;
-  return w >= 1900 ? 1.75 : w >= 1500 ? 1.5 : w >= 1280 ? 1.35 : w >= 1100 ? 1.2 : 1;
-};
+// Sin zoom automático: en PC el espacio se aprovecha con el layout (columnas / varios meses), no agrandando todo.
+window.zivEscalaPorDefecto = function() { return 1; };
 window.zivEscalaActual = function() {
   try {
     const v = parseFloat(localStorage.getItem('ziv-escala2'));

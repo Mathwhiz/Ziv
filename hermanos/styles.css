@@ -733,3 +733,21 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   font-size: 13px;
   color: var(--text-muted);
 }
+
+/* ── ESCRITORIO: aprovechar el ancho (lista en grilla, grupos y responsabilidades en columnas) ── */
+@media (min-width: 1000px) {
+  #view-main, #view-grupos, #view-responsabilidades, #view-especiales, #view-duplicados { max-width: 1400px; margin: 0 auto; }
+  .app { max-width: 1400px; padding: 1.5rem 28px; }
+  #view-main .toolbar { max-width: 620px; }
+  #hermanos-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 10px; align-items: start;
+  }
+  #hermanos-list .hermano-row { margin-bottom: 0; }
+  #grupos-board {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; align-items: start;
+  }
+  #grupos-board .grupo-card { min-width: 0; }
+  #grupos-board .grupo-item-main * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #resp-content { column-count: 3; column-gap: 28px; }
+  #resp-content .resp-section { break-inside: avoid; }
+}

@@ -23,16 +23,16 @@
 
 /* ── Loading ── */
 .loading-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1rem; gap: 14px; }
-.spinner { width: 30px; height: 30px; border: 3px solid #333; border-top-color: var(--spinner-color, #7F77DD); border-radius: 50%; animation: spin 0.8s linear infinite; }
-.loading-txt { font-size: 14px; color: #888; }
+.spinner { width: 30px; height: 30px; border: 3px solid var(--k-bd-333333, #333); border-top-color: var(--spinner-color, #7F77DD); border-radius: 50%; animation: spin 0.8s linear infinite; }
+.loading-txt { font-size: 14px; color: var(--k-tx-888888, #888); }
 
 /* ── Estados ── */
-.error-wrap { background: #2e1a1a; border: 0.5px solid #A32D2D; border-radius: 10px; padding: 1rem 1.25rem; font-size: 13px; color: #F09595; }
-.empty-state { text-align: center; padding: 3rem 1rem; color: #555; font-size: 14px; }
+.error-wrap { background: var(--k-bg-2e1a1a, #2e1a1a); border: 0.5px solid var(--k-bd-a32d2d, #A32D2D); border-radius: 10px; padding: 1rem 1.25rem; font-size: 13px; color: var(--k-tx-f09595, #F09595); }
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(--k-tx-555555, #555); font-size: 14px; }
 
 /* ── Section headers ── */
-.section-title { font-size: 22px; font-weight: 500; color: #eee; margin-bottom: 4px; text-align: center; }
-.section-sub   { font-size: 14px; color: #888; margin-bottom: 16px; text-align: center; }
+.section-title { font-size: 22px; font-weight: 500; color: var(--k-tx-eeeeee, #eee); margin-bottom: 4px; text-align: center; }
+.section-sub   { font-size: 14px; color: var(--k-tx-888888, #888); margin-bottom: 16px; text-align: center; }
 
 /* ── Encargado menú ── */
 .enc-menu { display: flex; flex-direction: column; align-items: center; gap: 14px; }
@@ -40,8 +40,8 @@
 /* ── Banner offline ── */
 .offline-banner {
   position: fixed; top: 0; left: 0; right: 0;
-  background: #2e1a1a; border-bottom: 1.5px solid #A32D2D;
-  color: #F09595; font-size: 13px; font-weight: 500;
+  background: var(--k-bg-2e1a1a, #2e1a1a); border-bottom: 1.5px solid var(--k-bd-a32d2d, #A32D2D);
+  color: var(--k-tx-f09595, #F09595); font-size: 13px; font-weight: 500;
   text-align: center; padding: 10px; z-index: 999; display: none;
 }
 .offline-banner.visible { display: block; }
@@ -50,8 +50,4 @@
    --ziv-z: 1 por defecto, 1.2 en PC (>=1100px). El usuario lo cambia desde el menú de su
    perfil (ui-utils.js lo guarda en localStorage y lo pone inline en <html>, que le gana a esto).
    El min-height compensa el zoom para que 100vh no genere scroll de más. */
-@media (min-width: 1100px) { :root { --ziv-z: 1.2; } }
-@media (min-width: 1280px) { :root { --ziv-z: 1.35; } }
-@media (min-width: 1500px) { :root { --ziv-z: 1.5; } }
-@media (min-width: 1900px) { :root { --ziv-z: 1.75; } }
 body { zoom: var(--ziv-z, 1); min-height: calc(100vh / var(--ziv-z, 1)) !important; }

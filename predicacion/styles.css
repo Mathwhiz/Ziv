@@ -668,3 +668,14 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
     text-align: left;
   }
 }
+
+/* ── ESCRITORIO: pestaña Tiempo en dos columnas (cronómetro y resumen a la izquierda, historial a la derecha) ── */
+@media (min-width: 1000px) {
+  #tab-tiempo .pred-body {
+    max-width: 1060px; display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+    column-gap: 32px; align-items: start;
+  }
+  #tab-tiempo .pred-body > :nth-child(-n+3) { grid-column: 1; }
+  #tab-tiempo .pred-body > :nth-child(4) { grid-column: 2; grid-row: 1; }
+  #tab-tiempo .pred-body > :nth-child(5) { grid-column: 2; grid-row: 2 / span 2; }
+}

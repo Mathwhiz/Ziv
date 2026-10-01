@@ -130,13 +130,31 @@ window.switchTab = function(tab) {
 // ─────────────────────────────────────────
 //   RENDER MES
 // ─────────────────────────────────────────
+// Cuántos meses entran en pantalla: 1 en celular, 2 desde 1000px, 3 desde 1500px (las hermanas con vista
+// de solo el mes actual siempre ven 1).
+function mesesVisibles() {
+  if (_soloMesActual) return 1;
+  return window.innerWidth >= 1500 ? 3 : window.innerWidth >= 1000 ? 2 : 1;
+}
+
 function renderMes() {
-  document.getElementById('mes-label').textContent = fmtMesLargo(_mes);
-  const sabados = getSabadosDelMes(_mes);
-  const el = document.getElementById('sabados-list');
+  const n = mesesVisibles();
+  const lista = document.getElementById('sabados-list');
+  lista.classList.toggle('multi', n > 1);
+  lista.style.setProperty('--meses', n);
+  document.getElementById('mes-label').textContent =
+    n > 1 ? `${fmtMesLargo(_mes)} – ${fmtMesLargo(navMesIso(_mes, n - 1))}` : fmtMesLargo(_mes);
+  lista.innerHTML = Array.from({ length: n }, (_, i) => {
+    const mes = navMesIso(_mes, i);
+    return `<section class="mes-bloque"><div class="mes-bloque-titulo">${fmtMesLargo(mes)}</div>${htmlSabadosDelMes(mes)}</section>`;
+  }).join('');
+}
+
+function htmlSabadosDelMes(mes) {
+  const sabados = getSabadosDelMes(mes);
   const hoy = hoyISO();
 
-  el.innerHTML = sabados.map(sab => {
+  return sabados.map(sab => {
     const especial = _semanasEsp[lunesDeISO(sab)];
     const confs    = Object.values(_conferencias).filter(c => c.fecha === sab);
     const [, , d]  = sab.split('-').map(Number);
@@ -183,6 +201,14 @@ function renderMes() {
       </div>`;
   }).join('');
 }
+
+// Al cruzar un corte de ancho (ej. ventana que se agranda) se vuelve a armar con la cantidad de meses que entra
+let _nMesesPintados = null;
+window.addEventListener('resize', () => {
+  const n = mesesVisibles();
+  if (_nMesesPintados !== null && n !== _nMesesPintados) renderMes();
+  _nMesesPintados = n;
+});
 
 function renderConfItem(c) {
   const actions = _puedeEditar
