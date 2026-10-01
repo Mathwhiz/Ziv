@@ -677,7 +677,16 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   }
   #tab-tiempo .pred-body > :nth-child(-n+3) { grid-column: 1; }
   #tab-tiempo .pred-body > :nth-child(4) { grid-column: 2; grid-row: 1; }
-  #tab-tiempo .pred-body > :nth-child(5) { grid-column: 2; grid-row: 2 / span 2; }
+  /* el historial arranca a la altura del cronómetro (el título queda encima y la lista ocupa las 3 filas) */
+  #tab-tiempo .pred-body > :nth-child(5) { grid-column: 2; grid-row: 1 / span 3; margin-top: 30px; }
+  /* Encabezado y pestañas del mismo ancho que el contenido (antes quedaban en 480px y se veía descentrado) */
+  .pred-header, .tabs-bar { max-width: 1060px; }
+  .tabs-bar .tab-btn { flex: 0 0 auto; padding: 10px 22px; }
+  /* Las demás pestañas con el mismo ancho que el encabezado (si no, quedaban en una columna centrada) */
+  .pred-body { max-width: 1060px; }
+  #tab-contactos .pred-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; align-items: start; }
+  #metas-container .metas-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  #salidas-semana-wrap { max-width: 560px; }
 }
 
 /* El cronómetro (00:00:00) se salía de la pantalla en celulares angostos */
