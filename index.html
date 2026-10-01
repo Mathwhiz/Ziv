@@ -169,7 +169,7 @@
     .congre-arrow { color: #444; font-size: 1.3rem; flex-shrink: 0; }
 
     .loading { color: var(--text-muted, #555); font-size: 0.9rem; text-align: center; padding: 40px 0; }
-    .error   { color: #e07070; font-size: 0.85rem; text-align: center; padding: 20px 0; }
+    .error   { color: var(--k-tx-e07070, #e07070); font-size: 0.85rem; text-align: center; padding: 20px 0; }
 
     /* ── Menú de módulos ── */
     #view-menu {
@@ -457,27 +457,27 @@
       right: 72px;
       width: 44px;
       height: 44px;
-      background: #1a1f1e;
+      background: var(--k-bg-1a1f1e, #1a1f1e);
       border: 1px solid rgba(29,158,117,0.35);
       border-radius: 12px;
-      color: #1D9E75;
+      color: var(--k-tx-1d9e75, #1D9E75);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: background .15s, border-color .15s, color .15s;
     }
-    .btn-instalar:hover { background: #1c2420; border-color: rgba(29,158,117,0.6); color: #25c491; }
+    .btn-instalar:hover { background: var(--k-bg-1c2420, #1c2420); border-color: rgba(29,158,117,0.6); color: var(--k-tx-25c491, #25c491); }
     .btn-instalar.oculto { display: none; }
     body.en-menu .btn-instalar { display: none !important; }
     body.light-mode .btn-instalar {
-      background: #eaf8f3;
+      background: #dbeee6;
       border-color: rgba(29,158,117,0.35);
       color: #168563;
       box-shadow: 0 4px 18px rgba(29,158,117,0.12);
     }
     body.light-mode .btn-instalar:hover {
-      background: #e0f3ec;
+      background: #cfe6dc;
       border-color: rgba(29,158,117,0.55);
       color: #127055;
     }
@@ -601,8 +601,8 @@
       position: absolute;
       inset: 0;
       border-radius: 34px;
-      background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.18), transparent 38%), rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.08);
+      background: radial-gradient(circle at 30% 25%, var(--k-bg-w18, rgba(255,255,255,.18)), transparent 38%), var(--k-bg-w04, rgba(255,255,255,.04));
+      border: 1px solid var(--k-bd-w08, rgba(255,255,255,.08));
       z-index: 1;
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
@@ -850,12 +850,12 @@
     }
     .cs-nav-card-map:hover {
       border-color: rgba(201,74,61,0.55);
-      background: #2a1711;
+      background: var(--k-bg-2a1711, #2a1711);
       box-shadow: 0 6px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(201,74,61,0.55), 0 4px 20px rgba(201,74,61,0.12);
     }
     body.light-mode .cs-nav-card-map:hover {
       border-color: rgba(201,74,61,0.52);
-      background: #fff0ea;
+      background: #efdfd6;
       box-shadow: 0 8px 26px rgba(174,76,41,0.16), 0 0 0 1px rgba(201,74,61,0.5);
     }
     .cs-nav-icon-admin {
@@ -864,12 +864,12 @@
     }
     .cs-nav-card-admin:hover {
       border-color: rgba(127,119,221,0.55);
-      background: #1a1730;
+      background: var(--k-bg-1a1730, #1a1730);
       box-shadow: 0 6px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(127,119,221,0.55), 0 4px 20px rgba(127,119,221,0.12);
     }
     body.light-mode .cs-nav-card-admin:hover {
       border-color: rgba(127,119,221,0.52);
-      background: #f3f0ff;
+      background: #e6e1f0;
       box-shadow: 0 8px 26px rgba(127,119,221,0.16), 0 0 0 1px rgba(127,119,221,0.5);
     }
     .cs-nav-title {
@@ -1133,12 +1133,12 @@
                   <div class="fake-row">
                     <div class="fake-dot" style="background:#5DB85D"></div>
                     <div class="fake-line fake-line-m"></div>
-                    <div class="fake-badge" style="background:rgba(93,184,93,0.12);color:#5DB85D">Activo</div>
+                    <div class="fake-badge" style="background:rgba(93,184,93,0.12);color:var(--k-tx-5db85d, #5DB85D)">Activo</div>
                   </div>
                   <div class="fake-row">
                     <div class="fake-dot" style="background:#EF9F27"></div>
                     <div class="fake-line fake-line-s"></div>
-                    <div class="fake-badge" style="background:rgba(239,159,39,0.12);color:#EF9F27">En curso</div>
+                    <div class="fake-badge" style="background:rgba(239,159,39,0.12);color:var(--k-tx-ef9f27, #EF9F27)">En curso</div>
                   </div>
                   <div class="fake-row">
                     <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
@@ -1161,15 +1161,15 @@
                 </div>
                 <div class="slide-body">
                   <div class="fake-row">
-                    <div class="fake-badge" style="background:rgba(91,141,222,0.12);color:#5B8DDE;min-width:60px;text-align:center">LECTOR</div>
+                    <div class="fake-badge" style="background:rgba(91,141,222,0.12);color:var(--k-tx-5b8dde, #5B8DDE);min-width:60px;text-align:center">LECTOR</div>
                     <div class="fake-line fake-line-l"></div>
                   </div>
                   <div class="fake-row">
-                    <div class="fake-badge" style="background:rgba(91,141,222,0.12);color:#5B8DDE;min-width:60px;text-align:center">SONIDO</div>
+                    <div class="fake-badge" style="background:rgba(91,141,222,0.12);color:var(--k-tx-5b8dde, #5B8DDE);min-width:60px;text-align:center">SONIDO</div>
                     <div class="fake-line fake-line-m"></div>
                   </div>
                   <div class="fake-row">
-                    <div class="fake-badge" style="background:rgba(91,141,222,0.12);color:#5B8DDE;min-width:60px;text-align:center">MICRO</div>
+                    <div class="fake-badge" style="background:rgba(91,141,222,0.12);color:var(--k-tx-5b8dde, #5B8DDE);min-width:60px;text-align:center">MICRO</div>
                     <div class="fake-line fake-line-s"></div>
                   </div>
                 </div>
@@ -1191,7 +1191,7 @@
                   <div class="fake-row">
                     <div class="fake-dot" style="background:#1D9E75"></div>
                     <div class="fake-line" style="width:30%"></div>
-                    <div class="fake-badge" style="background:rgba(29,158,117,0.12);color:#1D9E75">Canción 52</div>
+                    <div class="fake-badge" style="background:rgba(29,158,117,0.12);color:var(--k-tx-1d9e75, #1D9E75)">Canción 52</div>
                   </div>
                   <div class="fake-row">
                     <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
@@ -1220,7 +1220,7 @@
                   <div class="fake-row">
                     <div class="fake-dot" style="background:#7F77DD"></div>
                     <div class="fake-line fake-line-m"></div>
-                    <div class="fake-badge" style="background:rgba(127,119,221,0.10);color:#7F77DD">Anciano</div>
+                    <div class="fake-badge" style="background:rgba(127,119,221,0.10);color:var(--k-tx-7f77dd, #7F77DD)">Anciano</div>
                   </div>
                   <div class="fake-row">
                     <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
@@ -1247,13 +1247,13 @@
                 </div>
                 <div class="slide-body">
                   <div class="fake-row">
-                    <div class="fake-badge" style="background:rgba(224,82,119,0.12);color:#E05277;min-width:44px;text-align:center">12 h</div>
+                    <div class="fake-badge" style="background:rgba(224,82,119,0.12);color:var(--k-tx-e05277, #E05277);min-width:44px;text-align:center">12 h</div>
                     <div class="fake-line fake-line-m"></div>
                   </div>
                   <div class="fake-row">
                     <div class="fake-dot" style="background:#E05277"></div>
                     <div class="fake-line fake-line-l"></div>
-                    <div class="fake-badge" style="background:rgba(224,82,119,0.12);color:#E05277">3 estudios</div>
+                    <div class="fake-badge" style="background:rgba(224,82,119,0.12);color:var(--k-tx-e05277, #E05277)">3 estudios</div>
                   </div>
                   <div class="fake-row">
                     <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
@@ -1278,10 +1278,10 @@
                   <div class="fake-row">
                     <div class="fake-dot" style="background:#0DB6CC"></div>
                     <div class="fake-line fake-line-m"></div>
-                    <div class="fake-badge" style="background:rgba(13,182,204,0.10);color:#0DB6CC">Confirmada</div>
+                    <div class="fake-badge" style="background:rgba(13,182,204,0.10);color:var(--k-tx-0db6cc, #0DB6CC)">Confirmada</div>
                   </div>
                   <div class="fake-row">
-                    <div class="fake-badge" style="background:rgba(13,182,204,0.10);color:#0DB6CC">Domingo</div>
+                    <div class="fake-badge" style="background:rgba(13,182,204,0.10);color:var(--k-tx-0db6cc, #0DB6CC)">Domingo</div>
                     <div class="fake-line fake-line-l"></div>
                   </div>
                   <div class="fake-row">
@@ -1591,7 +1591,7 @@
     }
     syncInstallButtons();
   </script>
-  <script src="shared/ui-utils.js?v=1.8"></script>
+  <script src="shared/ui-utils.js?v=2.6"></script>
   <script type="module">
     import { db } from './shared/firebase.js';
     import './shared/auth.js';

@@ -14,8 +14,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="../shared/styles-base.css">
-  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=3.0">
+  <link rel="stylesheet" href="../shared/styles-base.css?v=1.1">
+  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=3.2">
 </head>
 <body>
 
@@ -50,7 +50,7 @@
         </div>
       </div>
       <div class="cs-module-title">Vida y Ministerio</div>
-      <div class="cs-module-sub" id="cover-congre" style="color:#EF9F27;">—</div>
+      <div class="cs-module-sub" id="cover-congre" style="color:var(--k-tx-ef9f27, #EF9F27);">—</div>
       <div class="cs-module-label">¿Qué querés hacer?</div>
 
       <button class="cs-module-card" style="--card-hover-border:rgba(239,159,39,0.55);--card-hover-bg:#272010;--card-hover-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 1px rgba(239,159,39,0.55),0 4px 20px rgba(239,159,39,0.12);" onclick="goToVerPrograma()">
@@ -112,7 +112,7 @@
   <!-- ── MENÚ ENCARGADO (tras PIN) ── -->
   <div id="view-menu-enc" class="view">
     <div style="min-height:calc(100vh - 2rem);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:2rem 1rem;">
-      <p class="section-title" style="color:#7F77DD;margin-bottom:4px;">Encargado</p>
+      <p class="section-title" style="color:var(--k-tx-7f77dd, #7F77DD);margin-bottom:4px;">Encargado</p>
       <p class="section-sub" id="menu-enc-congre-sub" style="margin-bottom:16px;">—</p>
       <div style="display:flex;flex-direction:column;align-items:center;gap:14px;min-width:320px;">
         <button class="cs-module-card" style="--card-hover-border:rgba(239,159,39,0.55);--card-hover-bg:#272010;--card-hover-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 1px rgba(239,159,39,0.55),0 4px 20px rgba(239,159,39,0.12);" onclick="goToSemanas()">
@@ -157,7 +157,7 @@
           </div>
         </button>
 
-        <button class="btn-secondary" onclick="cerrarSesionVM()" style="width:100%;border-color:#A32D2D;color:#F09595;">Cerrar sesión</button>
+        <button class="btn-secondary" onclick="cerrarSesionVM()" style="width:100%;border-color:var(--k-bd-a32d2d, #A32D2D);color:var(--k-tx-f09595, #F09595);">Cerrar sesión</button>
       </div>
     </div>
   </div>
@@ -222,11 +222,11 @@
         </div>
         <label class="check-row" style="display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer;">
           <input type="checkbox" id="nueva-reemplazar" style="width:18px;height:18px;accent-color:#EF9F27;cursor:pointer;">
-          <span style="font-size:14px;color:#ccc;">Reemplazar semanas existentes</span>
+          <span style="font-size:14px;color:var(--k-tx-cccccc, #ccc);">Reemplazar semanas existentes</span>
         </label>
         <label class="check-row" style="display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer;">
           <input type="checkbox" id="nueva-auto-asignar" style="width:18px;height:18px;accent-color:#7F77DD;cursor:pointer;">
-          <span style="font-size:14px;color:#ccc;">Auto-asignar hermanos</span>
+          <span style="font-size:14px;color:var(--k-tx-cccccc, #ccc);">Auto-asignar hermanos</span>
         </label>
         <div class="field">
           <label>¿Cuántas semanas generar?</label>
@@ -450,15 +450,15 @@
   </div>
 
 <!-- ── S-89 Overlay ──────────────────────────────── -->
-<div id="s89-overlay" style="display:none; position:fixed; inset:0; z-index:900; background:#111315; overflow-y:auto; -webkit-overflow-scrolling:touch;">
+<div id="s89-overlay" style="display:none; position:fixed; inset:0; z-index:900; background:var(--k-bg-111315, #111315); overflow-y:auto; -webkit-overflow-scrolling:touch;">
   <div style="max-width:480px; margin:0 auto; padding:0 16px 32px;">
 
     <!-- Header sticky -->
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 0 10px; position:sticky; top:0; background:#111315; z-index:1; border-bottom:1px solid #2a2a2a; margin-bottom:16px;">
-      <div id="s89-titulo" style="font-size:16px; font-weight:700; color:#e8e8e8;"></div>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 0 10px; position:sticky; top:0; background:var(--k-bg-111315, #111315); z-index:1; border-bottom:1px solid var(--k-bd-2a2a2a, #2a2a2a); margin-bottom:16px;">
+      <div id="s89-titulo" style="font-size:16px; font-weight:700; color:var(--text-primary, #e8e8e8);"></div>
       <div style="display:flex; gap:8px;">
-        <button style="background:#232628; border:1px solid #3a3a3a; color:#ccc; border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer;" onclick="window.s89Imprimir()">🖨 Imprimir</button>
-        <button style="background:#232628; border:1px solid #3a3a3a; color:#ccc; border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer;" onclick="window.cerrarS89()">✕</button>
+        <button style="background:var(--bg-card, #232628); border:1px solid var(--k-bd-3a3a3a, #3a3a3a); color:var(--k-tx-cccccc, #ccc); border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer;" onclick="window.s89Imprimir()">🖨 Imprimir</button>
+        <button style="background:var(--bg-card, #232628); border:1px solid var(--k-bd-3a3a3a, #3a3a3a); color:var(--k-tx-cccccc, #ccc); border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer;" onclick="window.cerrarS89()">✕</button>
       </div>
     </div>
 
@@ -486,7 +486,7 @@
 
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="../shared/ui-utils.js?v=1.8"></script>
+<script src="../shared/ui-utils.js?v=2.6"></script>
 <script type="module" src="/vida-ministerio/app.js"></script>
 </body>
 </html>

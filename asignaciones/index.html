@@ -25,8 +25,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Asignaciones — Ziv</title>
-<link rel="stylesheet" href="../shared/styles-base.css">
-<link rel="stylesheet" href="/asignaciones/styles.css?v=3.1">
+<link rel="stylesheet" href="../shared/styles-base.css?v=1.1">
+<link rel="stylesheet" href="/asignaciones/styles.css?v=3.5">
 </head>
 <body>
 
@@ -69,11 +69,11 @@
       </div>
 
       <div class="cs-module-title">Asignaciones</div>
-      <div class="cs-module-sub" id="congre-sub" style="color:#7F77DD;">—</div>
+      <div class="cs-module-sub" id="congre-sub" style="color:var(--k-tx-7f77dd, #7F77DD);">—</div>
       <div class="cs-module-label">¿Qué querés hacer?</div>
 
       <button class="cs-module-card" onclick="goToVerSemana()" style="--card-hover-border:#1D9E75;--card-hover-bg:#1e2922;">
-        <div class="cs-module-card-icon" style="background:#0d2318;">
+        <div class="cs-module-card-icon" style="background:var(--k-bg-0d2318, #0d2318);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="#1D9E75" stroke-width="1.8"/>
             <circle cx="12" cy="12" r="3" stroke="#1D9E75" stroke-width="1.8"/>
@@ -86,7 +86,7 @@
       </button>
 
       <button class="cs-module-card" onclick="goToBuscarHermano()" style="--card-hover-border:#378ADD;--card-hover-bg:#1e2430;">
-        <div class="cs-module-card-icon" style="background:#0d1a2e;">
+        <div class="cs-module-card-icon" style="background:var(--k-bg-0d1a2e, #0d1a2e);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <circle cx="11" cy="11" r="8" stroke="#378ADD" stroke-width="1.8"/>
             <path d="m21 21-4.35-4.35" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round"/>
@@ -99,7 +99,7 @@
       </button>
 
       <button id="btn-encargado-asig" class="cs-module-card" onclick="goToPin()" style="display:none;--card-hover-border:#7F77DD;--card-hover-bg:#1e1e2e;">
-        <div class="cs-module-card-icon" style="background:#171730;">
+        <div class="cs-module-card-icon" style="background:var(--k-bg-171730, #171730);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <rect x="3" y="11" width="18" height="11" rx="2" stroke="#7F77DD" stroke-width="1.8"/>
             <path d="M7 11V7a5 5 0 0110 0v4" stroke="#7F77DD" stroke-width="1.8" stroke-linecap="round"/>
@@ -218,7 +218,7 @@
     <p class="section-title">Editar programación</p>
     <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px;">
       <button onclick="cambiarSemanaEdit(-1)" class="semana-nav-btn">←</button>
-      <span id="editar-semana-info" style="font-size:14px;color:#888;"></span>
+      <span id="editar-semana-info" style="font-size:14px;color:var(--k-tx-888888, #888);"></span>
       <button onclick="cambiarSemanaEdit(1)" class="semana-nav-btn">→</button>
     </div>
     <div id="editar-loading" class="loading-wrap" style="display:none;"><div class="spinner"></div><div class="loading-txt">Cargando...</div></div>
@@ -243,26 +243,26 @@
     </div>
     <div style="display:flex;gap:8px;margin-bottom:14px;">
       <div style="flex:1;">
-        <label style="font-size:12px;color:#888;display:block;margin-bottom:3px;">Desde</label>
-        <input type="date" id="auto-desde" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid #555;border-radius:8px;background:#1e1e1e;color:#eee;">
+        <label style="font-size:12px;color:var(--k-tx-888888, #888);display:block;margin-bottom:3px;">Desde</label>
+        <input type="date" id="auto-desde" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-1e1e1e, #1e1e1e);color:var(--k-tx-eeeeee, #eee);">
       </div>
       <div style="flex:1;">
-        <label style="font-size:12px;color:#888;display:block;margin-bottom:3px;">Hasta</label>
-        <input type="date" id="auto-hasta" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid #555;border-radius:8px;background:#1e1e1e;color:#eee;">
+        <label style="font-size:12px;color:var(--k-tx-888888, #888);display:block;margin-bottom:3px;">Hasta</label>
+        <input type="date" id="auto-hasta" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-1e1e1e, #1e1e1e);color:var(--k-tx-eeeeee, #eee);">
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;background:#252525;border:0.5px solid #444;border-radius:10px;padding:12px 14px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;background:var(--k-bg-252525, #252525);border:0.5px solid var(--k-bd-444444, #444);border-radius:10px;padding:12px 14px;">
     <input type="checkbox" id="auto-usar-historial" style="width:16px;height:16px;accent-color:#7F77DD;cursor:pointer;">
     <div>
-      <label for="auto-usar-historial" style="font-size:13px;color:#eee;cursor:pointer;font-weight:500;">Tener en cuenta historial previo</label>
-      <div style="font-size:11px;color:#888;margin-top:2px;">Si está activado, respeta lo que ya está cargado en la planilla</div>
+      <label for="auto-usar-historial" style="font-size:13px;color:var(--k-tx-eeeeee, #eee);cursor:pointer;font-weight:500;">Tener en cuenta historial previo</label>
+      <div style="font-size:11px;color:var(--k-tx-888888, #888);margin-top:2px;">Si está activado, respeta lo que ya está cargado en la planilla</div>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;background:#252525;border:0.5px solid #444;border-radius:10px;padding:12px 14px;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;background:var(--k-bg-252525, #252525);border:0.5px solid var(--k-bd-444444, #444);border-radius:10px;padding:12px 14px;">
     <input type="checkbox" id="auto-reemplazar" style="width:16px;height:16px;accent-color:#F09595;cursor:pointer;">
     <div>
-      <label for="auto-reemplazar" style="font-size:13px;color:#eee;cursor:pointer;font-weight:500;">Reemplazar semanas existentes</label>
-      <div style="font-size:11px;color:#888;margin-top:2px;">Si está activado, regenera aunque ya haya datos en el rango elegido</div>
+      <label for="auto-reemplazar" style="font-size:13px;color:var(--k-tx-eeeeee, #eee);cursor:pointer;font-weight:500;">Reemplazar semanas existentes</label>
+      <div style="font-size:11px;color:var(--k-tx-888888, #888);margin-top:2px;">Si está activado, regenera aunque ya haya datos en el rango elegido</div>
     </div>
   </div>
   
@@ -284,7 +284,7 @@
     <p class="section-title">Tabla para WhatsApp</p>
     <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px;">
       <button onclick="cambiarSemanaImagen(-1)" class="semana-nav-btn">←</button>
-      <span id="imagen-semana-label" style="font-size:14px;color:#888;text-align:center;"></span>
+      <span id="imagen-semana-label" style="font-size:14px;color:var(--k-tx-888888, #888);text-align:center;"></span>
       <button onclick="cambiarSemanaImagen(1)" class="semana-nav-btn">→</button>
     </div>
     <div id="imagen-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando...</div></div>
@@ -319,7 +319,7 @@
 
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="../shared/ui-utils.js?v=1.8"></script>
+<script src="../shared/ui-utils.js?v=2.6"></script>
 <script type="module" src="/asignaciones/app.js"></script>
 </body>
 </html>

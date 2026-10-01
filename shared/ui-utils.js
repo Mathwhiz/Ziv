@@ -41,32 +41,204 @@
 
 /* ── MODO CLARO — respeta estructura visual, colores claros ── */
 body.light-mode {
-  --bg-primary:    #f4f5f7;
-  --bg-secondary:  #ffffff;
-  --bg-card:       #ffffff;
-  --bg-hover:      #ebebef;
-  --bg-input:      #ffffff;
-  --bg-modal:      #ffffff;
-  --bg-header:     #ffffff;
-  --bg-badge:      rgba(127,119,221,0.08);
+  --bg-primary:    #e2dfd8;
+  --bg-secondary:  #e9e6df;
+  --bg-card:       #edeae3;
+  --bg-hover:      #d8d5cd;
+  --bg-input:      #f1eee8;
+  --bg-modal:      #edeae3;
+  --bg-header:     #edeae3;
+  --bg-badge:      rgba(127,119,221,0.10);
 
-  --text-primary:  #18191c;
-  --text-secondary:#5a5a68;
-  --text-muted:    #9595a2;
-  --text-dim:      #9595a2;
+  --text-primary:  #1d1e22;
+  --text-secondary:#4a4c56;
+  --text-muted:    #777a85;
+  --text-dim:      #777a85;
 
-  --border-primary:#dddde3;
-  --border-light:  #d2d3dd;
-  --border-input:  #b8b8c2;
+  --border-primary:#cdc9c0;
+  --border-light:  #c0bcb2;
+  --border-input:  #a7a399;
 
-  --shadow-card:   0 8px 24px rgba(47,55,78,0.08);
-  --shadow-hover:  0 14px 34px rgba(47,55,78,0.14);
+  --shadow-card:   0 6px 20px rgba(40,36,28,0.10);
+  --shadow-hover:  0 12px 30px rgba(40,36,28,0.16);
 
-  --accent:        #7F77DD;
-  --accent-hover:  #6a62cc;
-  --toggle-bg:     #ffffff;
-  --toggle-knob:   #18191c;
+  --accent:        #6c63cf;
+  --accent-hover:  #5b52bd;
+  --toggle-bg:     #edeae3;
+  --toggle-knob:   #1d1e22;
 }
+
+/*TEMA-CLARO-AUTO:START*/
+body.light-mode {
+  --k-bd-000000: #d5d2cd;
+  --k-bd-1a1c1f: #cac7c1;
+  --k-bd-25272a: #c6c2bc;
+  --k-bd-272a2e: #c4c1ba;
+  --k-bd-2a2a2a: #c5c1ba;
+  --k-bd-2a2d30: #c3c0b9;
+  --k-bd-2e2e2e: #c3bfb9;
+  --k-bd-333333: #c1bdb6;
+  --k-bd-3a3a3a: #bebbb3;
+  --k-bd-3b6d11: #bdd6a9;
+  --k-bd-444444: #bab6af;
+  --k-bd-4a44a5: #4a44a5;
+  --k-bd-555555: #b4afa7;
+  --k-bd-a32d2d: #a32d2d;
+  --k-bd-w004: rgba(40, 36, 28, 0.052);
+  --k-bd-w005: rgba(40, 36, 28, 0.065);
+  --k-bd-w006: rgba(40, 36, 28, 0.078);
+  --k-bd-w007: rgba(40, 36, 28, 0.091);
+  --k-bd-w008: rgba(40, 36, 28, 0.104);
+  --k-bd-w01: rgba(40, 36, 28, 0.13);
+  --k-bd-w012: rgba(40, 36, 28, 0.156);
+  --k-bd-w015: rgba(40, 36, 28, 0.195);
+  --k-bd-w02: rgba(40, 36, 28, 0.26);
+  --k-bd-w022: rgba(40, 36, 28, 0.286);
+  --k-bd-w08: rgba(40, 36, 28, 0.104);
+  --k-bg-000000: #000000;
+  --k-bg-08090d: #dfe2ec;
+  --k-bg-091f17: #daf1e9;
+  --k-bg-0a0c10: #e0e4eb;
+  --k-bg-0a2e24: #daf1eb;
+  --k-bg-0c2a1e: #daf1e8;
+  --k-bg-0c2a45: #dae6f1;
+  --k-bg-0c447c: #0c447c;
+  --k-bg-0d1a2e: #dae3f1;
+  --k-bg-0d2318: #daf1e6;
+  --k-bg-0d2420: #daf1ed;
+  --k-bg-0d2e1a: #daf1e3;
+  --k-bg-0f6e56: #0f6e56;
+  --k-bg-111111: #d7d4ce;
+  --k-bg-111315: #d8d5cf;
+  --k-bg-120f2e: #dcdaf1;
+  --k-bg-141414: #d8d5d0;
+  --k-bg-16181e: #dad8d2;
+  --k-bg-171730: #ddddee;
+  --k-bg-17191c: #dad8d2;
+  --k-bg-18143a: #dcdaf1;
+  --k-bg-185fa5: #185fa5;
+  --k-bg-1a1730: #dfddee;
+  --k-bg-1a1a2e: #dedeed;
+  --k-bg-1a1c20: #dcd9d4;
+  --k-bg-1a1f1e: #dbd9d3;
+  --k-bg-1a2e0a: #e4f1da;
+  --k-bg-1c1e21: #dcd9d4;
+  --k-bg-1c1e22: #dcdad5;
+  --k-bg-1c2420: #dddad5;
+  --k-bg-1e1e1e: #dcd9d4;
+  --k-bg-1e2023: #dddad5;
+  --k-bg-1e2024: #dddad5;
+  --k-bg-1e2126: #dddbd6;
+  --k-bg-1f0909: #f1dada;
+  --k-bg-1f1505: #f1e8da;
+  --k-bg-22224a: #dcdcef;
+  --k-bg-232323: #dedbd6;
+  --k-bg-242424: #dedcd7;
+  --k-bg-252525: #dedcd7;
+  --k-bg-252729: #dfddd8;
+  --k-bg-27500a: #27500a;
+  --k-bg-2a0e0e: #f1dada;
+  --k-bg-2a1711: #f0e0db;
+  --k-bg-2a1d08: #f1e8da;
+  --k-bg-2a2a2a: #e0ded9;
+  --k-bg-2a2d30: #e1dfdb;
+  --k-bg-2d3033: #e2e0dc;
+  --k-bg-2e1a1a: #eddede;
+  --k-bg-2e1e00: #f1e9da;
+  --k-bg-2e3033: #e3e0dc;
+  --k-bg-333333: #e3e1dd;
+  --k-bg-333639: #e5e3df;
+  --k-bg-3a2020: #eddede;
+  --k-bg-3a2500: #f1e9da;
+  --k-bg-3b6d11: #3b6d11;
+  --k-bg-444350: #eceae7;
+  --k-bg-444444: #eae8e5;
+  --k-bg-4a3fb5: #4a3fb5;
+  --k-bg-w002: rgba(40, 36, 28, 0.026);
+  --k-bg-w0025: rgba(40, 36, 28, 0.033);
+  --k-bg-w003: rgba(40, 36, 28, 0.039);
+  --k-bg-w0035: rgba(40, 36, 28, 0.046);
+  --k-bg-w004: rgba(40, 36, 28, 0.052);
+  --k-bg-w005: rgba(40, 36, 28, 0.065);
+  --k-bg-w006: rgba(40, 36, 28, 0.078);
+  --k-bg-w012: rgba(40, 36, 28, 0.156);
+  --k-bg-w015: rgba(40, 36, 28, 0.195);
+  --k-bg-w02: rgba(40, 36, 28, 0.26);
+  --k-bg-w04: rgba(40, 36, 28, 0.052);
+  --k-bg-w05: rgba(40, 36, 28, 0.65);
+  --k-bg-w18: rgba(40, 36, 28, 0.234);
+  --k-tx-0a7a52: #0f704e;
+  --k-tx-0db6cc: #0e6b77;
+  --k-tx-1d9e75: #1a7054;
+  --k-tx-25c491: #1b6f54;
+  --k-tx-2dbd8e: #206f55;
+  --k-tx-33d4ea: #126b77;
+  --k-tx-378add: #2463a3;
+  --k-tx-4cc79b: #276d54;
+  --k-tx-555555: #555555;
+  --k-tx-5a7fa8: #4a6582;
+  --k-tx-5b8dde: #2d60b3;
+  --k-tx-5ba3d9: #296693;
+  --k-tx-5db85d: #356e35;
+  --k-tx-5dcaa5: #286c55;
+  --k-tx-5fa8e8: #2065a2;
+  --k-tx-639922: #486c1d;
+  --k-tx-6a6a6a: #6a6a6a;
+  --k-tx-6fcf74: #2a6f2e;
+  --k-tx-76abff: #165cca;
+  --k-tx-777777: #5d5e6d;
+  --k-tx-7cc8f8: #11669c;
+  --k-tx-7f77dd: #453bc4;
+  --k-tx-85b7eb: #2465a8;
+  --k-tx-888798: #525461;
+  --k-tx-888888: #565764;
+  --k-tx-8a8a8a: #555663;
+  --k-tx-97c459: #4f6a2a;
+  --k-tx-999999: #4e505c;
+  --k-tx-9a6060: #855757;
+  --k-tx-9a95dd: #4d44bb;
+  --k-tx-9b8fdd: #5542bd;
+  --k-tx-9b93e8: #4335ca;
+  --k-tx-9b93ee: #3b2cd3;
+  --k-tx-9c9c9c: #4d4e5a;
+  --k-tx-a0492a: #a0492a;
+  --k-tx-a09aff: #2619e6;
+  --k-tx-a9a3ee: #3d31ce;
+  --k-tx-b06000: #8e5510;
+  --k-tx-b0a8f5: #3724db;
+  --k-tx-b6acff: #3219e6;
+  --k-tx-b7b2ff: #2719e6;
+  --k-tx-bbbbbb: #40414b;
+  --k-tx-bdb8ff: #2819e6;
+  --k-tx-c0c0c0: #3e3f49;
+  --k-tx-c0dd97: #4d6827;
+  --k-tx-c4c4c4: #3c3d47;
+  --k-tx-c9c5ff: #2819e6;
+  --k-tx-cccccc: #393a43;
+  --k-tx-d0d0d0: #373841;
+  --k-tx-d85a30: #a14526;
+  --k-tx-dddddd: #32323a;
+  --k-tx-e05050: #bb2b2b;
+  --k-tx-e05277: #b62a4f;
+  --k-tx-e06060: #b82d2d;
+  --k-tx-e07070: #b53030;
+  --k-tx-e07a7a: #b33333;
+  --k-tx-e88080: #ba2b2b;
+  --k-tx-e8c94a: #715e14;
+  --k-tx-ee0055: #c11553;
+  --k-tx-eeeeee: #2a2b32;
+  --k-tx-ef9f27: #885811;
+  --k-tx-f09595: #bc2424;
+  --k-tx-f0f0f0: #2a2a31;
+  --k-tx-f2f1f7: #28292f;
+  --k-tx-f2f2f2: #292930;
+  --k-tx-f79fcb: #b81969;
+  --k-tx-fac775: #85580f;
+  --k-tx-ff8e8e: #c51616;
+  --k-tx-ffffff: #232429;
+  --k-tx-w025: rgba(40, 36, 28, 0.325);
+}
+/*TEMA-CLARO-AUTO:END*/
 
 /* ── Background del body ── */
 body {
@@ -82,12 +254,13 @@ body:not(.light-mode) {
 }
 body.light-mode {
   background-image:
-    radial-gradient(ellipse at 60% 15%, rgba(55,138,221,0.13) 0%, transparent 55%),
-    radial-gradient(ellipse at 18% 80%, rgba(29,158,117,0.09) 0%, transparent 48%),
-    radial-gradient(ellipse at 85% 20%, rgba(127,119,221,0.16) 0%, transparent 52%),
-    radial-gradient(ellipse at 40% 90%, rgba(155,143,255,0.08) 0%, transparent 46%),
-    url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADhklEQVR42n1Xy7HkIAzscc3daUAiXJSLuTgMLs7FXEiEcHiHV61ta71LFeUZwEKfVkv+rLX23jsAwMzQe4eZAQByzgCAUgoA4LouXy+l4Lou5Jwx53ys1VrBUUrBGOOxTnkA8NULOXrvGGNgzolaq//mZa01nOfpl0ZFVVmOWqsrM8YAAIwx8DUzFwAAc0703t261poLoHJU+DzPV+/wHZ7nZTxLBVpr+Nz3vfMwQ6CHz/P0w1xXK6LbSykws4fF+tS7cs74qka8jEI0rtwfYzyU4eA6vTDn9HV6jM/euyvsCvCFGFcd6lqNNYWd5/nXmVIKaq24rsu9q+H+0moFniKbQ2Or7o/CqQRDYGaPS7nmY621p5T24zj2tdZ+HMeeUtrv+97XWo9nSsnPrLV8cv2+78ce3+FTJ+WAC8dx+FQBqhSfqrT+j0qrHM5owJdAUuBpXtOl3CeAiJneO3rvDsiYhpodmv+8Y+MCN+ecTjaKbKYWc7/W6nHnNDPMOf0CcgANUSzQKGj8ouu5F7EQ1zRMGlINrWJI79zotjEGeu/IOTvNttY8JGOMB8dHptM0pfeYpup+ZlitFWaGjS7XFCql+FrMaaYta4QOM/MzlKsEROWodO8dG2OpzEUioiJzTgch468Uq4P/a63IOTtWIrVT3nZdl4OGtKvMyLBQKPfVK0pKpRSfDAkvVSUJahAc/8t/JQ/N+cgBkQuU3BSsCvJPSmmnK2l1zF1NR8ZXy7JyvOKktfaIP7386B2o9RvlRtpUK2lVZL1Iy/reW1p/FRy0VuOpmmthYVqyEDGDYhfFdFPcEFNm9luM1FqNkcYv1gONo85/cX4sevy/4WUwKyIB0SPsCWutjg3lEyKc3qEsZofSNLSivVn1huq4p7FWy7UKvu2vtfZv7H4VzRo3M4M2sIpwzZK35lXpV1u5nPMfHoiaKWLjjFkQvcT5xh+RbzbSKwsHY1ZK8dqvPUIsSMwetZiMyqzQTCKmKO+TUtpJLNH92r9rK/22piFRJTU88esr5/ybhgoSBaSG5o1uI+nEfiD2hTEt7/veN+181QIz836ANV0tJ1Hp+3qG7TpBd56nf18wzGOM3+8CIpxC9aMz5rS6XOtH/FDRkqv1XzNrjIFN+zulWFrKdW1AaFG80My8XPM8vUnZ6k0A2LioFYzozjk/qhndSlfGviB+lsdaogaxY/oBE4kcK+4zutMAAAAASUVORK5CYII=");
+    radial-gradient(ellipse at 60% 15%, rgba(55,138,221,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 18% 80%, rgba(29,158,117,0.05) 0%, transparent 48%),
+    radial-gradient(ellipse at 85% 20%, rgba(127,119,221,0.08) 0%, transparent 52%);
 }
+
+/* ── Escala global: misma regla que shared/styles-base.css (acá para las páginas que no lo cargan) ── */
+body { zoom: var(--ziv-z, 1); min-height: calc(100vh / var(--ziv-z, 1)) !important; }
 
 /* ── Botón toggle tema ── */
 .theme-toggle {
@@ -125,6 +298,57 @@ body.en-menu .theme-toggle { display: none !important; }
   if (saved === 'light') document.body.classList.add('light-mode');
 })();
 
+/* ─────────────────────────────────────────
+   TAMAÑO DE LETRA — escala global (menú del usuario)
+   Se guarda en localStorage 'ziv-escala'. Sin valor guardado: 1.2 en PC (>=1100px), 1 en el resto.
+   Pone --ziv-z en <html>; styles-base.css lo usa como `zoom` del body, así que escala todo junto
+   (texto, botones, espacios). Las páginas sin styles-base no se escalan.
+───────────────────────────────────────── */
+window.ZIV_ESCALAS = [0.9, 1, 1.1, 1.2, 1.35, 1.5];
+// admin.html tiene un picker con Leaflet, que se lleva mal con el zoom: ahí no se escala
+window.ZIV_SIN_ESCALA = /\/admin\.html$/.test(location.pathname);
+window.zivEscalaPorDefecto = function() { return window.innerWidth >= 1100 ? 1.2 : 1; };
+window.zivEscalaActual = function() {
+  try {
+    const v = parseFloat(localStorage.getItem('ziv-escala'));
+    if (ZIV_ESCALAS.includes(v)) return v;
+  } catch (e) {}
+  return window.zivEscalaPorDefecto();
+};
+window.zivAplicarEscala = function(e) {
+  if (!document.body) return;
+  document.documentElement.style.setProperty('--ziv-z', window.ZIV_SIN_ESCALA ? 1 : e);
+  window.zivSyncAjustes();
+};
+window.zivCambiarEscala = function(delta) {
+  const i = ZIV_ESCALAS.indexOf(window.zivEscalaActual());
+  const n = ZIV_ESCALAS[Math.min(ZIV_ESCALAS.length - 1, Math.max(0, (i < 0 ? 1 : i) + delta))];
+  try { localStorage.setItem('ziv-escala', String(n)); } catch (e) {}
+  window.zivAplicarEscala(n);
+};
+window.zivRestablecerEscala = function() {
+  try { localStorage.removeItem('ziv-escala'); } catch (e) {}
+  window.zivAplicarEscala(window.zivEscalaPorDefecto());
+};
+// Refresca los controles del menú del usuario (porcentaje, límites, etiqueta del tema)
+window.zivSyncAjustes = function() {
+  const e = window.zivEscalaActual();
+  const fila = document.getElementById('ziv-sFilaEscala');
+  if (fila) fila.style.display = window.ZIV_SIN_ESCALA ? 'none' : '';
+  const pct = document.getElementById('ziv-sPct');
+  if (pct) pct.textContent = Math.round(e * 100) + '%';
+  const i = ZIV_ESCALAS.indexOf(e);
+  const menos = document.getElementById('ziv-sMenos'), mas = document.getElementById('ziv-sMas');
+  if (menos) menos.disabled = i <= 0;
+  if (mas) mas.disabled = i >= ZIV_ESCALAS.length - 1;
+  const tema = document.getElementById('ziv-sTema');
+  if (tema) tema.textContent = document.body.classList.contains('light-mode') ? '☾ Cambiar a tema oscuro' : '☀ Cambiar a tema claro';
+};
+(function initEscala() {
+  const aplicar = () => window.zivAplicarEscala(window.zivEscalaActual());
+  if (document.body) aplicar(); else document.addEventListener('DOMContentLoaded', aplicar);
+})();
+
 window.uiToggleTheme = function() {
   document.body.classList.toggle('light-mode');
   const isLight = document.body.classList.contains('light-mode');
@@ -140,6 +364,7 @@ window.uiToggleTheme = function() {
   document.querySelectorAll('[data-theme-moon]').forEach(el => {
     el.style.display = isLight ? 'none' : '';
   });
+  if (window.zivSyncAjustes) window.zivSyncAjustes();
 };
 
 // Insertar botón toggle cuando el DOM esté listo
@@ -661,12 +886,12 @@ else document.addEventListener('DOMContentLoaded', insertThemeToggle);
 .cs-nav-card-pred:hover  { border-color: rgba(224,82,119,0.55);  background: #2a1018; box-shadow: 0 6px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(224,82,119,0.55),  0 4px 20px rgba(224,82,119,0.12); }
 .cs-nav-card-conf:hover  { border-color: rgba(13,182,204,0.55);  background: #091e22; box-shadow: 0 6px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(13,182,204,0.55),  0 4px 20px rgba(13,182,204,0.12); }
 
-body.light-mode .cs-nav-card-terr:hover  { border-color: rgba(151,196,89,0.55); background: #f1f8e8; box-shadow: 0 8px 26px rgba(93,130,53,0.18), 0 0 0 1px rgba(151,196,89,0.5); }
-body.light-mode .cs-nav-card-asign:hover { border-color: rgba(55,138,221,0.52); background: #ebf5ff; box-shadow: 0 8px 26px rgba(43,114,191,0.16), 0 0 0 1px rgba(55,138,221,0.5); }
-body.light-mode .cs-nav-card-herm:hover  { border-color: rgba(216,90,48,0.52);  background: #fff0ea; box-shadow: 0 8px 26px rgba(174,76,41,0.16), 0 0 0 1px rgba(216,90,48,0.5); }
-body.light-mode .cs-nav-card-vm:hover    { border-color: rgba(239,159,39,0.52); background: #fff7e8; box-shadow: 0 8px 26px rgba(195,131,34,0.16), 0 0 0 1px rgba(239,159,39,0.5); }
-body.light-mode .cs-nav-card-pred:hover  { border-color: rgba(224,82,119,0.52); background: #fff0f4; box-shadow: 0 8px 26px rgba(180,66,95,0.16), 0 0 0 1px rgba(224,82,119,0.5); }
-body.light-mode .cs-nav-card-conf:hover  { border-color: rgba(13,182,204,0.52); background: #e8f9fc; box-shadow: 0 8px 26px rgba(10,146,163,0.16), 0 0 0 1px rgba(13,182,204,0.5); }
+body.light-mode .cs-nav-card-terr:hover  { border-color: rgba(151,196,89,0.55); background: #e4ecd6; box-shadow: 0 8px 26px rgba(93,130,53,0.18), 0 0 0 1px rgba(151,196,89,0.5); }
+body.light-mode .cs-nav-card-asign:hover { border-color: rgba(55,138,221,0.52); background: #dce8f3; box-shadow: 0 8px 26px rgba(43,114,191,0.16), 0 0 0 1px rgba(55,138,221,0.5); }
+body.light-mode .cs-nav-card-herm:hover  { border-color: rgba(216,90,48,0.52);  background: #efdfd6; box-shadow: 0 8px 26px rgba(174,76,41,0.16), 0 0 0 1px rgba(216,90,48,0.5); }
+body.light-mode .cs-nav-card-vm:hover    { border-color: rgba(239,159,39,0.52); background: #f0e6d0; box-shadow: 0 8px 26px rgba(195,131,34,0.16), 0 0 0 1px rgba(239,159,39,0.5); }
+body.light-mode .cs-nav-card-pred:hover  { border-color: rgba(224,82,119,0.52); background: #efdde2; box-shadow: 0 8px 26px rgba(180,66,95,0.16), 0 0 0 1px rgba(224,82,119,0.5); }
+body.light-mode .cs-nav-card-conf:hover  { border-color: rgba(13,182,204,0.52); background: #d6ebee; box-shadow: 0 8px 26px rgba(10,146,163,0.16), 0 0 0 1px rgba(13,182,204,0.5); }
 
 .cs-nav-title { font-size: 21px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
 .cs-nav-sub   { font-size: 14px; color: var(--text-muted); }
@@ -845,6 +1070,11 @@ window.uiAlert = function(msg, title = 'Atención') {
     btn.onclick = close;
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
   });
+};
+
+// Escapa texto de usuario para meterlo en innerHTML (único lugar: no redefinir en los módulos)
+window.esc = function(v) {
+  return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 };
 
 /* ─────────────────────────────────────────
@@ -1608,8 +1838,8 @@ body.light-mode .cs-module-icon-anim {
   box-shadow: var(--card-hover-shadow, var(--shadow-hover));
 }
 body.light-mode .cs-module-card:hover {
-  border-color: var(--card-hover-border-light, var(--card-hover-border, #cfc0ef));
-  background: var(--card-hover-bg-light, linear-gradient(180deg, #ffffff 0%, #faf6ff 100%));
+  border-color: var(--card-hover-border-light, var(--card-hover-border, #c9bfe2));
+  background: var(--card-hover-bg-light, linear-gradient(180deg, #f1eee8 0%, #ece6f1 100%));
   box-shadow: var(--card-hover-shadow-light, 0 10px 24px rgba(122,110,190,0.16), 0 0 0 1px rgba(127,119,221,0.24));
 }
 .cs-module-card:active { transform: scale(0.98); box-shadow: none; }
@@ -1666,7 +1896,7 @@ body.light-mode .cs-module-card:hover {
     .ziv-sMenu {
       position: absolute; top: calc(100% + 6px); right: 0;
       background: #252525; border: 1px solid #3a3a3a;
-      border-radius: 12px; min-width: 168px;
+      border-radius: 12px; min-width: 230px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.55); overflow: hidden;
     }
     .ziv-sItem {
@@ -1679,17 +1909,35 @@ body.light-mode .cs-module-card:hover {
     .ziv-sItem:hover { background: #2e2e2e; }
     .ziv-sItem--danger { color: #F09595; }
     .ziv-sDivider { height: 1px; background: #333; }
-    body.light-mode .ziv-sBtn {
-      background: rgba(255,255,255,0.88); border-color: rgba(0,0,0,0.1); color: #555;
+    .ziv-sRow {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 8px 14px; font-size: 13px; color: #aaa; font-family: system-ui, sans-serif;
     }
-    body.light-mode .ziv-sBtn:hover { background: rgba(255,255,255,0.98); }
+    .ziv-sStep { display: flex; align-items: center; gap: 4px; }
+    .ziv-sStep button {
+      width: 32px; height: 30px; border-radius: 8px; cursor: pointer;
+      background: #2e2e2e; border: 1px solid #3a3a3a; color: #e8e8e8;
+      font: 600 13px system-ui, sans-serif;
+    }
+    .ziv-sStep button:hover:not(:disabled) { background: #3a3a3a; }
+    .ziv-sStep button:disabled { opacity: 0.35; cursor: default; }
+    .ziv-sStep button:focus-visible, .ziv-sItem:focus-visible { outline: 2px solid #9B8FFF; outline-offset: -2px; }
+    .ziv-sStep .ziv-sPct { width: auto; min-width: 46px; background: none; border-color: transparent; }
+    body.light-mode .ziv-sBtn {
+      background: rgba(237,234,227,0.92); border-color: rgba(0,0,0,0.1); color: #555;
+    }
+    body.light-mode .ziv-sBtn:hover { background: rgba(241,238,232,0.98); }
     body.light-mode .ziv-sMenu {
-      background: #fff; border-color: #e8e0d4;
+      background: #edeae3; border-color: #cdc9c0;
       box-shadow: 0 8px 24px rgba(0,0,0,0.1);
     }
     body.light-mode .ziv-sItem { color: #2a2a2a; }
-    body.light-mode .ziv-sItem:hover { background: #f7f3ed; }
-    body.light-mode .ziv-sDivider { background: #e8e0d4; }
+    body.light-mode .ziv-sItem:hover { background: #e2dfd8; }
+    body.light-mode .ziv-sDivider { background: #cdc9c0; }
+    body.light-mode .ziv-sRow { color: #666; }
+    body.light-mode .ziv-sStep button { background: #e2dfd8; border-color: #cdc9c0; color: #2a2a2a; }
+    body.light-mode .ziv-sStep button:hover:not(:disabled) { background: #d8d5cd; }
+    body.light-mode .ziv-sStep .ziv-sPct { background: none; border-color: transparent; }
   `;
   document.head.appendChild(style);
 
@@ -1705,12 +1953,23 @@ body.light-mode .cs-module-card:hover {
       </svg>
     </button>
     <div class="ziv-sMenu" id="ziv-sMenu" style="display:none">
+      <div class="ziv-sRow" id="ziv-sFilaEscala">
+        <span>Tamaño</span>
+        <span class="ziv-sStep">
+          <button id="ziv-sMenos" aria-label="Achicar letra" onclick="zivCambiarEscala(-1)">A−</button>
+          <button class="ziv-sPct" id="ziv-sPct" title="Restablecer tamaño" aria-label="Restablecer tamaño" onclick="zivRestablecerEscala()">100%</button>
+          <button id="ziv-sMas" aria-label="Agrandar letra" onclick="zivCambiarEscala(1)">A+</button>
+        </span>
+      </div>
+      <button class="ziv-sItem" id="ziv-sTema" onclick="uiToggleTheme()"></button>
+      <div class="ziv-sDivider"></div>
       <a id="ziv-sPerfil" href="/perfil.html" class="ziv-sItem">Ver perfil</a>
       <div class="ziv-sDivider"></div>
       <button class="ziv-sItem ziv-sItem--danger" onclick="sessionSignOut()">Cerrar sesión</button>
     </div>
   `;
   document.body.appendChild(el);
+  window.zivSyncAjustes();
 
   document.addEventListener('click', function(e) {
     if (!el.contains(e.target)) {

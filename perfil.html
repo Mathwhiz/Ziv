@@ -18,7 +18,7 @@
       align-items: center;
       justify-content: center;
       font-family: system-ui, sans-serif;
-      background: #1a1c1f;
+      background: var(--bg-primary, #1a1c1f);
       background-image:
         radial-gradient(ellipse at 18% 22%, rgba(55,138,221,0.13) 0%, transparent 52%),
         radial-gradient(ellipse at 82% 78%, rgba(127,119,221,0.11) 0%, transparent 52%);
@@ -45,21 +45,21 @@
     .avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
     .avatar {
       width: 72px; height: 72px; border-radius: 50%;
-      background: #2a2d30; border: 2px solid #3a3a3a; object-fit: cover;
+      background: var(--k-bg-2a2d30, #2a2d30); border: 2px solid var(--k-bd-3a3a3a, #3a3a3a); object-fit: cover;
     }
     .avatar-fallback {
       width: 72px; height: 72px; border-radius: 50%;
       background: rgba(127,119,221,0.18); border: 2px solid rgba(127,119,221,0.35);
       display: flex; align-items: center; justify-content: center;
-      font-size: 24px; font-weight: 700; color: #7F77DD;
+      font-size: 24px; font-weight: 700; color: var(--k-tx-7f77dd, #7F77DD);
     }
-    .avatar-label { font-size: 12px; color: #555; }
+    .avatar-label { font-size: 12px; color: var(--k-tx-555555, #555); }
 
     /* ── Card ── */
     .card {
       width: 100%;
-      background: #232628;
-      border: 1px solid #2e3033;
+      background: var(--bg-card, #232628);
+      border: 1px solid var(--border-primary, #2e3033);
       border-radius: 18px;
       padding: 1.25rem;
       display: flex;
@@ -70,17 +70,17 @@
     /* ── Campos ── */
     .field { display: flex; flex-direction: column; gap: 6px; }
     .field label {
-      font-size: 11px; font-weight: 600; color: #888;
+      font-size: 11px; font-weight: 600; color: var(--k-tx-888888, #888);
       text-transform: uppercase; letter-spacing: 0.5px;
     }
     .field input,
     .field select {
-      background: #1e1e1e; border: 1px solid #444; border-radius: 8px;
-      padding: 10px 12px; color: #eee; font-size: 15px;
+      background: var(--k-bg-1e1e1e, #1e1e1e); border: 1px solid var(--k-bd-444444, #444); border-radius: 8px;
+      padding: 10px 12px; color: var(--k-tx-eeeeee, #eee); font-size: 15px;
       font-family: inherit; outline: none; transition: border-color 0.15s; width: 100%;
     }
     .field input:focus, .field select:focus { border-color: #7F77DD; }
-    .field select option { background: #232628; }
+    .field select option { background: var(--bg-card, #232628); }
 
     /* ── Botón principal ── */
     .btn-primary {
@@ -98,14 +98,14 @@
       display: flex; align-items: center; gap: 8px;
       padding: 10px 12px; border-radius: 10px; font-size: 13px;
     }
-    .match-badge.ok        { background: rgba(29,158,117,0.12);  color: #1D9E75; border: 1px solid rgba(29,158,117,0.2); }
-    .match-badge.pendiente { background: rgba(239,159,39,0.10);  color: #EF9F27; border: 1px solid rgba(239,159,39,0.2); }
-    .match-badge.sin_match { background: rgba(163,45,45,0.10);   color: #F09595; border: 1px solid rgba(163,45,45,0.2); }
+    .match-badge.ok        { background: rgba(29,158,117,0.12);  color: var(--k-tx-1d9e75, #1D9E75); border: 1px solid rgba(29,158,117,0.2); }
+    .match-badge.pendiente { background: rgba(239,159,39,0.10);  color: var(--k-tx-ef9f27, #EF9F27); border: 1px solid rgba(239,159,39,0.2); }
+    .match-badge.sin_match { background: rgba(163,45,45,0.10);   color: var(--k-tx-f09595, #F09595); border: 1px solid rgba(163,45,45,0.2); }
 
     /* ── Footer ── */
     .footer { font-size: 12px; color: #3a3a3a; text-align: center; }
 
-    #loading-state { color: #555; font-size: 14px; padding: 40px 0; text-align: center; }
+    #loading-state { color: var(--k-tx-555555, #555); font-size: 14px; padding: 40px 0; text-align: center; }
     #form-state    { display: none; width: 100%; }
 
     /* ──────────────────────────────────────────────────────────────
@@ -115,11 +115,11 @@
 
     .dob-trigger {
       width: 100%;
-      background: #1e1e1e;
-      border: 1px solid #444;
+      background: var(--k-bg-1e1e1e, #1e1e1e);
+      border: 1px solid var(--k-bd-444444, #444);
       border-radius: 8px;
       padding: 10px 12px;
-      color: #eee;
+      color: var(--k-tx-eeeeee, #eee);
       font-size: 15px;
       font-family: inherit;
       cursor: pointer;
@@ -131,15 +131,15 @@
       transition: border-color 0.15s;
     }
     .dob-trigger:focus         { border-color: #7F77DD; outline: none; }
-    .dob-trigger.is-placeholder { color: #555; }
+    .dob-trigger.is-placeholder { color: var(--k-tx-555555, #555); }
     .dob-trigger svg            { flex-shrink: 0; opacity: 0.4; }
 
     .dob-popover {
       position: absolute;
       top: calc(100% + 6px);
       left: 0; right: 0;
-      background: #252525;
-      border: 1px solid #3a3a3a;
+      background: var(--k-bg-252525, #252525);
+      border: 1px solid var(--k-bd-3a3a3a, #3a3a3a);
       border-radius: 14px;
       padding: 12px;
       z-index: 200;
@@ -154,22 +154,22 @@
       margin-bottom: 10px;
     }
     .dob-nav-btn {
-      background: #2a2d30; border: 1px solid #3a3a3a; border-radius: 7px;
-      width: 30px; height: 30px; color: #aaa; font-size: 17px;
+      background: var(--k-bg-2a2d30, #2a2d30); border: 1px solid var(--k-bd-3a3a3a, #3a3a3a); border-radius: 7px;
+      width: 30px; height: 30px; color: var(--text-secondary, #aaa); font-size: 17px;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       flex-shrink: 0; transition: background 0.12s, color 0.12s; line-height: 1;
     }
-    .dob-nav-btn:hover { background: #333; color: #eee; }
+    .dob-nav-btn:hover { background: var(--k-bg-333333, #333); color: var(--k-tx-eeeeee, #eee); }
 
     .dob-selects { display: flex; gap: 6px; flex: 1; min-width: 0; }
     .dob-sel {
       flex: 1; min-width: 0;
-      background: #2a2d30; border: 1px solid #3a3a3a; border-radius: 7px;
-      padding: 5px 6px; color: #e8e8e8; font-size: 13px; font-family: inherit;
+      background: var(--k-bg-2a2d30, #2a2d30); border: 1px solid var(--k-bd-3a3a3a, #3a3a3a); border-radius: 7px;
+      padding: 5px 6px; color: var(--text-primary, #e8e8e8); font-size: 13px; font-family: inherit;
       cursor: pointer; outline: none; transition: border-color 0.12s;
     }
     .dob-sel:focus { border-color: #7F77DD; }
-    .dob-sel option { background: #252525; }
+    .dob-sel option { background: var(--k-bg-252525, #252525); }
 
     /* weekday labels */
     .dob-wdays {
@@ -177,7 +177,7 @@
       margin-bottom: 4px;
     }
     .dob-wdays span {
-      text-align: center; font-size: 11px; color: #555;
+      text-align: center; font-size: 11px; color: var(--k-tx-555555, #555);
       font-weight: 600; padding: 3px 0;
     }
 
@@ -187,22 +187,22 @@
     }
     .dob-day {
       aspect-ratio: 1; background: none; border: none;
-      border-radius: 7px; color: #c0c0c0; font-size: 13px;
+      border-radius: 7px; color: var(--k-tx-c0c0c0, #c0c0c0); font-size: 13px;
       font-family: inherit; cursor: pointer; transition: background 0.1s, color 0.1s;
     }
-    .dob-day:hover:not(:disabled):not(.dob-empty) { background: #333639; color: #fff; }
+    .dob-day:hover:not(:disabled):not(.dob-empty) { background: var(--k-bg-333639, #333639); color: var(--k-tx-ffffff, #fff); }
     .dob-day:disabled  { color: #2e2e2e; cursor: default; }
-    .dob-day.dob-today { color: #7F77DD; font-weight: 700; }
+    .dob-day.dob-today { color: var(--k-tx-7f77dd, #7F77DD); font-weight: 700; }
     .dob-day.dob-selected { background: #7F77DD; color: #fff; font-weight: 700; }
     .dob-day.dob-selected:hover { background: #6e66cc; }
 
     /* ── Términos y condiciones ── */
     .terminos-check {
       display: flex; align-items: flex-start; gap: 12px;
-      font-size: 13.5px; color: #c4c4c4; line-height: 1.5;
+      font-size: 13.5px; color: var(--k-tx-c4c4c4, #c4c4c4); line-height: 1.5;
       cursor: pointer;
-      background: #1e1e1e;
-      border: 1px solid #3a3a3a;
+      background: var(--k-bg-1e1e1e, #1e1e1e);
+      border: 1px solid var(--k-bd-3a3a3a, #3a3a3a);
       border-radius: 10px;
       padding: 14px;
       transition: border-color 0.15s, background 0.15s;
@@ -214,8 +214,8 @@
     .terminos-check input[type="checkbox"] {
       appearance: none; -webkit-appearance: none;
       margin-top: 1px; width: 20px; height: 20px;
-      border: 1.5px solid #555; border-radius: 6px;
-      background: #141414;
+      border: 1.5px solid var(--k-bd-555555, #555); border-radius: 6px;
+      background: var(--k-bg-141414, #141414);
       cursor: pointer; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       transition: background 0.15s, border-color 0.15s;
@@ -225,8 +225,8 @@
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: center; background-size: 13px;
     }
-    .terminos-check a { color: #9b93e8; text-decoration: underline; text-underline-offset: 2px; }
-    .terminos-check a:hover { color: #b0a8f5; }
+    .terminos-check a { color: var(--k-tx-9b93e8, #9b93e8); text-decoration: underline; text-underline-offset: 2px; }
+    .terminos-check a:hover { color: var(--k-tx-b0a8f5, #b0a8f5); }
   </style>
 </head>
 <body>
@@ -244,7 +244,7 @@
       <div id="titulo-perfil" style="font-size:22px;font-weight:700;letter-spacing:-0.4px;text-align:center;margin:12px 0 4px">
         Completá tu perfil
       </div>
-      <div style="font-size:14px;color:#666;text-align:center" id="congre-sub">—</div>
+      <div style="font-size:14px;color:var(--text-muted, #666);text-align:center" id="congre-sub">—</div>
 
       <div class="card" style="margin-top:16px">
 
@@ -454,7 +454,7 @@
     document.addEventListener('DOMContentLoaded', dobInit);
   </script>
 
-  <script src="/shared/ui-utils.js?v=1.8"></script>
+  <script src="/shared/ui-utils.js?v=2.6"></script>
   <script type="module">
     import './shared/auth.js';
     import { TERMINOS_VERSION } from './shared/auth-config.js';

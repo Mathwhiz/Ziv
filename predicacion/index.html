@@ -14,8 +14,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="../shared/styles-base.css">
-  <link rel="stylesheet" href="styles.css?v=1.4">
+  <link rel="stylesheet" href="../shared/styles-base.css?v=1.1">
+  <link rel="stylesheet" href="styles.css?v=1.6">
 </head>
 <body>
 
@@ -277,7 +277,7 @@
 </div><!-- /view-app -->
 
 <!-- ── Mapa overlay ── -->
-<div id="mapa-overlay" style="display:none; position:fixed; inset:0; z-index:9000; background:#1a1c1f; flex-direction:column;">
+<div id="mapa-overlay" style="display:none; position:fixed; inset:0; z-index:9000; background:var(--bg-primary, #1a1c1f); flex-direction:column;">
   <div class="mapa-ov-header">
     <button class="mapa-ov-close" onclick="cerrarMapaOverlay()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -290,7 +290,7 @@
   <iframe id="mapa-frame" src="" style="flex:1; border:none; width:100%;"></iframe>
 </div>
 
-<script src="../shared/ui-utils.js?v=1.8"></script>
+<script src="../shared/ui-utils.js?v=2.6"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

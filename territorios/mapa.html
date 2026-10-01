@@ -367,20 +367,29 @@ async function cargarHistorialInfo() {
       const q = query(terrCol, where('grupoId', '==', g));
       const terrSnap = await getDocs(q);
       await Promise.all(terrSnap.docs.map(async terrDoc => {
-        const id = String(terrDoc.data().id);
-        const histSnap = await getDocs(
-          query(
-            collection(db, 'congregaciones', CONGRE_ID, 'territorios', terrDoc.id, 'historial'),
-            orderBy('fechaInicio', 'desc'),
-            limit(1)
-          )
-        );
-        if (!histSnap.empty) {
-          const h = histSnap.docs[0].data();
+        const data = terrDoc.data();
+        const id = String(data.id);
+        // ultimoHist lo mantiene territorios/app.js; si falta (territorio viejo) se consulta
+        let ult = data.ultimoHist;
+        if (ult === undefined) {
+          const histSnap = await getDocs(
+            query(
+              collection(db, 'congregaciones', CONGRE_ID, 'territorios', terrDoc.id, 'historial'),
+              orderBy('fechaInicio', 'desc'),
+              limit(1)
+            )
+          );
+          if (histSnap.empty) ult = null;
+          else {
+            const h = histSnap.docs[0].data();
+            ult = { ini: h.fechaInicio || null, fin: h.fechaFin || null };
+          }
+        }
+        if (ult) {
           territoriosInfo[id] = {
-            lastFin:    h.fechaFin    || null,
-            lastIni:    h.fechaInicio || null,
-            enProgreso: !!h.fechaInicio && !h.fechaFin,
+            lastFin:    ult.fin || null,
+            lastIni:    ult.ini || null,
+            enProgreso: !!ult.ini && !ult.fin,
           };
         }
       }));

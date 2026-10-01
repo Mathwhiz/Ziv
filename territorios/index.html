@@ -24,8 +24,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Territorios — Ziv</title>
-<link rel="stylesheet" href="../shared/styles-base.css">
-<link rel="stylesheet" href="/territorios/styles.css">
+<link rel="stylesheet" href="../shared/styles-base.css?v=1.1">
+<link rel="stylesheet" href="/territorios/styles.css?v=1.4">
 </head>
 <body>
 
@@ -75,7 +75,7 @@
       </div>
 
       <div class="cs-module-title">Territorios</div>
-      <div class="cs-module-sub" id="congre-sub" style="color:#97C459;">—</div>
+      <div class="cs-module-sub" id="congre-sub" style="color:var(--k-tx-97c459, #97C459);">—</div>
       <div class="cs-module-label">¿Con qué grupo trabajás?</div>
 
       <div id="grupos-wrap" style="display:flex;flex-direction:column;gap:8px;width:100%;"></div>
@@ -97,7 +97,7 @@
         </div>
       </div>
       <div class="cs-module-title">Territorios</div>
-      <div class="cs-module-sub" id="congre-sub-sg" style="color:#97C459;">—</div>
+      <div class="cs-module-sub" id="congre-sub-sg" style="color:var(--k-tx-97c459, #97C459);">—</div>
       <div class="cs-module-label" style="text-align:center;line-height:1.5;">
         No pudimos identificar tu grupo de territorios.<br>Pedile a un encargado que te vincule con tu publicador o te asigne un grupo.
       </div>
@@ -164,7 +164,7 @@
         </div>
       </div>
 
-      <button class="btn-secondary" onclick="cerrarSesion()" style="width:100%;max-width:440px;border-color:rgba(163,45,45,0.2);color:#9a6060;">Cerrar sesión</button>
+      <button class="btn-secondary" onclick="cerrarSesion()" style="width:100%;max-width:440px;border-color:rgba(163,45,45,0.2);color:var(--k-tx-9a6060, #9a6060);">Cerrar sesión</button>
     </div>
   </div>
 
@@ -219,8 +219,8 @@
   <!-- Modal editar nota -->
   <div id="chat-edit-modal" class="chat-edit-modal" style="display:none;" onclick="if(event.target===this)closeChatEdit()">
     <div class="chat-edit-card">
-      <div style="font-size:14px;font-weight:600;color:#eee;margin-bottom:10px;">Editar nota</div>
-      <textarea id="chat-edit-texto" rows="4" style="width:100%;resize:vertical;background:#1a1c1f;border:0.5px solid #444;border-radius:8px;padding:8px 10px;color:#eee;font-size:13px;font-family:inherit;"></textarea>
+      <div style="font-size:14px;font-weight:600;color:var(--k-tx-eeeeee, #eee);margin-bottom:10px;">Editar nota</div>
+      <textarea id="chat-edit-texto" rows="4" style="width:100%;resize:vertical;background:var(--bg-primary, #1a1c1f);border:0.5px solid var(--k-bd-444444, #444);border-radius:8px;padding:8px 10px;color:var(--k-tx-eeeeee, #eee);font-size:13px;font-family:inherit;"></textarea>
       <div style="display:flex;gap:8px;margin-top:10px;">
         <button class="btn-secondary" onclick="closeChatEdit()" style="flex:1;">Cancelar</button>
         <button class="btn-save" onclick="confirmarEditNota()" style="flex:2;">Guardar</button>
@@ -264,7 +264,7 @@
       <div class="va-legend-item"><div class="va-dot va-dot-gc"></div>Normal</div>
       <div class="va-legend-item"><div class="va-dot" style="background:#EF9F27;"></div>Peligroso</div>
       <div class="va-legend-item"><div class="va-dot" style="background:#e06060;"></div>No predica</div>
-      <div class="va-legend-item"><div class="va-dot" style="background:#444350;"></div>Sin reg.</div>
+      <div class="va-legend-item"><div class="va-dot" style="background:var(--k-bg-444350, #444350);"></div>Sin reg.</div>
     </div>
     <div id="info-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando...</div></div>
     <div id="info-error" style="display:none;"></div>
@@ -319,7 +319,7 @@
 
       <div class="modal-hist-section">
         <div class="modal-section-label">Historial de salidas</div>
-        <div id="modal-hist-loading" style="font-size:13px;color:#888798;margin-bottom:10px;">Cargando...</div>
+        <div id="modal-hist-loading" style="font-size:13px;color:var(--k-tx-888798, #888798);margin-bottom:10px;">Cargando...</div>
         <div id="modal-hist-content" style="display:none;">
           <table class="hist-table">
             <thead><tr><th>Conductor</th><th>Inicio</th><th>Fin</th><th style="text-align:right;"></th></tr></thead>
@@ -333,7 +333,7 @@
               <div><label>Conductor</label><input type="text" id="edit-cond" list="conductores-list" placeholder="Elegir o escribir..."><datalist id="conductores-list"></datalist></div>
               <div><label>Inicio</label><input type="date" id="edit-ini"></div>
             </div>
-            <div><label>Fin</label><input type="date" id="edit-fin" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;background:#1e2126;color:#eee;margin-top:3px;"></div>
+            <div><label>Fin</label><input type="date" id="edit-fin" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid var(--k-bd-w01, rgba(255,255,255,0.1));border-radius:8px;background:var(--k-bg-1e2126, #1e2126);color:var(--k-tx-eeeeee, #eee);margin-top:3px;"></div>
             <div style="display:flex;gap:8px;margin-top:10px;">
               <button class="btn-secondary" style="flex:1;font-size:13px;padding:7px;" onclick="cancelEdit()">Cancelar</button>
               <button class="btn-primary"   style="flex:1;font-size:13px;padding:7px;" onclick="saveEdit()">Guardar</button>
@@ -373,9 +373,9 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;">
-      <button id="btn-semana-prev" onclick="cambiarSemana(-1)" style="font-size:18px;padding:2px 10px;border:0.5px solid #555;border-radius:8px;background:#2a2a2a;color:#aaa;cursor:pointer;">←</button>
-      <span id="week-info" style="font-size:14px;color:#888;"></span>
-      <button onclick="cambiarSemana(1)" style="font-size:18px;padding:2px 10px;border:0.5px solid #555;border-radius:8px;background:#2a2a2a;color:#aaa;cursor:pointer;">→</button>
+      <button id="btn-semana-prev" onclick="cambiarSemana(-1)" style="font-size:18px;padding:2px 10px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-2a2a2a, #2a2a2a);color:var(--text-secondary, #aaa);cursor:pointer;">←</button>
+      <span id="week-info" style="font-size:14px;color:var(--k-tx-888888, #888);"></span>
+      <button onclick="cambiarSemana(1)" style="font-size:18px;padding:2px 10px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-2a2a2a, #2a2a2a);color:var(--text-secondary, #aaa);cursor:pointer;">→</button>
     </div>
     <div id="terr-loading" class="loading-wrap" style="display:none;">
       <div class="spinner"></div>
@@ -413,7 +413,7 @@
       <button class="btn-secondary" onclick="goBackToConfig()" style="flex:1;">← Editar</button>
       <button class="btn-save"      onclick="guardarImagen()"  style="flex:1;">Guardar imagen</button>
       <button id="btn-enviar-wa" onclick="enviarWhatsapp()"
-        style="flex:1;padding:11px;background:#1a2e0a;color:#97C459;border:0.5px solid #3B6D11;border-radius:12px;cursor:pointer;font-size:13px;font-weight:500;">
+        style="flex:1;padding:11px;background:var(--k-bg-1a2e0a, #1a2e0a);color:var(--k-tx-97c459, #97C459);border:0.5px solid var(--k-bd-3b6d11, #3B6D11);border-radius:12px;cursor:pointer;font-size:13px;font-weight:500;">
         📲 Enviar al grupo
       </button>
     </div>
@@ -423,10 +423,10 @@
 
   <!-- ── MAPA POPUP ── -->
   <div id="mapa-popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:300;flex-direction:column;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;">
-    <div style="width:100%;max-width:900px;height:82vh;max-height:700px;background:#1e1e1e;border-radius:16px;border:0.5px solid #444;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,0.7);">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#2a2a2a;border-bottom:0.5px solid #444;flex-shrink:0;">
-        <div style="font-size:15px;font-weight:500;color:#eee;" id="mapa-popup-title">Mapa</div>
-        <button onclick="closeMapaPopup()" style="background:#1e1e1e;border:0.5px solid #555;color:#aaa;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">✕</button>
+    <div style="width:100%;max-width:900px;height:82vh;max-height:700px;background:var(--k-bg-1e1e1e, #1e1e1e);border-radius:16px;border:0.5px solid var(--k-bd-444444, #444);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,0.7);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--k-bg-2a2a2a, #2a2a2a);border-bottom:0.5px solid var(--k-bd-444444, #444);flex-shrink:0;">
+        <div style="font-size:15px;font-weight:500;color:var(--k-tx-eeeeee, #eee);" id="mapa-popup-title">Mapa</div>
+        <button onclick="closeMapaPopup()" style="background:var(--k-bg-1e1e1e, #1e1e1e);border:0.5px solid var(--k-bd-555555, #555);color:var(--text-secondary, #aaa);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">✕</button>
       </div>
       <iframe id="mapa-iframe" src="" style="flex:1;border:none;width:100%;"></iframe>
     </div>
@@ -436,7 +436,7 @@
 
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="../shared/ui-utils.js?v=1.8"></script>
+<script src="../shared/ui-utils.js?v=2.6"></script>
 <script type="module" src="/territorios/app.js"></script>
 </body>
 </html>

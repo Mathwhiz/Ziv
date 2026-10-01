@@ -84,10 +84,6 @@ function lunesDeISO(iso) {
 
 function hoyISO() { return fmtLocal(new Date()); }
 
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
 // ─────────────────────────────────────────
 //   FIRESTORE
 // ─────────────────────────────────────────
@@ -254,57 +250,57 @@ window.compartirMes = async function() {
         superintendente: 'Semana del Superintendente',
         asamblea: especial.subtipo === 'regional' ? 'Asamblea Regional' : 'Asamblea de Circuito',
       };
-      contenido = `<div style="font-size:13px;color:#E8C94A;font-weight:600;">★ ${labels[especial.tipo] || 'Semana especial'}</div>`;
+      contenido = `<div style="font-size:13px;color:var(--k-tx-e8c94a, #E8C94A);font-weight:600;">★ ${labels[especial.tipo] || 'Semana especial'}</div>`;
 
     } else if (confs.length) {
       contenido = confs.map(c => {
         if (c.tipo === 'entrada') {
           const nombre = esc(c.nombreOrador || '—');
-          const congre = c.congregacionNombre ? `<div style="font-size:11px;color:#888;margin-top:1px;">${esc(c.congregacionNombre)}</div>` : '';
+          const congre = c.congregacionNombre ? `<div style="font-size:11px;color:var(--k-tx-888888, #888);margin-top:1px;">${esc(c.congregacionNombre)}</div>` : '';
           const disc   = (c.discursoNumero || c.discursoTitulo)
-            ? `<div style="font-size:11px;color:#0DB6CC;margin-top:2px;">N°${c.discursoNumero || '?'}${c.discursoTitulo ? ' — ' + esc(c.discursoTitulo) : ''}</div>` : '';
+            ? `<div style="font-size:11px;color:var(--k-tx-0db6cc, #0DB6CC);margin-top:2px;">N°${c.discursoNumero || '?'}${c.discursoTitulo ? ' — ' + esc(c.discursoTitulo) : ''}</div>` : '';
           return `<div style="margin-bottom:4px;">
-            <div style="font-size:10px;font-weight:700;color:#1D9E75;letter-spacing:0.05em;margin-bottom:2px;">ENTRADA</div>
-            <div style="font-size:13px;font-weight:700;color:#f0f0f0;">${nombre}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--k-tx-1d9e75, #1D9E75);letter-spacing:0.05em;margin-bottom:2px;">ENTRADA</div>
+            <div style="font-size:13px;font-weight:700;color:var(--k-tx-f0f0f0, #f0f0f0);">${nombre}</div>
             ${congre}${disc}
           </div>`;
         } else {
           const nombre = c.pubId
             ? esc(_publicadores.find(p => p.id === c.pubId)?.nombre || '—')
             : esc(c.nombreOrador || '—');
-          const destino = c.congregacionNombre ? `<div style="font-size:11px;color:#888;margin-top:1px;">→ ${esc(c.congregacionNombre)}</div>` : '';
+          const destino = c.congregacionNombre ? `<div style="font-size:11px;color:var(--k-tx-888888, #888);margin-top:1px;">→ ${esc(c.congregacionNombre)}</div>` : '';
           const disc    = (c.discursoNumero || c.discursoTitulo)
-            ? `<div style="font-size:11px;color:#378ADD;margin-top:2px;">N°${c.discursoNumero || '?'}${c.discursoTitulo ? ' — ' + esc(c.discursoTitulo) : ''}</div>` : '';
+            ? `<div style="font-size:11px;color:var(--k-tx-378add, #378ADD);margin-top:2px;">N°${c.discursoNumero || '?'}${c.discursoTitulo ? ' — ' + esc(c.discursoTitulo) : ''}</div>` : '';
           return `<div style="margin-bottom:4px;">
-            <div style="font-size:10px;font-weight:700;color:#378ADD;letter-spacing:0.05em;margin-bottom:2px;">SALIDA</div>
-            <div style="font-size:13px;font-weight:700;color:#f0f0f0;">${nombre}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--k-tx-378add, #378ADD);letter-spacing:0.05em;margin-bottom:2px;">SALIDA</div>
+            <div style="font-size:13px;font-weight:700;color:var(--k-tx-f0f0f0, #f0f0f0);">${nombre}</div>
             ${destino}${disc}
           </div>`;
         }
       }).join('');
 
     } else {
-      contenido = `<div style="font-size:12px;color:#555;font-style:italic;">Sin confirmar</div>`;
+      contenido = `<div style="font-size:12px;color:var(--k-tx-555555, #555);font-style:italic;">Sin confirmar</div>`;
     }
 
     return `
-      <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:0.5px solid #272a2e;">
+      <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:0.5px solid var(--k-bd-272a2e, #272a2e);">
         <div style="flex-shrink:0;width:38px;text-align:center;padding-top:2px;">
-          <div style="font-size:20px;font-weight:800;color:#e8e8e8;line-height:1;">${d}</div>
-          <div style="font-size:9px;color:#555;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">sáb</div>
+          <div style="font-size:20px;font-weight:800;color:var(--text-primary, #e8e8e8);line-height:1;">${d}</div>
+          <div style="font-size:9px;color:var(--k-tx-555555, #555);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">sáb</div>
         </div>
         <div style="flex:1;min-width:0;">${contenido}</div>
       </div>`;
   }).join('');
 
   const html = `
-    <div style="background:#1a1c1f;border-radius:18px;padding:22px 18px 16px;width:320px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;box-sizing:border-box;">
+    <div style="background:var(--bg-primary, #1a1c1f);border-radius:18px;padding:22px 18px 16px;width:320px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;box-sizing:border-box;">
       <div style="margin-bottom:16px;">
-        <div style="font-size:10px;font-weight:800;color:#0DB6CC;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:5px;">Conferencias</div>
-        <div style="font-size:26px;font-weight:800;color:#f2f2f2;line-height:1.1;">${fmtMesLargo(_mes)}</div>
-        <div style="font-size:12px;color:#555;margin-top:3px;">${esc(CONGRE_NOMBRE)}</div>
+        <div style="font-size:10px;font-weight:800;color:var(--k-tx-0db6cc, #0DB6CC);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:5px;">Conferencias</div>
+        <div style="font-size:26px;font-weight:800;color:var(--k-tx-f2f2f2, #f2f2f2);line-height:1.1;">${fmtMesLargo(_mes)}</div>
+        <div style="font-size:12px;color:var(--k-tx-555555, #555);margin-top:3px;">${esc(CONGRE_NOMBRE)}</div>
       </div>
-      <div style="height:1px;background:#272a2e;margin-bottom:4px;"></div>
+      <div style="height:1px;background:var(--bg-hover, #272a2e);margin-bottom:4px;"></div>
       ${filas}
       <div style="margin-top:12px;text-align:center;font-size:10px;color:#3a3d42;font-weight:600;letter-spacing:0.06em;">ZIV</div>
     </div>`;

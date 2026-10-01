@@ -23,12 +23,12 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 .conf-back-link:hover { background: var(--bg-hover); color: var(--text-primary); }
 .conf-header-center { flex: 1; min-width: 0; }
 .conf-header-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
-.conf-header-sub   { font-size: 11px; color: #0DB6CC; font-weight: 500; }
+.conf-header-sub   { font-size: 11px; color: var(--k-tx-0db6cc, #0DB6CC); font-weight: 500; }
 .conf-compartir-btn {
   width: 36px; height: 36px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   background: rgba(13,182,204,0.10); border: 1px solid rgba(13,182,204,0.28);
-  color: #0DB6CC; cursor: pointer; flex-shrink: 0;
+  color: var(--k-tx-0db6cc, #0DB6CC); cursor: pointer; flex-shrink: 0;
   transition: background 0.15s;
 }
 .conf-compartir-btn:hover { background: rgba(13,182,204,0.18); }
@@ -44,7 +44,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent;
   transition: color 0.15s, border-color 0.15s; margin-bottom: -0.5px;
 }
-.tab-btn.active { color: #0DB6CC; border-bottom-color: #0DB6CC; }
+.tab-btn.active { color: var(--k-tx-0db6cc, #0DB6CC); border-bottom-color: #0DB6CC; }
 .tab-btn:hover:not(.active) { color: var(--text-secondary); }
 
 .tab-panel { display: none; }
@@ -88,25 +88,25 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 .sab-cuerpo { flex: 1; min-width: 0; }
 
 .sab-especial {
-  font-size: 13px; color: #E8C94A; font-weight: 500; padding: 4px 0;
+  font-size: 13px; color: var(--k-tx-e8c94a, #E8C94A); font-weight: 500; padding: 4px 0;
 }
 .sab-sin-conf { font-size: 13px; color: var(--text-muted); font-style: italic; padding: 4px 0; }
 
 .sab-agregar-btn {
   display: flex; align-items: center; gap: 6px;
   background: rgba(13,182,204,0.07); border: 1px dashed rgba(13,182,204,0.3);
-  color: #0DB6CC; border-radius: 8px; padding: 7px 12px;
+  color: var(--k-tx-0db6cc, #0DB6CC); border-radius: 8px; padding: 7px 12px;
   font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit;
   transition: background 0.15s, border-color 0.15s; width: 100%;
 }
 .sab-agregar-btn:hover { background: rgba(13,182,204,0.12); border-color: rgba(13,182,204,0.5); }
 
 .sab-add-btn {
-  background: none; border: none; color: #0DB6CC; font-size: 12px; font-weight: 600;
+  background: none; border: none; color: var(--k-tx-0db6cc, #0DB6CC); font-size: 12px; font-weight: 600;
   cursor: pointer; font-family: inherit; padding: 4px 0; margin-top: 4px;
   display: block;
 }
-.sab-add-btn:hover { color: #33d4ea; }
+.sab-add-btn:hover { color: var(--k-tx-33d4ea, #33d4ea); }
 
 /* ── Items de conferencia ── */
 .conf-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 0.5px solid var(--border-light); }
@@ -117,8 +117,8 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   letter-spacing: 0.04em; border-radius: 6px;
   padding: 2px 7px; margin-bottom: 4px; border: 1px solid transparent;
 }
-.conf-badge.entrada { background: rgba(29,158,117,0.12); color: #1D9E75; border-color: rgba(29,158,117,0.25); }
-.conf-badge.salida  { background: rgba(55,138,221,0.12); color: #378ADD; border-color: rgba(55,138,221,0.25); }
+.conf-badge.entrada { background: rgba(29,158,117,0.12); color: var(--k-tx-1d9e75, #1D9E75); border-color: rgba(29,158,117,0.25); }
+.conf-badge.salida  { background: rgba(55,138,221,0.12); color: var(--k-tx-378add, #378ADD); border-color: rgba(55,138,221,0.25); }
 
 .conf-orador  { font-size: 14px; font-weight: 600; color: var(--text-primary); }
 .conf-detalle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
@@ -133,8 +133,8 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   font-size: 14px; color: var(--text-muted); font-family: inherit;
   transition: background 0.12s, color 0.12s;
 }
-.conf-item-edit:hover { color: #9b93ee; background: rgba(127,119,221,0.14); }
-.conf-item-del:hover  { color: #F09595; background: rgba(160,45,45,0.14); }
+.conf-item-edit:hover { color: var(--k-tx-9b93ee, #9b93ee); background: rgba(127,119,221,0.14); }
+.conf-item-del:hover  { color: var(--k-tx-f09595, #F09595); background: rgba(160,45,45,0.14); }
 
 /* ── Oradores ── */
 .tab-section-head {
@@ -145,7 +145,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 .tab-section-sub   { font-size: 12px; color: var(--text-muted); margin-bottom: 14px; }
 .tab-add-btn {
   background: rgba(13,182,204,0.10); border: 1px solid rgba(13,182,204,0.3);
-  color: #0DB6CC; border-radius: 8px; padding: 5px 12px;
+  color: var(--k-tx-0db6cc, #0DB6CC); border-radius: 8px; padding: 5px 12px;
   font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
   transition: background 0.15s;
 }
@@ -167,12 +167,12 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   padding: 4px 10px; font-size: 12px; cursor: pointer; font-family: inherit;
   white-space: nowrap; flex-shrink: 0; transition: background 0.12s, color 0.12s;
 }
-.orador-edit-btn:hover { background: rgba(13,182,204,0.1); color: #0DB6CC; border-color: rgba(13,182,204,0.4); }
+.orador-edit-btn:hover { background: rgba(13,182,204,0.1); color: var(--k-tx-0db6cc, #0DB6CC); border-color: rgba(13,182,204,0.4); }
 
 .orador-discs { display: flex; flex-wrap: wrap; gap: 6px; }
 .disc-chip {
   background: rgba(13,182,204,0.08); border: 1px solid rgba(13,182,204,0.22);
-  color: #0DB6CC; border-radius: 6px; padding: 3px 8px;
+  color: var(--k-tx-0db6cc, #0DB6CC); border-radius: 6px; padding: 3px 8px;
   font-size: 12px; font-weight: 600; cursor: default;
 }
 .disc-none { font-size: 12px; color: var(--text-muted); font-style: italic; }
@@ -193,8 +193,8 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 14px; color: var(--text-muted); font-family: inherit;
 }
-.circ-edit-btn:hover { color: #9b93ee; background: rgba(127,119,221,0.14); }
-.circ-del-btn:hover  { color: #F09595; background: rgba(160,45,45,0.14); }
+.circ-edit-btn:hover { color: var(--k-tx-9b93ee, #9b93ee); background: rgba(127,119,221,0.14); }
+.circ-del-btn:hover  { color: var(--k-tx-f09595, #F09595); background: rgba(160,45,45,0.14); }
 .circ-empty { font-size: 13px; color: var(--text-muted); padding: 24px 0; text-align: center; }
 
 /* ── Modal (hereda .modal-overlay de hermanos pero es independiente) ── */
@@ -232,7 +232,7 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 .btn-tipo-active {
-  background: rgba(13,182,204,0.12); border-color: rgba(13,182,204,0.4); color: #0DB6CC;
+  background: rgba(13,182,204,0.12); border-color: rgba(13,182,204,0.4); color: var(--k-tx-0db6cc, #0DB6CC);
 }
 
 /* Select en modal */

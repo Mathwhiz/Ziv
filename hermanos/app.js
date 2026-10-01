@@ -154,10 +154,6 @@ function hideSinPermiso() {
 function norm(s) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
-function esc(s) {
-  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 function pubCol() {
   return collection(db, 'congregaciones', CONGRE_ID, 'publicadores');
 }
@@ -798,7 +794,7 @@ window.guardarHermano = async function() {
   if (!nombre) { uiToast('Ingresá un nombre', 'error'); return; }
 
   const status = document.getElementById('modal-status');
-  status.style.color = '#888'; status.textContent = 'Guardando…';
+  status.style.color = 'var(--k-tx-888888, #888)'; status.textContent = 'Guardando…';
 
   // Nuevo hermano
   if (!editandoId) {
@@ -816,7 +812,7 @@ window.guardarHermano = async function() {
       uiToast('Hermano agregado', 'success');
       logActividad(CONGRE_ID, 'hermanos', 'guardado', 'Hermano agregado: ' + nombre);
     } catch(e) {
-      status.style.color = '#F09595'; status.textContent = 'Error: ' + e.message;
+      status.style.color = 'var(--k-tx-f09595, #F09595)'; status.textContent = 'Error: ' + e.message;
     }
     return;
   }
@@ -829,7 +825,7 @@ window.guardarHermano = async function() {
     uiToast('Guardado', 'success');
     logActividad(CONGRE_ID, 'hermanos', 'guardado', 'Hermano editado: ' + nombre);
   } else {
-    status.style.color = '#F09595'; status.textContent = 'Error al guardar';
+    status.style.color = 'var(--k-tx-f09595, #F09595)'; status.textContent = 'Error al guardar';
   }
 };
 
@@ -1273,10 +1269,6 @@ window.closeChatPanel = function() {
   document.body.style.overflow = '';
 };
 
-function escapeHtml(str) {
-  return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
-}
-
 async function refreshChatNotas() {
   const loadEl = document.getElementById('chat-loading');
   const listEl = document.getElementById('chat-list');
@@ -1295,7 +1287,7 @@ async function refreshChatNotas() {
       const fecha = n.createdAt?.toDate ? n.createdAt.toDate() : new Date();
       const fechaStr = `${String(fecha.getDate()).padStart(2,'0')}/${String(fecha.getMonth()+1).padStart(2,'0')} ${String(fecha.getHours()).padStart(2,'0')}:${String(fecha.getMinutes()).padStart(2,'0')}`;
       const acciones = esMio ? `<div class="chat-item-actions"><button class="chat-btn-edit" onclick="abrirEditNota('${n.id}',${JSON.stringify(n.texto||'').replace(/</g,'\\u003c')})">Editar</button><button class="chat-btn-del" onclick="eliminarNota('${n.id}')">Eliminar</button></div>` : '';
-      return `<div class="chat-item"><div class="chat-item-head"><span class="chat-item-author">${escapeHtml(n.autor||'?')}</span><span class="chat-item-date">${fechaStr}</span></div><div class="chat-item-text">${escapeHtml(n.texto||'')}</div>${acciones}</div>`;
+      return `<div class="chat-item"><div class="chat-item-head"><span class="chat-item-author">${esc(n.autor||'?')}</span><span class="chat-item-date">${fechaStr}</span></div><div class="chat-item-text">${esc(n.texto||'')}</div>${acciones}</div>`;
     }).join('');
     listEl.style.display = '';
   } catch(err) {

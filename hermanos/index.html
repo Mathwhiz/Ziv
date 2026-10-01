@@ -14,8 +14,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="../shared/styles-base.css">
-  <link rel="stylesheet" href="/hermanos/styles.css?v=2.1">
+  <link rel="stylesheet" href="../shared/styles-base.css?v=1.1">
+  <link rel="stylesheet" href="/hermanos/styles.css?v=2.3">
 </head>
 <body>
 
@@ -53,7 +53,7 @@
       </div>
 
       <div class="cs-module-title">Administrador</div>
-      <div class="cs-module-sub js-congre" style="color:#D85A30;">—</div>
+      <div class="cs-module-sub js-congre" style="color:var(--k-tx-d85a30, #D85A30);">—</div>
       <div class="cs-module-label">¿Qué querés hacer?</div>
 
       <button class="cs-module-card" style="--card-hover-border:rgba(216,90,48,0.55);--card-hover-bg:#2a1711;--card-hover-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 1px rgba(216,90,48,0.55),0 4px 20px rgba(216,90,48,0.12);" onclick="goToHermanos()">
@@ -79,7 +79,7 @@
           </svg>
         </div>
         <div>
-          <div class="cs-module-card-title" style="color:#9b93ee;">Semanas especiales</div>
+          <div class="cs-module-card-title" style="color:var(--k-tx-9b93ee, #9b93ee);">Semanas especiales</div>
           <div class="cs-module-card-sub">Asambleas, conmemoración y más</div>
         </div>
       </button>
@@ -92,7 +92,7 @@
           </svg>
         </div>
         <div>
-          <div class="cs-module-card-title" style="color:#2dbd8e;">Responsabilidades</div>
+          <div class="cs-module-card-title" style="color:var(--k-tx-2dbd8e, #2dbd8e);">Responsabilidades</div>
           <div class="cs-module-card-sub">Cargos y encargados de la congregación</div>
         </div>
       </button>
@@ -105,7 +105,7 @@
           </svg>
         </div>
         <div>
-          <div class="cs-module-card-title" style="color:#76abff;">Grupos</div>
+          <div class="cs-module-card-title" style="color:var(--k-tx-76abff, #76abff);">Grupos</div>
           <div class="cs-module-card-sub">Ver publicadores por grupo</div>
         </div>
       </button>
@@ -123,7 +123,7 @@
   <div id="view-responsabilidades" class="view">
     <div class="main-header">
       <div>
-        <div class="main-title" style="color:#D85A30;">Responsabilidades</div>
+        <div class="main-title" style="color:var(--k-tx-d85a30, #D85A30);">Responsabilidades</div>
         <div class="main-sub js-congre">—</div>
       </div>
     </div>
@@ -160,7 +160,7 @@
   <div id="view-grupos" class="view">
     <div class="main-header">
       <div>
-        <div class="main-title" style="color:#76abff;">Grupos</div>
+        <div class="main-title" style="color:var(--k-tx-76abff, #76abff);">Grupos</div>
         <div class="main-sub js-congre">—</div>
       </div>
     </div>
@@ -254,7 +254,7 @@
   <div id="view-especiales" class="view">
     <div class="main-header">
       <div>
-        <div class="main-title" style="color:#9b93ee;">Semanas especiales</div>
+        <div class="main-title" style="color:var(--k-tx-9b93ee, #9b93ee);">Semanas especiales</div>
         <div class="main-sub js-congre">—</div>
       </div>
       <button class="btn-esp-add" onclick="toggleFormEspecial()" title="Agregar">+</button>
@@ -270,7 +270,7 @@
   <div id="view-duplicados" class="view">
     <div class="main-header">
       <div>
-        <div class="main-title" style="color:#EF9F27;">Duplicados</div>
+        <div class="main-title" style="color:var(--k-tx-ef9f27, #EF9F27);">Duplicados</div>
         <div class="main-sub js-congre">—</div>
       </div>
     </div>
@@ -350,9 +350,9 @@
           <span id="chat-panel-titulo" class="chat-panel-title">Notas — Congregación</span>
           <button class="chat-close-btn" onclick="closeChatPanel()">✕</button>
         </div>
-        <div id="chat-loading" style="display:none;text-align:center;padding:2rem;color:#555;font-size:13px;">Cargando…</div>
+        <div id="chat-loading" style="display:none;text-align:center;padding:2rem;color:var(--k-tx-555555, #555);font-size:13px;">Cargando…</div>
         <div id="chat-error"  style="display:none;"></div>
-        <div id="chat-empty"  style="display:none;text-align:center;padding:2rem;color:#555;font-size:13px;">Sin notas todavía.</div>
+        <div id="chat-empty"  style="display:none;text-align:center;padding:2rem;color:var(--k-tx-555555, #555);font-size:13px;">Sin notas todavía.</div>
         <div id="chat-list"   class="chat-list" style="display:none;"></div>
         <div class="chat-composer">
           <textarea id="chat-mensaje" class="chat-textarea" placeholder="Escribí una nota…" rows="2"></textarea>
@@ -412,7 +412,7 @@
 
   <div id="chat-edit-modal" class="chat-edit-modal" style="display:none;" onclick="if(event.target===this)closeChatEdit()">
     <div class="chat-edit-card">
-      <div style="font-size:14px;font-weight:600;color:#ccc;margin-bottom:10px;">Editar nota</div>
+      <div style="font-size:14px;font-weight:600;color:var(--k-tx-cccccc, #ccc);margin-bottom:10px;">Editar nota</div>
       <textarea id="chat-edit-texto" class="chat-textarea" rows="4"></textarea>
       <div style="display:flex;gap:8px;margin-top:10px;">
         <button class="btn-secondary" onclick="closeChatEdit()" style="flex:1;padding:9px;">Cancelar</button>
@@ -424,7 +424,7 @@
 </div><!-- /.app -->
 
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
-<script src="../shared/ui-utils.js?v=1.8"></script>
+<script src="../shared/ui-utils.js?v=2.6"></script>
 <script type="module" src="/hermanos/app.js"></script>
 </body>
 </html>

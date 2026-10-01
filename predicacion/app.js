@@ -81,10 +81,6 @@ function listMesesEntre(desde, hasta) {
   return meses;
 }
 
-function esc(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -1361,7 +1357,7 @@ async function cargarSalidasSemana() {
       const diaNum  = d.getDate();
       const diaNom  = DIAS_LARGO[d.getDay()];
       const esHoy   = fecha === fechaHoy();
-      html += `<div class="salidas-dia-label">${diaNom} ${diaNum}${esHoy ? ' · <span style="color:#E05277">Hoy</span>' : ''}</div>`;
+      html += `<div class="salidas-dia-label">${diaNom} ${diaNum}${esHoy ? ' · <span style="color:var(--k-tx-e05277, #E05277)">Hoy</span>' : ''}</div>`;
       porFecha[fecha].forEach(s => {
         const horaFmt     = s.hora ? s.hora.replace('.', ':') : '—';
         const esTel       = s.tipo === 'tel';

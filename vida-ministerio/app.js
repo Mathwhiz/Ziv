@@ -150,71 +150,66 @@ async function syncVmPublicConfig() {
   });
 }
 
-async function replaceVmPublicadores() {
-  const existing = await getDocs(vmPublicadoresCol());
-  if (!existing.empty) {
-    for (let i = 0; i < existing.docs.length; i += 400) {
-      const batch = writeBatch(db);
-      existing.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
-      await batch.commit();
-    }
+// Valor comparable de un doc de espejo: sin updatedAt y con claves ordenadas
+function _espejoClave(v) {
+  if (Array.isArray(v)) return v.map(_espejoClave);
+  if (v && typeof v === 'object') {
+    return Object.keys(v).sort().reduce((o, k) => {
+      if (k !== 'updatedAt' && v[k] !== undefined) o[k] = _espejoClave(v[k]);
+      return o;
+    }, {});
   }
-  for (let i = 0; i < publicadores.length; i += 400) {
+  return v;
+}
+
+// Deja `col` igual a `deseados` ({id: data}) tocando solo lo que cambió: escribe lo nuevo o
+// distinto y borra lo que sobra. Antes se borraba todo y se reescribía, y mientras tanto el
+// visor público veía el programa vacío.
+async function syncEspejo(col, deseados) {
+  const existing = await getDocs(col);
+  const ops = [];
+  const vistos = new Set();
+  existing.docs.forEach(d => {
+    vistos.add(d.id);
+    if (!(d.id in deseados)) ops.push(b => b.delete(d.ref));
+    else if (JSON.stringify(_espejoClave(d.data())) !== JSON.stringify(_espejoClave(deseados[d.id]))) {
+      ops.push(b => b.set(d.ref, deseados[d.id]));
+    }
+  });
+  Object.keys(deseados).forEach(id => {
+    if (!vistos.has(id)) ops.push(b => b.set(doc(col, id), deseados[id]));
+  });
+  for (let i = 0; i < ops.length; i += 400) {
     const batch = writeBatch(db);
-    publicadores.slice(i, i + 400).forEach(p => {
-      batch.set(doc(db, 'congregaciones', congreId, 'vm_publicadores', String(p.id)), {
-        id: String(p.id),
-        nombre: p.nombre || '',
-      });
-    });
+    ops.slice(i, i + 400).forEach(op => op(batch));
     await batch.commit();
   }
 }
 
+async function replaceVmPublicadores() {
+  const deseados = {};
+  publicadores.forEach(p => {
+    deseados[String(p.id)] = { id: String(p.id), nombre: p.nombre || '' };
+  });
+  await syncEspejo(vmPublicadoresCol(), deseados);
+}
+
 async function replaceVmEspecialesPublicos() {
-  const existing = await getDocs(vmEspecialesCol());
-  if (!existing.empty) {
-    for (let i = 0; i < existing.docs.length; i += 400) {
-      const batch = writeBatch(db);
-      existing.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
-      await batch.commit();
-    }
-  }
-  const entries = Object.entries(vmEspeciales);
-  for (let i = 0; i < entries.length; i += 400) {
-    const batch = writeBatch(db);
-    entries.slice(i, i + 400).forEach(([fecha, esp]) => {
-      batch.set(doc(db, 'congregaciones', congreId, 'vm_especiales', fecha), {
-        tipo: esp?.tipo || null,
-        fechaEvento: esp?.fechaEvento || null,
-      });
-    });
-    await batch.commit();
-  }
+  const deseados = {};
+  Object.entries(vmEspeciales).forEach(([fecha, esp]) => {
+    deseados[fecha] = { tipo: esp?.tipo || null, fechaEvento: esp?.fechaEvento || null };
+  });
+  await syncEspejo(vmEspecialesCol(), deseados);
 }
 
 async function syncVmProgramaCompleto() {
   const snap = await getDocs(collection(db, 'congregaciones', congreId, 'vidaministerio'));
-  const semanas = snap.docs
+  const deseados = {};
+  snap.docs
     .map(d => d.data())
-    .filter(s => s?.fecha && /^\d{4}-\d{2}-\d{2}$/.test(s.fecha));
-
-  const existing = await getDocs(vmProgramaCol());
-  if (!existing.empty) {
-    for (let i = 0; i < existing.docs.length; i += 400) {
-      const batch = writeBatch(db);
-      existing.docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
-      await batch.commit();
-    }
-  }
-
-  for (let i = 0; i < semanas.length; i += 400) {
-    const batch = writeBatch(db);
-    semanas.slice(i, i + 400).forEach(s => {
-      batch.set(doc(db, 'congregaciones', congreId, 'vm_programa', s.fecha), toPublicVmSemana(s));
-    });
-    await batch.commit();
-  }
+    .filter(s => s?.fecha && /^\d{4}-\d{2}-\d{2}$/.test(s.fecha))
+    .forEach(s => { deseados[s.fecha] = toPublicVmSemana(s); });
+  await syncEspejo(vmProgramaCol(), deseados);
 }
 
 const VM_TIPO_LABELS = {
@@ -276,10 +271,6 @@ function lunesDeDate(input) {
 
 function lunesDeHoy() {
   return lunesDeDate(new Date());
-}
-
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ─────────────────────────────────────────
@@ -1019,7 +1010,7 @@ function renderSemanaPublico(s) {
   const cancionStr = [s.cancionApertura, s.cancionIntermedia, s.cancionCierre]
     .map((c, i) => c ? `${['Ap.','Int.','Cie.'][i]} ${c}` : null).filter(Boolean).join(' · ');
   if (cancionStr) {
-    html += `<div style="font-size:12px;color:#555;margin-bottom:14px;padding-left:1px;">${cancionStr}</div>`;
+    html += `<div style="font-size:12px;color:var(--k-tx-555555, #555);margin-bottom:14px;padding-left:1px;">${cancionStr}</div>`;
   }
 
   // Tesoros
@@ -1033,7 +1024,7 @@ function renderSemanaPublico(s) {
       <div class="pub-parte-titulo">${esc(lect.titulo || 'Lectura Bíblica')}</div>
       <div class="pub-parte-nombre" style="text-align:right;">
         ${lNombre   ? `<div>${esc(lNombre)}</div>`   : '<div><span class="pub-parte-sin">—</span></div>'}
-        ${lAuxNombre ? `<div style="font-size:11px;color:#888;">${esc(lAuxNombre)}</div>` : ''}
+        ${lAuxNombre ? `<div style="font-size:11px;color:var(--k-tx-888888, #888);">${esc(lAuxNombre)}</div>` : ''}
       </div>
     </div>`;
   } else {
@@ -1066,7 +1057,7 @@ function renderSemanaPublico(s) {
         <div class="pub-parte-titulo">${esc(p.titulo || 'Parte')}</div>
         <div class="pub-parte-nombre" style="text-align:right;">
           ${mainStr ? `<div>${mainStr}</div>` : '<div><span class="pub-parte-sin">—</span></div>'}
-          ${auxStr  ? `<div style="font-size:11px;color:#888;">${auxStr}</div>` : ''}
+          ${auxStr  ? `<div style="font-size:11px;color:var(--k-tx-888888, #888);">${auxStr}</div>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -1083,7 +1074,7 @@ function renderSemanaPublico(s) {
     <div class="pub-parte-titulo">${esc(estudio.titulo || 'Estudio Bíblico')}</div>
     <div class="pub-parte-nombre" style="text-align:right;">
       ${estudio.conductor ? `<div>${esc(nombreDePub(estudio.conductor) || '—')}</div>` : '<div class="pub-parte-sin">—</div>'}
-      ${estudio.lector ? `<div style="font-size:11px;color:#888;">Lec. ${esc(nombreDePub(estudio.lector) || '')}</div>` : ''}
+      ${estudio.lector ? `<div style="font-size:11px;color:var(--k-tx-888888, #888);">Lec. ${esc(nombreDePub(estudio.lector) || '')}</div>` : ''}
     </div>
   </div>` : '';
   html += `<div class="pub-seccion">
@@ -2595,7 +2586,7 @@ window.compartirSemanaFoto = function() {
   uiLoading.show('Generando imagen…');
   const prevBg  = el.style.background;
   const prevPad = el.style.padding;
-  el.style.background = '#1e1e1e';
+  el.style.background = 'var(--k-bg-1e1e1e, #1e1e1e)';
   el.style.padding    = '16px';
   html2canvas(el, {
     backgroundColor: '#1e1e1e',
@@ -2949,7 +2940,7 @@ window.exportarMesImagen = async function(mesISO) {
   const auxId      = vmMesesCache[mesISO]?.encargadoSalaAuxId;
   const auxNombre  = (tieneAuxiliar && auxId) ? (nombreDePub(auxId) || '') : '';
   const auxLine    = auxNombre
-    ? `<div style="font-size:12px;color:#888;margin-bottom:10px;">Sala Auxiliar: ${esc(auxNombre)}</div>`
+    ? `<div style="font-size:12px;color:var(--k-tx-888888, #888);margin-bottom:10px;">Sala Auxiliar: ${esc(auxNombre)}</div>`
     : '';
 
   // Cargar datos completos de Firestore (semanasLista tiene todo pero por si acaso)
@@ -2971,8 +2962,8 @@ window.exportarMesImagen = async function(mesISO) {
     const fin    = new Date(inicio);
     fin.setDate(fin.getDate() + 6);
     const rango = `${dd(inicio.getDate())}/${dd(inicio.getMonth()+1)} al ${dd(fin.getDate())}/${dd(fin.getMonth()+1)}`;
-    return `<div style="background:#1e1e1e;border-radius:12px;padding:12px;overflow:hidden;">
-      <div style="font-size:10px;font-weight:700;color:#EF9F27;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #2e3033;letter-spacing:0.06em;text-transform:uppercase;">Semana ${rango}</div>
+    return `<div style="background:var(--k-bg-1e1e1e, #1e1e1e);border-radius:12px;padding:12px;overflow:hidden;">
+      <div style="font-size:10px;font-weight:700;color:var(--k-tx-ef9f27, #EF9F27);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border-primary, #2e3033);letter-spacing:0.06em;text-transform:uppercase;">Semana ${rango}</div>
       ${renderSemanaPublico(s)}
     </div>`;
   }).join('');
@@ -2980,7 +2971,7 @@ window.exportarMesImagen = async function(mesISO) {
   const wrap = document.createElement('div');
   wrap.style.cssText = 'position:fixed;left:-9999px;top:0;background:#1a1c1f;padding:20px;width:820px;box-sizing:border-box;';
   wrap.innerHTML = `
-    <div style="font-size:17px;font-weight:800;color:#EF9F27;margin-bottom:4px;">${esc(label)}</div>
+    <div style="font-size:17px;font-weight:800;color:var(--k-tx-ef9f27, #EF9F27);margin-bottom:4px;">${esc(label)}</div>
     ${auxLine}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">${cellsHtml}</div>
   `;
@@ -3053,7 +3044,7 @@ function s89SlipsDeSemana(semana) {
 function s89SlipHtml(s, idx) {
   const e  = t => (t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const chk = sel => sel
-    ? '<div class="s89-caja" style="background:#000;color:#fff;font-weight:900;">✓</div>'
+    ? '<div class="s89-caja" style="background:#000;color:var(--k-tx-ffffff, #fff);font-weight:900;">✓</div>'
     : '<div class="s89-caja"></div>';
 
   return `
@@ -3174,7 +3165,7 @@ window.s89Compartir = async function(idx) {
 
 function s89GenerarHtml(slips, { autoPrint = false } = {}) {
   const e = t => (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const caja = sel => `<span style="display:inline-block;width:16px;height:16px;border:1.5px solid #000;text-align:center;line-height:14px;font-size:13px;font-weight:900;vertical-align:middle;font-family:sans-serif;">${sel ? '✓' : ''}</span>`;
+  const caja = sel => `<span style="display:inline-block;width:16px;height:16px;border:1.5px solid var(--k-bd-000000, #000);text-align:center;line-height:14px;font-size:13px;font-weight:900;vertical-align:middle;font-family:sans-serif;">${sel ? '✓' : ''}</span>`;
 
   const slipHtml = s => `
 <div class="s89-print-slip">
@@ -3183,19 +3174,19 @@ function s89GenerarHtml(slips, { autoPrint = false } = {}) {
   </div>
   <div style="display:flex;align-items:flex-end;gap:4px;margin-bottom:7mm;">
     <b style="white-space:nowrap;font-size:13pt;">Nombre:</b>
-    <span style="flex:1;border-bottom:1.5px solid #000;font-size:13pt;padding-left:4px;">${e(s.nombre)}</span>
+    <span style="flex:1;border-bottom:1.5px solid var(--k-bd-000000, #000);font-size:13pt;padding-left:4px;">${e(s.nombre)}</span>
   </div>
   <div style="display:flex;align-items:flex-end;gap:4px;margin-bottom:7mm;">
     <b style="white-space:nowrap;font-size:13pt;">Ayudante:</b>
-    <span style="flex:1;border-bottom:1.5px solid #000;font-size:13pt;padding-left:4px;">${e(s.ayudante)}</span>
+    <span style="flex:1;border-bottom:1.5px solid var(--k-bd-000000, #000);font-size:13pt;padding-left:4px;">${e(s.ayudante)}</span>
   </div>
   <div style="display:flex;align-items:flex-end;gap:4px;margin-bottom:7mm;">
     <b style="white-space:nowrap;font-size:13pt;">Fecha:</b>
-    <span style="flex:1;border-bottom:1.5px solid #000;font-size:13pt;padding-left:4px;">${e(s.fecha)}</span>
+    <span style="flex:1;border-bottom:1.5px solid var(--k-bd-000000, #000);font-size:13pt;padding-left:4px;">${e(s.fecha)}</span>
   </div>
   <div style="display:flex;align-items:flex-end;gap:4px;margin-bottom:7mm;">
     <b style="white-space:nowrap;font-size:13pt;">Intervención núm.:</b>
-    <span style="flex:1;border-bottom:1.5px solid #000;font-size:13pt;padding-left:4px;">${s.intervencion}</span>
+    <span style="flex:1;border-bottom:1.5px solid var(--k-bd-000000, #000);font-size:13pt;padding-left:4px;">${s.intervencion}</span>
   </div>
   <div style="font-size:13pt;font-weight:700;margin-bottom:5mm;">Se presentará en:</div>
   <div style="margin-left:8mm;font-size:13pt;">
@@ -3208,7 +3199,7 @@ function s89GenerarHtml(slips, { autoPrint = false } = {}) {
     que necesita para su intervención. Repase también las indicaciones que se describen en las
     <i>Instrucciones para la reunión Vida y Ministerio Cristianos</i> (S-38).
   </div>
-  <div style="font-size:8pt;color:#555;margin-top:4mm;">S-89-S 11/23</div>
+  <div style="font-size:8pt;color:var(--k-tx-555555, #555);margin-top:4mm;">S-89-S 11/23</div>
 </div>`;
 
   // 2 por página (en vez de 4) → tamaño mucho más cercano al original
@@ -3519,7 +3510,7 @@ function _lhRenderLista(lista) {
   }
   el.innerHTML = lista.map(h => {
     const asignChips = (h.roles || []).filter(r => !r.startsWith('VM_'))
-      .map(r => `<span class="vm-rol-chip" style="background:rgba(90,163,217,0.12);color:#5BA3D9;border-color:rgba(90,163,217,0.3);">${esc(_lhRolLabel(r))}</span>`).join('');
+      .map(r => `<span class="vm-rol-chip" style="background:rgba(90,163,217,0.12);color:var(--k-tx-5ba3d9, #5BA3D9);border-color:rgba(90,163,217,0.3);">${esc(_lhRolLabel(r))}</span>`).join('');
     const vmChips = (h.roles || []).filter(r => r.startsWith('VM_'))
       .map(r => `<span class="vm-rol-chip">${esc(_lhRolLabel(r))}</span>`).join('');
     const inactivoChip = h.activo === false
@@ -3771,7 +3762,7 @@ window.guardarHermanoVM = async function() {
   const nombre = document.getElementById('lh-modal-nombre').value.trim();
   if (!nombre) { uiToast('Ingresá un nombre', 'error'); return; }
   const status = document.getElementById('lh-modal-status');
-  status.style.color = '#888'; status.textContent = 'Guardando…';
+  status.style.color = 'var(--k-tx-888888, #888)'; status.textContent = 'Guardando…';
   if (!_lhEditandoId) {
     const roles = _lhRolesParaGuardar(null);
     const data = { nombre, roles, activo: true, noDisponible: _lhModalNoDisp };
@@ -3785,13 +3776,13 @@ window.guardarHermanoVM = async function() {
       _lhFiltrar();
       uiToast('Hermano agregado', 'success');
     } catch(e) {
-      status.style.color = '#F09595'; status.textContent = 'Error: ' + e.message;
+      status.style.color = 'var(--k-tx-f09595, #F09595)'; status.textContent = 'Error: ' + e.message;
     }
     return;
   }
   const ok = await _lhGuardarSilencioso();
   if (ok) { cerrarModalHermanoVM(); _lhFiltrar(); uiToast('Guardado', 'success'); }
-  else     { status.style.color = '#F09595'; status.textContent = 'Error al guardar'; }
+  else     { status.style.color = 'var(--k-tx-f09595, #F09595)'; status.textContent = 'Error al guardar'; }
 };
 
 // Desactivar / reactivar — conserva el historial, oculta de lista y auto-asignación

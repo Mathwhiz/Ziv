@@ -145,7 +145,7 @@ async function loadDashboard() {
     const snap = await getDocs(collection(db, 'congregaciones'));
     list.innerHTML = '';
     if (snap.empty) {
-      list.innerHTML = '<p style="color:#666;font-size:14px;text-align:center;padding:24px 0;">No hay congregaciones todavía.</p>';
+      list.innerHTML = '<p style="color:var(--text-muted, #666);font-size:14px;text-align:center;padding:24px 0;">No hay congregaciones todavía.</p>';
     } else {
       const ICO = {
         map:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4l-6 2v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
@@ -186,7 +186,7 @@ async function loadDashboard() {
     loading.style.display = 'none';
     list.style.display    = '';
   } catch(err) {
-    loading.innerHTML = `<span style="color:#F09595;font-size:14px;">Error: ${err.message}</span>`;
+    loading.innerHTML = `<span style="color:var(--k-tx-f09595, #F09595);font-size:14px;">Error: ${err.message}</span>`;
   }
 
   // Badge de matches pendientes
@@ -354,10 +354,10 @@ async function abrirSalonPicker() {
     <div class="salon-sheet">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
         <div>
-          <div style="font-size:16px;font-weight:700;color:#eee;">Salón del Reino</div>
-          <div style="font-size:12px;color:#666;margin-top:2px;">Arrastrá el marcador o tocá el mapa</div>
+          <div style="font-size:16px;font-weight:700;color:var(--k-tx-eeeeee, #eee);">Salón del Reino</div>
+          <div style="font-size:12px;color:var(--text-muted, #666);margin-top:2px;">Arrastrá el marcador o tocá el mapa</div>
         </div>
-        <button onclick="cerrarSalonPicker()" style="background:#333;border:none;border-radius:8px;width:32px;height:32px;color:#aaa;font-size:20px;cursor:pointer;line-height:1;">×</button>
+        <button onclick="cerrarSalonPicker()" style="background:var(--k-bg-333333, #333);border:none;border-radius:8px;width:32px;height:32px;color:var(--text-secondary, #aaa);font-size:20px;cursor:pointer;line-height:1;">×</button>
       </div>
       <input class="vincular-search" id="salon-search" type="text" autocomplete="off"
              placeholder="Buscar dirección o esquina…" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarDireccionSalon();}">
@@ -808,8 +808,8 @@ function renderCiudadesExtra() {
       </div>
       <div class="kml-drop kml-drop-sm" onclick="document.getElementById('ce-kml-${i}').click()">
         ${c.territories
-          ? `<span style="color:#5DCAA5;font-size:12px;">✓ ${c.territories.length} territorios cargados (IDs +${c.offset})</span>`
-          : `<span style="font-size:12px;color:#888;">Subir KML · se numeran desde 1, se guardan con ID +${c.offset}</span>`}
+          ? `<span style="color:var(--k-tx-5dcaa5, #5DCAA5);font-size:12px;">✓ ${c.territories.length} territorios cargados (IDs +${c.offset})</span>`
+          : `<span style="font-size:12px;color:var(--k-tx-888888, #888);">Subir KML · se numeran desde 1, se guardan con ID +${c.offset}</span>`}
       </div>
       <input type="file" id="ce-kml-${i}" accept=".kml" style="display:none" onchange="onCiudadExtraKmlFile(${i}, this)">
     </div>`).join('');
@@ -1225,11 +1225,11 @@ function renderTerrList() {
     lista = terrData.filter(t => (terrChanges[t._docId] ?? t.grupoId) === terrFiltro);
   }
 
-  const noBtn = `<button class="terr-g-btn" data-grupo="" style="border-color:#555;"
+  const noBtn = `<button class="terr-g-btn" data-grupo="" style="border-color:var(--k-bd-555555, #555);"
     onclick="assignGrupo('{ID}','')">—</button>`;
 
   document.getElementById('terr-list').innerHTML = lista.length === 0
-    ? '<p style="color:#666;font-size:14px;text-align:center;padding:20px 0;">Sin territorios en este filtro.</p>'
+    ? '<p style="color:var(--text-muted, #666);font-size:14px;text-align:center;padding:20px 0;">Sin territorios en este filtro.</p>'
     : lista.map(t => {
         const cur     = terrChanges[t._docId] ?? t.grupoId ?? '';
         const changed = t._docId in terrChanges;
@@ -1241,14 +1241,14 @@ function renderTerrList() {
               onclick="assignGrupo('${t._docId}','${g.id}')">${g.label.replace(/^Grupo\s*/i,'').substring(0,5)}</button>`;
           }),
           `<button class="terr-g-btn${!cur ? ' sel' : ''}" data-grupo=""
-            style="border-color:#555;${!cur ? 'background:#555;' : ''}"
+            style="border-color:var(--k-bd-555555, #555);${!cur ? 'background:#555;' : ''}"
             onclick="assignGrupo('${t._docId}','')">—</button>`,
         ].join('');
         const displayNum = t.nombre ? t.nombre.replace('Territorio ', '') : String(t.id);
         return `<div class="terr-row${changed ? ' changed' : ''}" id="terr-row-${t._docId}">
           <div style="min-width:36px;">
             <span class="terr-num">${displayNum}</span>
-            ${t.ciudad ? `<div style="font-size:9px;color:#888;line-height:1.2;margin-top:1px;">${t.ciudad}</div>` : ''}
+            ${t.ciudad ? `<div style="font-size:9px;color:var(--k-tx-888888, #888);line-height:1.2;margin-top:1px;">${t.ciudad}</div>` : ''}
           </div>
           <div class="terr-g-btns">${btns}</div>
         </div>`;
@@ -1403,7 +1403,7 @@ async function openMatches() {
       matchesList.push({ uid: user.uid, displayName: user.displayName, email: user.email, congregacionId: user.congregacionId, candidates });
     }
   } catch(err) {
-    document.getElementById('matches-list').innerHTML = `<p style="color:#F09595;font-size:14px;">Error: ${err.message}</p>`;
+    document.getElementById('matches-list').innerHTML = `<p style="color:var(--k-tx-f09595, #F09595);font-size:14px;">Error: ${err.message}</p>`;
     loading.style.display = 'none';
     return;
   }
@@ -1422,28 +1422,28 @@ function fmtRoles(roles) {
 function renderMatchesList() {
   const list = document.getElementById('matches-list');
   if (matchesList.length === 0) {
-    list.innerHTML = '<p style="color:#666;font-size:14px;text-align:center;padding:24px 0;">No hay matches pendientes.</p>';
+    list.innerHTML = '<p style="color:var(--text-muted, #666);font-size:14px;text-align:center;padding:24px 0;">No hay matches pendientes.</p>';
     return;
   }
   list.innerHTML = matchesList.map(m => {
     const rolesHtml = roles => fmtRoles(roles)
-      ? `<div style="font-size:11px;color:#666;margin-top:2px;">${fmtRoles(roles)}</div>` : '';
+      ? `<div style="font-size:11px;color:var(--text-muted, #666);margin-top:2px;">${fmtRoles(roles)}</div>` : '';
     const candidatesHtml = m.candidates.length > 0
       ? m.candidates.map(p => `
           <div class="match-pub-row">
             <div style="flex:1;min-width:0;">
-              <div style="font-size:14px;color:#ddd;">${p.nombre}</div>
+              <div style="font-size:14px;color:var(--k-tx-dddddd, #ddd);">${p.nombre}</div>
               ${rolesHtml(p.roles)}
             </div>
             <button class="btn-match-sel" onclick="resolverMatch('${m.uid}','${p.id}','${p.nombre.replace(/'/g,"\\'")}','${m.congregacionId||''}')">Seleccionar</button>
           </div>`).join('')
-      : '<p style="font-size:13px;color:#666;margin:6px 0;">No se encontraron coincidencias en la base.</p>';
+      : '<p style="font-size:13px;color:var(--text-muted, #666);margin:6px 0;">No se encontraron coincidencias en la base.</p>';
 
     return `<div class="match-card">
-      <div style="font-size:16px;font-weight:600;color:#eee;">${m.displayName || '(sin nombre)'}</div>
-      <div style="font-size:12px;color:#666;margin-top:2px;">${m.email || 'Sin email'}${m.congregacionId ? ' · ' + m.congregacionId : ''}</div>
+      <div style="font-size:16px;font-weight:600;color:var(--k-tx-eeeeee, #eee);">${m.displayName || '(sin nombre)'}</div>
+      <div style="font-size:12px;color:var(--text-muted, #666);margin-top:2px;">${m.email || 'Sin email'}${m.congregacionId ? ' · ' + m.congregacionId : ''}</div>
       ${m.candidates.length > 0
-        ? '<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin:12px 0 8px;">Posibles coincidencias</div>'
+        ? '<div style="font-size:11px;color:var(--k-tx-888888, #888);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 8px;">Posibles coincidencias</div>'
         : ''}
       <div>${candidatesHtml}</div>
       <button class="btn-match-none" onclick="marcarSinMatch('${m.uid}')">No encontrado</button>
@@ -1533,7 +1533,7 @@ async function openUsuarios(congreId, congreNombre) {
     loading.style.display = 'none';
 
     if (usuarios.length === 0) {
-      list.innerHTML = '<p style="color:#666;font-size:14px;text-align:center;padding:24px 0;">Ningún usuario registrado en esta congregación.</p>';
+      list.innerHTML = '<p style="color:var(--text-muted, #666);font-size:14px;text-align:center;padding:24px 0;">Ningún usuario registrado en esta congregación.</p>';
       return;
     }
 
@@ -1553,32 +1553,32 @@ async function openUsuarios(congreId, congreNombre) {
       const grupoEnc  = u.grupoEncargado || '';
       const pendienteAprobacion = roles.includes('pendiente');
       const rolesPills = roles.map(r =>
-        `<span style="font-size:10px;color:#9b8fdd;background:rgba(127,119,221,0.12);border:0.5px solid rgba(127,119,221,0.25);border-radius:6px;padding:2px 7px;">${ROL_LABELS[r] || r}</span>`
+        `<span style="font-size:10px;color:var(--k-tx-9b8fdd, #9b8fdd);background:rgba(127,119,221,0.12);border:0.5px solid rgba(127,119,221,0.25);border-radius:6px;padding:2px 7px;">${ROL_LABELS[r] || r}</span>`
       ).join('');
       const aprobarBtn = pendienteAprobacion
         ? `<button onclick="aprobarComoPublicador('${u.uid}')"
-             style="font-size:11px;color:#1D9E75;background:rgba(29,158,117,0.12);border:0.5px solid rgba(29,158,117,0.25);border-radius:7px;padding:3px 9px;cursor:pointer;">✓ Aprobar acceso</button>`
+             style="font-size:11px;color:var(--k-tx-1d9e75, #1D9E75);background:rgba(29,158,117,0.12);border:0.5px solid rgba(29,158,117,0.25);border-radius:7px;padding:3px 9px;cursor:pointer;">✓ Aprobar acceso</button>`
         : '';
       return `
         <div class="usuario-row">
           <div class="usuario-avatar">${ini}</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:14px;font-weight:600;color:#eee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.displayName || '(sin nombre)'}</div>
-            <div style="font-size:11px;color:#666;margin-top:1px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+            <div style="font-size:14px;font-weight:600;color:var(--k-tx-eeeeee, #eee);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.displayName || '(sin nombre)'}</div>
+            <div style="font-size:11px;color:var(--text-muted, #666);margin-top:1px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
               <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.email || 'Sin email'}</span>${badge}${vincularBtn}
             </div>
             <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:6px;">
               ${rolesPills}
               ${aprobarBtn}
               <button onclick="abrirRolesModal('${u.uid}','${nameSafe}','${rolesStr}','${grupoEnc}')"
-                style="font-size:11px;color:#888;background:#2a2a2a;border:0.5px solid #3a3a3a;border-radius:7px;padding:3px 9px;cursor:pointer;">✏ Editar roles</button>
+                style="font-size:11px;color:var(--k-tx-888888, #888);background:var(--k-bg-2a2a2a, #2a2a2a);border:0.5px solid var(--k-bd-3a3a3a, #3a3a3a);border-radius:7px;padding:3px 9px;cursor:pointer;">✏ Editar roles</button>
             </div>
           </div>
         </div>`;
     }).join('');
 
   } catch (err) {
-    loading.innerHTML = `<span style="color:#F09595;font-size:14px;">Error: ${err.message}</span>`;
+    loading.innerHTML = `<span style="color:var(--k-tx-f09595, #F09595);font-size:14px;">Error: ${err.message}</span>`;
   }
 }
 
@@ -1604,10 +1604,10 @@ async function abrirVincularModal(uid, nombre) {
     <div class="vincular-sheet">
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <div>
-          <div style="font-size:16px;font-weight:700;color:#eee;">Vincular publicador</div>
-          <div style="font-size:12px;color:#666;margin-top:2px;">${nombre}</div>
+          <div style="font-size:16px;font-weight:700;color:var(--k-tx-eeeeee, #eee);">Vincular publicador</div>
+          <div style="font-size:12px;color:var(--text-muted, #666);margin-top:2px;">${nombre}</div>
         </div>
-        <button onclick="cerrarVincularModal()" style="background:#333;border:none;border-radius:8px;width:32px;height:32px;color:#aaa;font-size:20px;cursor:pointer;line-height:1;">×</button>
+        <button onclick="cerrarVincularModal()" style="background:var(--k-bg-333333, #333);border:none;border-radius:8px;width:32px;height:32px;color:var(--text-secondary, #aaa);font-size:20px;cursor:pointer;line-height:1;">×</button>
       </div>
       <input class="vincular-search" id="vincular-search" type="text" placeholder="Buscar publicador…" oninput="filtrarVincPubs(this.value)">
       <div class="vincular-pub-list" id="vincular-list">
@@ -1630,7 +1630,7 @@ async function abrirVincularModal(uid, nombre) {
     filtrarVincPubs('');
   } catch (err) {
     document.getElementById('vincular-list').innerHTML =
-      `<p style="color:#F09595;font-size:14px;">Error: ${err.message}</p>`;
+      `<p style="color:var(--k-tx-f09595, #F09595);font-size:14px;">Error: ${err.message}</p>`;
   }
 }
 
@@ -1642,14 +1642,14 @@ function filtrarVincPubs(q) {
     (p.nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(norm)
   );
   if (filtrados.length === 0) {
-    list.innerHTML = '<p style="color:#666;font-size:14px;text-align:center;padding:16px 0;">Sin resultados</p>';
+    list.innerHTML = '<p style="color:var(--text-muted, #666);font-size:14px;text-align:center;padding:16px 0;">Sin resultados</p>';
     return;
   }
   list.innerHTML = filtrados.map(p => `
     <div class="match-pub-row">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;color:#ddd;">${p.nombre}</div>
-        ${p.roles?.length ? `<div style="font-size:11px;color:#666;margin-top:2px;">${fmtRoles(p.roles)}</div>` : ''}
+        <div style="font-size:14px;color:var(--k-tx-dddddd, #ddd);">${p.nombre}</div>
+        ${p.roles?.length ? `<div style="font-size:11px;color:var(--text-muted, #666);margin-top:2px;">${fmtRoles(p.roles)}</div>` : ''}
       </div>
       <button class="btn-match-sel" onclick="confirmarVinculo('${p.id}','${(p.nombre||'').replace(/'/g,"\\'")}')">Vincular</button>
     </div>`).join('');
@@ -1724,29 +1724,29 @@ async function abrirRolesModal(uid, nombre, rolesStr, grupoEncargado) {
   const currentRoles = rolesStr ? rolesStr.split(',').filter(Boolean) : ['publicador'];
 
   const checkboxes = ROLES_ASIGNABLES.map(r => `
-    <label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid #2a2a2a;cursor:pointer;">
+    <label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--k-bd-2a2a2a, #2a2a2a);cursor:pointer;">
       <input type="checkbox" value="${r}" ${currentRoles.includes(r) ? 'checked' : ''}
         onchange="toggleEncargadoGrupoSel()"
         style="width:16px;height:16px;accent-color:#7F77DD;flex-shrink:0;cursor:pointer;">
-      <span style="font-size:13px;color:#ddd;">${ROL_LABELS[r] || r}</span>
+      <span style="font-size:13px;color:var(--k-tx-dddddd, #ddd);">${ROL_LABELS[r] || r}</span>
     </label>`).join('');
 
   const modal = document.createElement('div');
   modal.id = 'roles-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;';
   modal.innerHTML = `
-    <div style="background:#232628;border:0.5px solid #3a3a3a;border-radius:16px;padding:20px;width:100%;max-width:340px;">
-      <div style="font-size:15px;font-weight:600;color:#eee;margin-bottom:2px;">Roles</div>
-      <div style="font-size:12px;color:#666;margin-bottom:14px;">${nombre}</div>
+    <div style="background:var(--bg-card, #232628);border:0.5px solid var(--k-bd-3a3a3a, #3a3a3a);border-radius:16px;padding:20px;width:100%;max-width:340px;">
+      <div style="font-size:15px;font-weight:600;color:var(--k-tx-eeeeee, #eee);margin-bottom:2px;">Roles</div>
+      <div style="font-size:12px;color:var(--text-muted, #666);margin-bottom:14px;">${nombre}</div>
       <div id="roles-cb-list" style="max-height:300px;overflow-y:auto;">${checkboxes}</div>
       <div id="roles-grupo-wrap" style="display:${currentRoles.includes('encargado_grupo') ? '' : 'none'};margin-top:12px;">
-        <div style="font-size:12px;color:#888;margin-bottom:6px;">Grupo asignado</div>
-        <select id="roles-grupo-sel" style="width:100%;padding:8px 10px;background:#1a1c1f;border:0.5px solid #3a3a3a;border-radius:8px;color:#ddd;font-size:13px;">
+        <div style="font-size:12px;color:var(--k-tx-888888, #888);margin-bottom:6px;">Grupo asignado</div>
+        <select id="roles-grupo-sel" style="width:100%;padding:8px 10px;background:var(--bg-primary, #1a1c1f);border:0.5px solid var(--k-bd-3a3a3a, #3a3a3a);border-radius:8px;color:var(--k-tx-dddddd, #ddd);font-size:13px;">
           <option value="">— Cargando grupos… —</option>
         </select>
       </div>
       <div style="display:flex;gap:8px;margin-top:20px;">
-        <button onclick="cerrarRolesModal()" style="flex:1;padding:10px;background:#2a2a2a;border:0.5px solid #3a3a3a;border-radius:10px;color:#aaa;font-size:13px;cursor:pointer;">Cancelar</button>
+        <button onclick="cerrarRolesModal()" style="flex:1;padding:10px;background:var(--k-bg-2a2a2a, #2a2a2a);border:0.5px solid var(--k-bd-3a3a3a, #3a3a3a);border-radius:10px;color:var(--text-secondary, #aaa);font-size:13px;cursor:pointer;">Cancelar</button>
         <button onclick="confirmarRolesModal()" style="flex:2;padding:10px;background:#7F77DD;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Guardar</button>
       </div>
     </div>`;
@@ -1907,7 +1907,7 @@ async function loadActividad(congreId) {
     `;
 
     if (!entries.length) {
-      list.innerHTML = '<p style="color:#666;font-size:14px;text-align:center;padding:24px 0;">Sin actividad registrada todavía.</p>';
+      list.innerHTML = '<p style="color:var(--text-muted, #666);font-size:14px;text-align:center;padding:24px 0;">Sin actividad registrada todavía.</p>';
       loading.style.display = 'none';
       list.style.display = '';
       return;
@@ -1929,7 +1929,7 @@ async function loadActividad(congreId) {
       const accion  = ACT_ACCIONES[e.accion] || e.accion;
       const hora    = ts ? ts.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—';
       const nombre  = e.nombre || (e.anonimo ? 'Invitado' : '—');
-      const anonBadge  = e.anonimo ? ' <span style="font-size:10px;color:#555;">(invitado)</span>' : '';
+      const anonBadge  = e.anonimo ? ' <span style="font-size:10px;color:var(--k-tx-555555, #555);">(invitado)</span>' : '';
       const detalleHtml = e.detalle
         ? `<div class="act-detalle">${e.detalle}</div>${actCambiosHtml(e.cambios)}`
         : actCambiosHtml(e.cambios);
@@ -1949,7 +1949,7 @@ async function loadActividad(congreId) {
     loading.style.display = 'none';
     list.style.display    = '';
   } catch(err) {
-    loading.innerHTML = `<span style="color:#F09595;font-size:14px;">Error: ${err.message}</span>`;
+    loading.innerHTML = `<span style="color:var(--k-tx-f09595, #F09595);font-size:14px;">Error: ${err.message}</span>`;
   }
 }
 

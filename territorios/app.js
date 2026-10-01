@@ -259,6 +259,28 @@ function getDiaFromFecha(fecha) {
 // ─────────────────────────────────────────
 
 /**
+ * Último historial de un territorio, leído de la subcolección: { ini, fin, conductor } | null.
+ */
+async function ultimoHistDe(id) {
+  const snap = await getDocs(query(histCol(id), orderBy('fechaInicio', 'desc'), limit(1)));
+  if (snap.empty) return null;
+  const h = snap.docs[0].data();
+  return { ini: h.fechaInicio || null, fin: h.fechaFin || null, conductor: h.conductor || null };
+}
+
+/**
+ * Recalcula el último historial y lo guarda en territorios/{id}.ultimoHist.
+ * Llamar después de CUALQUIER escritura o borrado en historial/ (fetchGrupo y mapa.html
+ * lo leen de acá en vez de consultar el historial de cada territorio).
+ * Si la escritura falla, igual devuelve el valor calculado.
+ */
+async function sincronizarUltimoHist(id) {
+  const ult = await ultimoHistDe(id);
+  try { await updateDoc(doc(terrCol(), String(id)), { ultimoHist: ult }); } catch (e) { console.warn('ultimoHist no guardado', id, e); }
+  return ult;
+}
+
+/**
  * Carga todos los territorios de un grupo y su último historial.
  * Retorna objeto: { [terrId]: { lastFin, lastIni, enProgreso, tipo } }
  */
@@ -268,23 +290,20 @@ async function fetchGrupo(grupo) {
   const snap = await getDocs(q);
 
   const result = {};
-  // Para cada territorio, buscar su última entrada de historial
   await Promise.all(snap.docs.map(async terrDoc => {
     const terr = terrDoc.data();
     const id   = String(terr.id);
 
-    // Ordenar historial por fechaInicio desc, tomar el último
-    const histSnap = await getDocs(
-      query(histCol(id), orderBy('fechaInicio', 'desc'), limit(1))
-    );
+    // El último historial vive en el doc del territorio (ultimoHist). Si falta
+    // (territorio anterior al campo), se consulta y se guarda para la próxima.
+    const ult = terr.ultimoHist !== undefined ? terr.ultimoHist : await sincronizarUltimoHist(id);
 
     let lastFin = null, lastIni = null, enProgreso = false, lastConductor = null;
-    if (!histSnap.empty) {
-      const h = histSnap.docs[0].data();
-      lastIni       = h.fechaInicio || null;
-      lastFin       = h.fechaFin   || null;
-      enProgreso    = !h.fechaFin;
-      lastConductor = h.conductor  || null;
+    if (ult) {
+      lastIni       = ult.ini       || null;
+      lastFin       = ult.fin       || null;
+      enProgreso    = !ult.fin;
+      lastConductor = ult.conductor || null;
     }
 
     result[id] = { lastFin, lastIni, enProgreso, lastConductor, tipo: terr.tipo || 'normal', ciudad: terr.ciudad || null, nombre: terr.nombre || null, notas: terr.notas || null };
@@ -587,6 +606,7 @@ function getPlantilla(grupo) {
 }
 
 async function goToStep1() {
+  cargarEncuentrosPrevios();   // en segundo plano: cuando elijan territorio ya está listo
   hide('view-cover'); hide('view-preview');
   hide('view-modo');  hide('view-registrar'); hide('view-info');
   show('view-config'); setStep(1);
@@ -681,9 +701,9 @@ function renderSalidas() {
     telBlock.style.marginBottom = '14px';
     telBlock.innerHTML = `
       <div class="salida-card-top" style="margin-bottom:8px;">
-        <span style="font-size:16px;font-weight:500;color:#5DCAA5;">Telefónica fija — Lunes a Sábado</span>
+        <span style="font-size:16px;font-weight:500;color:var(--k-tx-5dcaa5, #5DCAA5);">Telefónica fija — Lunes a Sábado</span>
       </div>
-      <div style="font-size:13px;color:#888;margin-bottom:10px;">
+      <div style="font-size:13px;color:var(--k-tx-888888, #888);margin-bottom:10px;">
         ID: 844 0225 6636 &nbsp;·&nbsp; Contraseña: 479104
       </div>
       <div class="form-row">
@@ -796,6 +816,7 @@ function renderSalidaCard(s) {
           placeholder="Ej: Flia. García / esq. X y Y" style="flex:1;">
         ${esTel ? '' : `<button type="button" class="scv2-icon-btn green" onclick="openEncuentroPicker(${s.id})" title="Mapa">📍</button>`}
       </div>
+      ${esTel ? '' : `<div class="enc-sugs" id="enc-sugs-${s.id}"></div>`}
     </div>`;
 
   const terrFields = esTel ? encField : `
@@ -931,7 +952,7 @@ function addExtraTerritory(salidaId) {
       onclick="openTerritorioPicker('${salidaId}', '${hiddenId}', '${btnId}')">
       <span class="ui-fake-input-icon">🗺</span><span>Elegir territorio</span>
     </button>
-    <button type="button" onclick="this.parentElement.remove()" style="padding:6px 9px;background:#2e1a1a;color:#F09595;border:0.5px solid #A32D2D;border-radius:8px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;">−</button>`;
+    <button type="button" onclick="this.parentElement.remove()" style="padding:6px 9px;background:var(--k-bg-2e1a1a, #2e1a1a);color:var(--k-tx-f09595, #F09595);border:0.5px solid var(--k-bd-a32d2d, #A32D2D);border-radius:8px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;">−</button>`;
   container.appendChild(wrap);
 }
 
@@ -972,7 +993,7 @@ function openTerritorioPicker(salidaId, hiddenId, btnId) {
     if (hidden) hidden.value = resultado;
     if (btn) {
       if (resultado) {
-        btn.innerHTML = `<span class="ui-fake-input-icon">🗺</span><span style="color:#eee;">Territorio ${resultado}</span>`;
+        btn.innerHTML = `<span class="ui-fake-input-icon">🗺</span><span style="color:var(--k-tx-eeeeee, #eee);">Territorio ${resultado}</span>`;
         btn.classList.remove('empty');
       } else {
         btn.innerHTML = `<span class="ui-fake-input-icon">🗺</span><span>Elegir territorio</span>`;
@@ -981,6 +1002,7 @@ function openTerritorioPicker(salidaId, hiddenId, btnId) {
     }
     showTerrDaysHint(salidaId, resultado);
     updateCardStatus(salidaId);
+    actualizarSugerenciasEncuentro(salidaId);
   });
 }
 
@@ -996,6 +1018,87 @@ function openMapaPicker(salidaId) {
   iframe.src = `/territorios/mapa.html?grupo=${selectedGrupo}&modo=picker&salidaid=${salidaId}&picker=1`;
   popup.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+}
+
+// ─────────────────────────────────────────
+//   MEMORIA DE LUGARES DE ENCUENTRO POR TERRITORIO
+//   Sale del historial de salidas/ (cada registro guarda terr + enc): no hay colección nueva ni
+//   nada que mantener a mano. Se lee una vez por sesión de planificación y se rearma tras registrar.
+// ─────────────────────────────────────────
+let encuentrosPorTerr = null;   // { terrId: [{ texto, veces, ultima }] } ordenado: el más usado primero
+let _encuentrosPromesa = null;
+
+function cargarEncuentrosPrevios() {
+  if (_encuentrosPromesa) return _encuentrosPromesa;
+  _encuentrosPromesa = (async () => {
+    const porTerr = {};
+    try {
+      const snap = await getDocs(query(salidaCol(), orderBy('fechaReg', 'desc'), limit(200)));
+      snap.forEach(d => {
+        const data = d.data();
+        (data.salidas || []).forEach(sal => {
+          if (sal.tipo === 'tel') return;
+          const terr = String(sal.terr || '').trim();
+          const enc  = String(sal.enc  || '').trim();
+          if (!terr || terr === '—' || !enc || enc === '—') return;
+          const lista = (porTerr[terr] = porTerr[terr] || {});
+          const clave = enc.toLowerCase();
+          const e = (lista[clave] = lista[clave] || { texto: enc, veces: 0, ultima: '' });
+          e.veces++;
+          const f = sal.fecha || data.fechaReg || '';
+          if (f >= e.ultima) { e.ultima = f; e.texto = enc; }   // se queda con la escritura más reciente
+        });
+      });
+    } catch (e) {
+      console.warn('No se pudieron leer los encuentros previos', e);
+    }
+    encuentrosPorTerr = {};
+    Object.keys(porTerr).forEach(t => {
+      encuentrosPorTerr[t] = Object.values(porTerr[t])
+        .sort((a, b) => b.veces - a.veces || b.ultima.localeCompare(a.ultima));
+    });
+    return encuentrosPorTerr;
+  })();
+  return _encuentrosPromesa;
+}
+
+// Muestra los lugares usados antes para el territorio elegido y, si el campo está vacío (o tiene un
+// valor que puso esta misma función), lo completa con el más usado.
+async function actualizarSugerenciasEncuentro(salidaId) {
+  const cont  = document.getElementById('enc-sugs-' + salidaId);
+  const input = document.getElementById('sal-enc-' + salidaId);
+  if (!cont || !input) return;
+  const terr = document.getElementById('sal-terr-' + salidaId)?.value || '';
+  cont.innerHTML = '';
+  if (!terr) return;
+  await cargarEncuentrosPrevios();
+  if ((document.getElementById('sal-terr-' + salidaId)?.value || '') !== terr) return;   // cambió mientras cargaba
+  const opciones = (encuentrosPorTerr[String(terr)] || []).slice(0, 4);
+  if (!opciones.length) return;
+
+  if (!input.value.trim() || input.dataset.auto === '1') {
+    input.value = opciones[0].texto;
+    input.dataset.auto = '1';
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  const marcar = () => cont.querySelectorAll('.enc-sug').forEach((b, i) =>
+    b.classList.toggle('activo', input.value.trim().toLowerCase() === opciones[i].texto.toLowerCase()));
+  cont.innerHTML = '<span class="enc-sugs-lbl">Usados antes:</span>' + opciones.map(o =>
+    `<button type="button" class="enc-sug" title="${esc(o.texto)}">${esc(o.texto)}${o.veces > 1 ? ` <small>×${o.veces}</small>` : ''}</button>`
+  ).join('');
+  cont.querySelectorAll('.enc-sug').forEach((b, i) => {
+    b.onclick = () => {
+      input.value = opciones[i].texto;
+      input.dataset.auto = '1';
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      marcar();
+    };
+  });
+  if (!input.dataset.encListener) {
+    input.dataset.encListener = '1';
+    input.addEventListener('input', () => { input.dataset.auto = ''; });
+  }
+  marcar();
 }
 
 function openEncuentroPicker(salidaId) {
@@ -1032,8 +1135,9 @@ window.addEventListener('message', function(event) {
     const mainBtn    = document.getElementById('sal-terr-btn-' + salidaId);
     if (mainHidden && territorios[0]) {
       mainHidden.value = territorios[0];
+      actualizarSugerenciasEncuentro(salidaId);
       if (mainBtn) {
-        mainBtn.innerHTML = `<span class="ui-fake-input-icon">🗺</span><span style="color:#eee;">Territorio ${territorios[0]}</span>`;
+        mainBtn.innerHTML = `<span class="ui-fake-input-icon">🗺</span><span style="color:var(--k-tx-eeeeee, #eee);">Territorio ${territorios[0]}</span>`;
         mainBtn.classList.remove('empty');
       }
     }
@@ -1050,9 +1154,9 @@ window.addEventListener('message', function(event) {
           <input type="hidden" id="${hiddenId}" value="${num}">
           <button type="button" id="${btnId}" class="ui-fake-input" style="flex:1;font-size:13px;"
             onclick="openTerritorioPicker('${salidaId}', '${hiddenId}', '${btnId}')">
-            <span class="ui-fake-input-icon">🗺</span><span style="color:#eee;">Territorio ${num}</span>
+            <span class="ui-fake-input-icon">🗺</span><span style="color:var(--k-tx-eeeeee, #eee);">Territorio ${num}</span>
           </button>
-          <button type="button" onclick="this.parentElement.remove()" style="padding:6px 9px;background:#2e1a1a;color:#F09595;border:0.5px solid #A32D2D;border-radius:8px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;">−</button>`;
+          <button type="button" onclick="this.parentElement.remove()" style="padding:6px 9px;background:var(--k-bg-2e1a1a, #2e1a1a);color:var(--k-tx-f09595, #F09595);border:0.5px solid var(--k-bd-a32d2d, #A32D2D);border-radius:8px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;">−</button>`;
         extraContainer.appendChild(wrap);
       });
     }
@@ -1087,7 +1191,7 @@ function generatePreview() {
   const color = GROUP_COLORS[selectedGrupo] || '#eee';
   document.getElementById('preview-grupo-title').textContent = `${grupoLabel} — Salidas de la semana`;
   document.getElementById('preview-grupo-color').innerHTML  = `<span style="color:${color}">${grupoLabel}</span>`;
-  document.getElementById('preview-congre-color').innerHTML = `<span style="color:#7F77DD">${CONGRE_NOMBRE}</span>`;
+  document.getElementById('preview-congre-color').innerHTML = `<span style="color:var(--k-tx-7f77dd, #7F77DD)">${CONGRE_NOMBRE}</span>`;
   document.querySelector('.card-preview').style.borderColor = color;
   document.querySelector('.card-preview-header').style.borderBottomColor = color;
   const colorOscuro = { '1':'#0c2a45', '2':'#2e1e00', '3':'#1a2e0a', '4':'#2e1000', 'C':'#1e1a3a' };
@@ -1099,8 +1203,8 @@ function generatePreview() {
   if (selectedGrupo === 'C') {
     const horaMan = document.getElementById('tel-fija-manana')?.value || '10:00';
     const horaTar = document.getElementById('tel-fija-tarde')?.value  || '17:00';
-    rows.push({ enc:'ID: 844 0225 6636 · Clave: 479104', terr:'TELEFÓNICA', tel:true, badge:'<div class="dia-badge" style="background:#0a2e24;color:#5DCAA5;">Lun a Sáb</div>', fecha:'', cond:'—', hora:horaMan.replace(':','.') });
-    rows.push({ enc:'ID: 844 0225 6636 · Clave: 479104', terr:'TELEFÓNICA', tel:true, badge:'<div class="dia-badge" style="background:#0a2e24;color:#5DCAA5;">Lun a Sáb</div>', fecha:'', cond:'—', hora:horaTar.replace(':','.') });
+    rows.push({ enc:'ID: 844 0225 6636 · Clave: 479104', terr:'TELEFÓNICA', tel:true, badge:'<div class="dia-badge" style="background:var(--k-bg-0a2e24, #0a2e24);color:var(--k-tx-5dcaa5, #5DCAA5);">Lun a Sáb</div>', fecha:'', cond:'—', hora:horaMan.replace(':','.') });
+    rows.push({ enc:'ID: 844 0225 6636 · Clave: 479104', terr:'TELEFÓNICA', tel:true, badge:'<div class="dia-badge" style="background:var(--k-bg-0a2e24, #0a2e24);color:var(--k-tx-5dcaa5, #5DCAA5);">Lun a Sáb</div>', fecha:'', cond:'—', hora:horaTar.replace(':','.') });
   }
   salidas.forEach(s => {
     const fecha = document.getElementById('sal-fecha-' + s.id)?.value || '';
@@ -1177,13 +1281,13 @@ async function registrarEnProgreso() {
     allTerrsR.forEach(terr => territoriosARegistrar.push({ terr, cond: cond || '—', fecha }));
   });
   if (territoriosARegistrar.length === 0) {
-    status.style.color = '#F09595';
+    status.style.color = 'var(--k-tx-f09595, #F09595)';
     status.textContent = 'No hay territorios de campo asignados.';
     return;
   }
   btn.disabled = true;
   if (window.uiLoading) uiLoading.show(`Registrando ${territoriosARegistrar.length} territorio(s)...`);
-  else { status.style.color = '#888'; status.textContent = `Registrando ${territoriosARegistrar.length} territorio(s)...`; }
+  else { status.style.color = 'var(--k-tx-888888, #888)'; status.textContent = `Registrando ${territoriosARegistrar.length} territorio(s)...`; }
 
   try {
     for (const t of territoriosARegistrar) {
@@ -1193,6 +1297,7 @@ async function registrarEnProgreso() {
         fechaFin:    null,
       });
     }
+    await Promise.all(territoriosARegistrar.map(t => sincronizarUltimoHist(t.terr)));
 
     // Guardar salida en historial
     const salidasParaHistorial = salidas.map(s => ({
@@ -1210,15 +1315,16 @@ async function registrarEnProgreso() {
     });
 
     territoriosData = {};
+    encuentrosPorTerr = null; _encuentrosPromesa = null;   // que la próxima planificación vea lo recién guardado
     if (window.uiLoading) uiLoading.hide();
-    status.style.color = '#5DCAA5';
+    status.style.color = 'var(--k-tx-5dcaa5, #5DCAA5)';
     status.textContent = `✓ ${territoriosARegistrar.length} territorio(s) registrado(s) como en progreso`;
     btn.disabled = true;
     btn.textContent = 'Ya registrado ✓';
     window.lanzarPelotaFestejo?.('⚽');
   } catch(err) {
     if (window.uiLoading) uiLoading.hide();
-    status.style.color = '#F09595';
+    status.style.color = 'var(--k-tx-f09595, #F09595)';
     status.textContent = 'Error: ' + err.message;
     btn.disabled = false;
   }
@@ -1277,14 +1383,14 @@ function renderRegistrar() {
             <div style="display:flex;align-items:center;gap:6px;">
               <select id="reg-cond-${n}" style="flex:1;">${getConductorOptions(selectedGrupo)}</select>
               <button type="button" onclick="openConductorPicker('reg-cond-${n}', selectedGrupo, this)"
-                style="padding:6px 10px;background:#1a1a2e;color:#7F77DD;border:0.5px solid #4A44A5;border-radius:8px;cursor:pointer;font-size:13px;flex-shrink:0;font-weight:500;">
+                style="padding:6px 10px;background:var(--k-bg-1a1a2e, #1a1a2e);color:var(--k-tx-7f77dd, #7F77DD);border:0.5px solid var(--k-bd-4a44a5, #4A44A5);border-radius:8px;cursor:pointer;font-size:13px;flex-shrink:0;font-weight:500;">
                 👤
               </button>
             </div>
           </div>
           <div><label>Fecha inicio</label><input type="date" id="reg-ini-${n}" value="${ini}"></div>
         </div>
-        <div><label>Fecha fin</label><input type="date" id="reg-fin-${n}" value="${ini}" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid #555;border-radius:8px;background:#1e1e1e;color:#eee;margin-top:3px;"></div>
+        <div><label>Fecha fin</label><input type="date" id="reg-fin-${n}" value="${ini}" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-1e1e1e, #1e1e1e);color:var(--k-tx-eeeeee, #eee);margin-top:3px;"></div>
       </div>`;
     c.appendChild(div);
   });
@@ -1329,14 +1435,14 @@ async function guardarRegistros() {
 
   const sinConductor = saves.some(s => s.estado === 'completado' && !s.conductor);
   if (sinConductor) {
-    status.style.color = '#F09595';
+    status.style.color = 'var(--k-tx-f09595, #F09595)';
     status.textContent = 'Elegí el conductor de cada territorio antes de guardar.';
     btn.disabled = false;
     return;
   }
 
   if (window.uiLoading) uiLoading.show('Guardando registros...');
-  else { status.style.color = '#888'; status.textContent = 'Guardando...'; }
+  else { status.style.color = 'var(--k-tx-888888, #888)'; status.textContent = 'Guardando...'; }
 
   try {
     for (const s of saves) {
@@ -1360,15 +1466,16 @@ async function guardarRegistros() {
         });
       }
     }
+    await Promise.all(saves.map(s => sincronizarUltimoHist(s.territorio)));
     territoriosData = {};
     if (window.uiLoading) uiLoading.hide();
-    status.style.color = '#5DCAA5';
+    status.style.color = 'var(--k-tx-5dcaa5, #5DCAA5)';
     status.textContent = 'Guardado correctamente';
     btn.disabled = false;
     logActividad(CONGRE_ID, 'territorios', 'guardado', 'Registros de salidas');
   } catch(err) {
     if (window.uiLoading) uiLoading.hide();
-    status.style.color = '#F09595';
+    status.style.color = 'var(--k-tx-f09595, #F09595)';
     status.textContent = 'Error al guardar: ' + err.message;
     btn.disabled = false;
   }
@@ -1661,7 +1768,7 @@ function renderHistorial(rows) {
   historialRows = rows;
   const tbody = document.getElementById('modal-hist-body');
   if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" style="color:#888;text-align:center;">Sin registros</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--k-tx-888888, #888);text-align:center;">Sin registros</td></tr>';
   } else {
     tbody.innerHTML = rows.map((r, i) => `
       <tr>
@@ -1697,6 +1804,7 @@ async function deleteEntry(docId) {
   if (!ok) return;
   const n = modalTerr;
   await deleteDoc(doc(db, 'congregaciones', CONGRE_ID, 'territorios', String(n), 'historial', docId));
+  await sincronizarUltimoHist(n);
   await openModal(n);
   await refreshTerrEntrada(n);
 }
@@ -1751,6 +1859,7 @@ async function saveEdit() {
   }
   cancelEdit();
   const n = modalTerr;
+  await sincronizarUltimoHist(n);
   await openModal(n);
   await refreshTerrEntrada(n);
 }
@@ -1767,17 +1876,9 @@ function closeModal() {
 
 async function refreshTerrEntrada(n) {
   if (!territoriosData[n]) return;
-  const histSnap = await getDocs(
-    query(histCol(n), orderBy('fechaInicio', 'desc'), limit(1))
-  );
-  let lastFin = null, lastIni = null, enProgreso = false, lastConductor = null;
-  if (!histSnap.empty) {
-    const h = histSnap.docs[0].data();
-    lastIni       = h.fechaInicio || null;
-    lastFin       = h.fechaFin   || null;
-    enProgreso    = !h.fechaFin;
-    lastConductor = h.conductor  || null;
-  }
+  const ult = await ultimoHistDe(n);
+  const lastIni = ult?.ini || null, lastFin = ult?.fin || null;
+  const enProgreso = !!ult && !ult.fin, lastConductor = ult?.conductor || null;
   territoriosData[n] = { ...territoriosData[n], lastFin, lastIni, enProgreso, lastConductor };
   renderInfoGrid();
 }
@@ -1835,7 +1936,7 @@ function renderHistorialSalidas(rows, docs) {
   const c = document.getElementById('hist-content');
   c.innerHTML = '';
   if (rows.length === 0) {
-    c.innerHTML = '<div style="text-align:center;color:#888;padding:2rem;font-size:14px;">No hay salidas registradas todavía.</div>';
+    c.innerHTML = '<div style="text-align:center;color:var(--k-tx-888888, #888);padding:2rem;font-size:14px;">No hay salidas registradas todavía.</div>';
     return;
   }
   // Agrupar por salidaDocId (cada documento = una semana registrada)
@@ -1951,12 +2052,6 @@ function switchChatScope(scope) {
   refreshChatNotas();
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll('&', '&amp;').replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
-}
-
 async function refreshChatNotas() {
   show('chat-loading'); hide('chat-list'); hide('chat-error'); hide('chat-empty');
   try {
@@ -1978,10 +2073,10 @@ async function refreshChatNotas() {
         </div>` : '';
       return `<div class="chat-item">
         <div class="chat-item-head">
-          <span class="chat-item-author">${escapeHtml(n.autor || getScopeLabel(n.canal === 'congregacion' ? 'congregacion' : 'grupo'))}</span>
+          <span class="chat-item-author">${esc(n.autor || getScopeLabel(n.canal === 'congregacion' ? 'congregacion' : 'grupo'))}</span>
           <span class="chat-item-date">${fechaStr}</span>
         </div>
-        <div class="chat-item-text">${escapeHtml(n.texto || '')}</div>
+        <div class="chat-item-text">${esc(n.texto || '')}</div>
         ${acciones}
       </div>`;
     }).join('');

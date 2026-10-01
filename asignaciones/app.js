@@ -671,7 +671,7 @@ function renderSemana(rows, containerId, especial) {
         <span class="reunion-dia" style="color:${diaColor};">${displayDia}</span>
         <span class="reunion-fecha">${row.fecha || ''}</span>
       </div>
-      <div class="roles-list">${rolesHTML || '<div style="color:#666;font-size:13px;padding:8px 0;">Sin datos</div>'}</div>`;
+      <div class="roles-list">${rolesHTML || '<div style="color:var(--text-muted, #666);font-size:13px;padding:8px 0;">Sin datos</div>'}</div>`;
     c.appendChild(card);
   });
 }
@@ -925,7 +925,7 @@ async function guardarEdicion() {
   const btn    = document.getElementById('btn-guardar-edicion');
   const status = document.getElementById('editar-status');
   if (btn) btn.disabled = true;
-  if (status) { status.style.color = '#888'; status.textContent = 'Guardando...'; }
+  if (status) { status.style.color = 'var(--k-tx-888888, #888)'; status.textContent = 'Guardando...'; }
   const cards = document.querySelectorAll('#editar-content .edit-card');
   const data  = [];
   cards.forEach(card => {
@@ -936,10 +936,10 @@ async function guardarEdicion() {
   });
   try {
     await saveProgramacion(data);
-    if (status) { status.style.color = '#5DCAA5'; status.textContent = '✓ Guardado correctamente'; }
+    if (status) { status.style.color = 'var(--k-tx-5dcaa5, #5DCAA5)'; status.textContent = '✓ Guardado correctamente'; }
     logActividad(CONGRE_ID, 'asignaciones', 'guardado', 'Asignaciones editadas');
   } catch(err) {
-    if (status) { status.style.color = '#F09595'; status.textContent = 'Error: ' + err.message; }
+    if (status) { status.style.color = 'var(--k-tx-f09595, #F09595)'; status.textContent = 'Error: ' + err.message; }
   }
   if (btn) btn.disabled = false;
 }
@@ -1059,7 +1059,7 @@ function generarAutomatico() {
 function renderAutoPreview(rows) {
   const c = document.getElementById('auto-preview');
   if (!c) return;
-  c.innerHTML = `<div style="font-size:12px;color:#888;margin-bottom:10px;">${rows.length} reuniones a generar — revisá antes de guardar</div>`;
+  c.innerHTML = `<div style="font-size:12px;color:var(--k-tx-888888, #888);margin-bottom:10px;">${rows.length} reuniones a generar — revisá antes de guardar</div>`;
   rows.forEach(row => {
     const diaColor = DIA_COLORS[row.dia] || '#eee';
     const diaBg    = DIA_BG[row.dia] || '#1e1e1e';
@@ -1079,14 +1079,14 @@ function renderAutoPreview(rows) {
 
 async function guardarAutomatico() {
   const status = document.getElementById('auto-status');
-  if (!autoResult.length) { if(status){status.style.color='#888';status.textContent='Nada que guardar.';} return; }
-  if (status){status.style.color='#888';status.textContent='Guardando...';}
+  if (!autoResult.length) { if(status){status.style.color='var(--k-tx-888888, #888)';status.textContent='Nada que guardar.';} return; }
+  if (status){status.style.color='var(--k-tx-888888, #888)';status.textContent='Guardando...';}
   try {
     await saveProgramacion(autoResult);
-    if (status){status.style.color='#5DCAA5';status.textContent=`✓ ${autoResult.length} reuniones guardadas`;}
+    if (status){status.style.color='var(--k-tx-5dcaa5, #5DCAA5)';status.textContent=`✓ ${autoResult.length} reuniones guardadas`;}
     logActividad(CONGRE_ID, 'asignaciones', 'guardado', `Generó automático: ${autoResult.length} reuniones`);
   } catch(err) {
-    if (status){status.style.color='#F09595';status.textContent='Error: '+err.message;}
+    if (status){status.style.color='var(--k-tx-f09595, #F09595)';status.textContent='Error: '+err.message;}
   }
 }
 
@@ -1100,16 +1100,16 @@ async function apiFetch(params) {
 
 async function guardarEnPlanilla() {
   const status = document.getElementById('auto-status');
-  if (!autoResult.length) { if(status){status.style.color='#888';status.textContent='Nada que guardar.';} return; }
-  if (!SCRIPT_URL) { if(status){status.style.color='#F09595';status.textContent='No hay planilla configurada.';} return; }
+  if (!autoResult.length) { if(status){status.style.color='var(--k-tx-888888, #888)';status.textContent='Nada que guardar.';} return; }
+  if (!SCRIPT_URL) { if(status){status.style.color='var(--k-tx-f09595, #F09595)';status.textContent='No hay planilla configurada.';} return; }
   const btn = document.getElementById('btn-guardar-planilla');
   if (btn) btn.disabled = true;
   // Enviar de a una entrada para no exceder el límite de URL de Apps Script
   for (let i = 0; i < autoResult.length; i++) {
-    if (status){ status.style.color='#888'; status.textContent=`Enviando a planilla... (${i+1}/${autoResult.length})`; }
+    if (status){ status.style.color='var(--k-tx-888888, #888)'; status.textContent=`Enviando a planilla... (${i+1}/${autoResult.length})`; }
     await apiFetch({ action: 'saveProgramacion', data: JSON.stringify([autoResult[i]]) });
   }
-  if (status){status.style.color='#5DCAA5';status.textContent=`✓ Planilla actualizada (${autoResult.length} reuniones)`;}
+  if (status){status.style.color='var(--k-tx-5dcaa5, #5DCAA5)';status.textContent=`✓ Planilla actualizada (${autoResult.length} reuniones)`;}
   if (btn) btn.disabled = false;
 }
 
@@ -1119,7 +1119,7 @@ function renderTablaImagen(rows) {
   if (!c) return;
   c.innerHTML = '';
   if (!rows || rows.length === 0) {
-    c.innerHTML = '<div style="color:#888;text-align:center;padding:20px;font-size:13px;">Sin programación esta semana</div>';
+    c.innerHTML = '<div style="color:var(--k-tx-888888, #888);text-align:center;padding:20px;font-size:13px;">Sin programación esta semana</div>';
     return;
   }
   rows.forEach(row => {
@@ -1133,7 +1133,7 @@ function renderTablaImagen(rows) {
     c.innerHTML += `
       <div class="tabla-reunion-wrap" style="--dc:${diaColor};">
         <div class="tabla-dia-header">
-          ${dia} <span style="font-size:11px;font-weight:400;color:#888;margin-left:8px;">${row.fecha}</span>
+          ${dia} <span style="font-size:11px;font-weight:400;color:var(--k-tx-888888, #888);margin-left:8px;">${row.fecha}</span>
         </div>
         <table class="tabla-roles"><tbody>${rolesHTML}</tbody></table>
       </div>`;
