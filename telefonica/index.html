@@ -10,9 +10,9 @@
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <meta name="theme-color" content="#c0392b">
   <style>
-    :root { --bg: #f4f5f7; --tx: #444; --link: #c0392b; --bar-bd: #e2e4e8; --bar-h: 44px; }
+    :root { --bg: #f4f5f7; --tx: #444; --link: #c0392b; --bar-h: 44px; }
     @media (prefers-color-scheme: dark) {
-      :root { --bg: #121417; --tx: #aaa; --link: #ff6b60; --bar-bd: #24272b; }
+      :root { --bg: #121417; --tx: #aaa; --link: #ff6b60; }
     }
     html, body { margin: 0; height: 100%; background: var(--bg); }
     body { font-family: system-ui, sans-serif; color: var(--tx); }
@@ -22,13 +22,14 @@
       height: calc(var(--bar-h) + env(safe-area-inset-top, 0px));
       padding: env(safe-area-inset-top, 0px) 12px 0;
       box-sizing: border-box; display: flex; align-items: center;
-      background: var(--bg); border-bottom: 1px solid var(--bar-bd);
+      /* Siempre clara, como la app de Apps Script (no sigue el modo oscuro del sistema) */
+      background: #f4f5f7; border-bottom: 1px solid #e2e4e8;
     }
     #tel-volver {
-      color: var(--tx); text-decoration: none; font-size: 15px; font-weight: 600;
+      color: #333; text-decoration: none; font-size: 15px; font-weight: 600;
       padding: 8px 10px; border-radius: 10px;
     }
-    #tel-volver:hover, #tel-volver:focus-visible { background: var(--bar-bd); }
+    #tel-volver:hover, #tel-volver:focus-visible { background: #e2e4e8; }
     /* La app de Apps Script ocupa el resto de la pantalla; el cargador queda detrás hasta que llega */
     #tel-frame {
       position: fixed; left: 0; right: 0; bottom: 0;
