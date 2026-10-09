@@ -10,19 +10,34 @@
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <meta name="theme-color" content="#c0392b">
   <style>
-    :root { --bg: #f4f5f7; --tx: #444; --link: #c0392b; }
+    :root { --bg: #f4f5f7; --tx: #444; --link: #c0392b; --bar-bd: #e2e4e8; --bar-h: 44px; }
     @media (prefers-color-scheme: dark) {
-      :root { --bg: #121417; --tx: #aaa; --link: #ff6b60; }
+      :root { --bg: #121417; --tx: #aaa; --link: #ff6b60; --bar-bd: #24272b; }
     }
     html, body { margin: 0; height: 100%; background: var(--bg); }
     body { font-family: system-ui, sans-serif; color: var(--tx); }
-    /* La app de Apps Script ocupa toda la pantalla; el cargador queda detrás hasta que llega */
+    /* Barra fina para volver al menú: en la app instalada (sobre todo iPhone) no hay botón atrás */
+    #tel-barra {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 2;
+      height: calc(var(--bar-h) + env(safe-area-inset-top, 0px));
+      padding: env(safe-area-inset-top, 0px) 12px 0;
+      box-sizing: border-box; display: flex; align-items: center;
+      background: var(--bg); border-bottom: 1px solid var(--bar-bd);
+    }
+    #tel-volver {
+      color: var(--tx); text-decoration: none; font-size: 15px; font-weight: 600;
+      padding: 8px 10px; border-radius: 10px;
+    }
+    #tel-volver:hover, #tel-volver:focus-visible { background: var(--bar-bd); }
+    /* La app de Apps Script ocupa el resto de la pantalla; el cargador queda detrás hasta que llega */
     #tel-frame {
-      position: fixed; inset: 0; width: 100%; height: 100vh; height: 100dvh;
+      position: fixed; left: 0; right: 0; bottom: 0;
+      top: calc(var(--bar-h) + env(safe-area-inset-top, 0px));
+      width: 100%; height: calc(100dvh - var(--bar-h) - env(safe-area-inset-top, 0px));
       border: 0; display: block;
     }
     #tel-cargando {
-      position: fixed; inset: 0; display: flex; flex-direction: column;
+      position: fixed; inset: var(--bar-h) 0 0 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 14px;
       text-align: center; padding: 24px; font-size: 16px;
     }
@@ -31,6 +46,10 @@
   </style>
 </head>
 <body>
+
+  <nav id="tel-barra">
+    <a id="tel-volver" href="/#menu">← Ziv</a>
+  </nav>
 
   <div id="tel-cargando">
     <div>Cargando Predicación Telefónica…</div>
