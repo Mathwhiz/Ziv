@@ -31,3 +31,6 @@ skills-lock.json
 
 # Copias locales antes de un fix
 *.bak_*
+
+# Sandbox de prototipos (solo local)
+ejemplos/

@@ -858,6 +858,22 @@
       background: #efdfd6;
       box-shadow: 0 8px 26px rgba(174,76,41,0.16), 0 0 0 1px rgba(201,74,61,0.5);
     }
+    .cs-nav-icon-tel {
+      --nav-c: #1D9E75;
+      --nav-c-dim: rgba(29,158,117,0.2);
+      background: rgba(29,158,117,0.13);
+      border: 1px solid rgba(29,158,117,0.22);
+    }
+    .cs-nav-card-tel:hover {
+      border-color: rgba(29,158,117,0.55);
+      background: var(--k-bg-0e2219, #0e2219);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(29,158,117,0.55), 0 4px 20px rgba(29,158,117,0.12);
+    }
+    body.light-mode .cs-nav-card-tel:hover {
+      border-color: rgba(29,158,117,0.52);
+      background: #d8ebe3;
+      box-shadow: 0 8px 26px rgba(22,120,89,0.16), 0 0 0 1px rgba(29,158,117,0.5);
+    }
     .cs-nav-icon-admin {
       background: rgba(127,119,221,0.13);
       border: 1px solid rgba(127,119,221,0.22);
@@ -1494,6 +1510,19 @@
         </div>
       </a>
 
+      <a id="menu-card-tel" class="cs-nav-card cs-nav-card-tel" href="telefonica/" style="display:none;">
+        <div class="cs-nav-icon cs-nav-icon-tel">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"
+              stroke="#1D9E75" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-nav-title">Telefónica</div>
+          <div class="cs-nav-sub">Predicación telefónica del grupo</div>
+        </div>
+      </a>
+
       <a id="menu-card-conf" class="cs-nav-card cs-nav-card-conf" href="conferencias/index.html" style="display:none;">
         <div class="cs-nav-icon cs-nav-icon-conf">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -2062,10 +2091,12 @@
       const cardAsign = document.getElementById('menu-card-asign');
       const cardHerm  = document.getElementById('menu-card-herm');
       const cardConf  = document.getElementById('menu-card-conf');
+      const cardTel   = document.getElementById('menu-card-tel');
       if (cardTerr)  cardTerr.style.display  = window.hasPermission?.('acceso_territorios')  ? '' : 'none';
       if (cardAsign) cardAsign.style.display = window.hasPermission?.('acceso_asignaciones') ? '' : 'none';
       if (cardHerm)  cardHerm.style.display  = window.hasPermission?.('acceso_hermanos')     ? '' : 'none';
       if (cardConf)  cardConf.style.display  = window.hasPermission?.('acceso_conferencias') ? '' : 'none';
+      if (cardTel)   cardTel.style.display   = window.hasPermission?.('acceso_telefonica')   ? '' : 'none';
 
       // Hermana registrada: ocultar módulos no relevantes, redirigir VM al visor público
       const esHermana = user && !user.isAnonymous && user.sexo === 'M';

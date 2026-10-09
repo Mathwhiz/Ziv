@@ -37,6 +37,7 @@ export const PERMISOS = {
     'acceso_vm',
     'acceso_hermanos',
     'acceso_predicacion',
+    'acceso_telefonica',
     'acceso_conferencias',
     'editar_conferencias',
     'editar_publicadores',
@@ -51,6 +52,7 @@ export const PERMISOS = {
     'acceso_vm',
     'acceso_hermanos',
     'acceso_predicacion',
+    'acceso_telefonica',
     'acceso_conferencias',
     'editar_conferencias',
     'editar_publicadores',
@@ -61,23 +63,27 @@ export const PERMISOS = {
     'acceso_asignaciones',
     'acceso_hermanos',
     'acceso_predicacion',
+    'acceso_telefonica',
   ],
 
   encargado_vm: [
     'acceso_vm',
     'acceso_hermanos',
     'acceso_predicacion',
+    'acceso_telefonica',
   ],
 
   encargado_grupo: [
     'acceso_territorios',
     'acceso_predicacion',
+    'acceso_telefonica',
   ],
 
   encargado_conferencias: [
     'acceso_conferencias',
     'editar_conferencias',
     'acceso_predicacion',
+    'acceso_telefonica',
   ],
 
   // acceso_conferencias: solo anciano/siervo_ministerial entre los roles de
@@ -88,6 +94,7 @@ export const PERMISOS = {
     'acceso_vm',
     'acceso_conferencias',
     'acceso_predicacion',
+    'acceso_telefonica',
   ],
 
   siervo_ministerial: [
@@ -95,24 +102,28 @@ export const PERMISOS = {
     'acceso_vm',
     'acceso_conferencias',
     'acceso_predicacion',
+    'acceso_telefonica',
   ],
 
   precursor_regular: [
     'acceso_asignaciones',
     'acceso_vm',
     'acceso_predicacion',
+    'acceso_telefonica',
   ],
 
   precursor_auxiliar: [
     'acceso_asignaciones',
     'acceso_vm',
     'acceso_predicacion',
+    'acceso_telefonica',
   ],
 
   publicador: [
     'acceso_asignaciones',
     'acceso_vm',
     'acceso_predicacion',
+    'acceso_telefonica',
   ],
 
   pendiente: [
