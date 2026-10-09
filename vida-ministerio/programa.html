@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Programa Vida y Ministerio</title>
+  <link rel="icon" href="/assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a1c1f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ziv">
+  <link rel="apple-touch-icon" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="../shared/styles-base.css?v=1.4">
+  <link rel="stylesheet" href="styles.css?v=3.1">
+  <style>
+    .prog-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 0 10px;
+    }
+    .prog-titulo-wrap { flex: 1; min-width: 0; }
+    .prog-titulo { font-size: 17px; font-weight: 600; color: #e8e8e8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .prog-sub    { font-size: 12px; color: #555; margin-top: 1px; }
+    .prog-nav-btn {
+      background: #232628;
+      border: 0.5px solid #3a3a3a;
+      color: #aaa;
+      border-radius: 10px;
+      width: 38px; height: 38px;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .prog-nav-btn:hover { background: #2d3033; border-color: #555; }
+    .prog-nav-btn:disabled { opacity: 0.3; cursor: default; }
+    .prog-share-btn {
+      background: #232628;
+      border: 0.5px solid #3a3a3a;
+      color: #aaa;
+      border-radius: 10px;
+      height: 38px;
+      padding: 0 13px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .prog-share-btn:hover { background: #2d3033; border-color: #555; }
+    .prog-share-btn:active { background: #333; }
+    .prog-congre {
+      font-size: 12px; color: #555; margin-bottom: 14px;
+      padding-bottom: 12px; border-bottom: 0.5px solid #2a2a2a;
+      letter-spacing: 0.03em; text-transform: uppercase; font-weight: 500;
+    }
+    .prog-error  { color: #F09595; font-size: 14px; padding: 20px 0; text-align: center; }
+    /* Card wrapper para el contenido */
+    #prog-contenido { border: 0.5px solid #2e2e2e; border-radius: 16px; overflow: hidden; background: #1e2023; }
+    #prog-contenido > .loading-wrap { background: transparent; }
+    /* Separadores entre secciones dentro del viewer */
+    #prog-contenido .seccion-bloque:not(:last-child) { border-bottom: 0.5px solid #2a2a2a; }
+    #prog-contenido .seccion-bloque { border-radius: 0; border: none; margin-bottom: 0; }
+    #prog-contenido .seccion-bloque:first-child { border-radius: 16px 16px 0 0; }
+    #prog-contenido .seccion-bloque:last-child  { border-radius: 0 0 16px 16px; }
+  </style>
+</head>
+<body>
+
+<div class="app-inner">
+  <div class="prog-header">
+    <button class="prog-nav-btn" id="btn-prev" onclick="navSemana(-1)" title="Semana anterior">‹</button>
+    <div class="prog-titulo-wrap">
+      <div class="prog-titulo" id="prog-titulo">Cargando…</div>
+      <div class="prog-sub">Vida y Ministerio</div>
+    </div>
+    <button class="prog-nav-btn" id="btn-next" onclick="navSemana(1)" title="Semana siguiente">›</button>
+    <button class="prog-share-btn" onclick="compartir()" title="Compartir enlace">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+        <polyline points="16 6 12 2 8 6"/>
+        <line x1="12" y1="2" x2="12" y2="15"/>
+      </svg>
+      Compartir
+    </button>
+  </div>
+
+  <div id="prog-congre" class="prog-congre"></div>
+  <div id="prog-contenido">
+    <div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
+  </div>
+  <div style="height:2rem;"></div>
+</div>
+
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
+<script type="module" src="programa.js"></script>
+</body>
+</html>

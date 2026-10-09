@@ -1,0 +1,33 @@
+# Dependencias y builds
+node_modules/
+android/
+www/
+
+# Herramientas, datos y documentación locales (no van al repo público)
+tools/
+docs/
+demo/
+*.csv
+*.xlsx
+*.kml
+.env*
+serviceAccountKey*.json
+
+# Configuración local (Firebase, Capacitor, editores, asistentes)
+.firebaserc
+firebase.json
+firestore.rules
+capacitor.config.json
+package.json
+package-lock.json
+CLAUDE.md
+.claude/
+.agents/
+.aidesigner/
+.mcp.json
+skills-lock.json
+.vscode/
+.idea/
+
+# Copias locales antes de un fix
+*.bak_*

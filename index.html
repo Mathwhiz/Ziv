@@ -1,0 +1,2194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ziv</title>
+  <link rel="icon" href="/assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a1c1f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ziv">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: calc(100vh / var(--ziv-z, 1));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-primary, #eee);
+      font-family: system-ui, sans-serif;
+      background-color: var(--bg-primary, #1a1c1f);
+      background-image:
+        radial-gradient(ellipse at 18% 22%, rgba(55,138,221,0.13) 0%, transparent 52%),
+        radial-gradient(ellipse at 82% 78%, rgba(127,119,221,0.11) 0%, transparent 52%),
+        radial-gradient(ellipse at 60% 10%, rgba(29,158,117,0.07) 0%, transparent 40%);
+    }
+    body.light-mode {
+      background-image:
+        radial-gradient(ellipse at 60% 20%, rgba(46,134,193,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse at 20% 80%, rgba(79,195,195,0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 82% 18%, rgba(127,119,221,0.09) 0%, transparent 56%),
+        radial-gradient(ellipse at 8% 24%, rgba(155,143,255,0.06) 0%, transparent 48%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    }
+
+    .view {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .view.no-view-anim {
+      animation: none !important;
+    }
+    .view.intro-layer {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+    .view.welcome-out {
+      opacity: 0;
+      transform: translateY(-72px) scale(.96);
+      transition: opacity .72s cubic-bezier(.16,1,.3,1), transform .72s cubic-bezier(.16,1,.3,1);
+      pointer-events: none;
+    }
+    .wrap.congre-wrap-prep {
+      opacity: 0;
+      transform: translateY(72px) scale(.98);
+      pointer-events: none;
+      transition: opacity .72s cubic-bezier(.16,1,.3,1), transform .72s cubic-bezier(.16,1,.3,1);
+    }
+    .wrap.congre-wrap-in {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    .view.congre-out-left {
+      opacity: 0;
+      transform: translateX(-88px) scale(.97);
+      transition: opacity .72s cubic-bezier(.16,1,.3,1), transform .72s cubic-bezier(.16,1,.3,1);
+      pointer-events: none;
+    }
+    .auth-screen.auth-screen-prep {
+      opacity: 0;
+      transform: translateX(88px) scale(.985);
+      pointer-events: none;
+      transition: opacity .72s cubic-bezier(.16,1,.3,1), transform .72s cubic-bezier(.16,1,.3,1);
+    }
+    .auth-screen.auth-screen-in {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+    .view.auth-out-right {
+      opacity: 0;
+      transform: translateX(88px) scale(.97);
+      transition: opacity .72s cubic-bezier(.16,1,.3,1), transform .72s cubic-bezier(.16,1,.3,1);
+      pointer-events: none;
+    }
+    .wrap.congre-back-prep {
+      opacity: 0;
+      transform: translateX(-88px) scale(.985);
+      pointer-events: none;
+      transition: opacity .72s cubic-bezier(.16,1,.3,1), transform .72s cubic-bezier(.16,1,.3,1);
+    }
+    .wrap.congre-back-in {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    .wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 340px;
+      padding: 2rem 1rem;
+    }
+
+    .logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    /* ── Lista de congregaciones ── */
+    #congre-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .congre-card {
+      width: 100%;
+      background: var(--bg-card, #232628);
+      border: 1px solid var(--border-primary, #2e3033);
+      border-radius: 18px;
+      padding: 1.1rem 1.25rem;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: border-color 0.18s, background 0.18s, transform 0.1s, box-shadow 0.18s;
+      color: inherit;
+      box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,0.25));
+      outline: none;
+      font-family: inherit;
+    }
+    .congre-card:hover {
+      border-color: var(--c-border-hover, #3a3a3a);
+      background: var(--c-bg-hover, #272a2d);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 28px rgba(0,0,0,0.4), 0 0 0 1px var(--c-border-hover, #3a3a3a), 0 4px 20px var(--c-glow, transparent);
+    }
+    .congre-card:active { transform: scale(0.98); box-shadow: none; }
+
+    .congre-icon {
+      width: 46px; height: 46px; border-radius: 13px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      font-size: 16px; font-weight: 700; letter-spacing: -0.5px;
+    }
+
+    .congre-info { flex: 1; min-width: 0; }
+    .congre-nombre { font-size: 22px; font-weight: 600; color: var(--text-primary, #e8e8e8); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .congre-id { font-size: 13px; color: var(--text-muted, #666); }
+    .congre-arrow { color: #444; font-size: 1.3rem; flex-shrink: 0; }
+
+    .loading { color: var(--text-muted, #555); font-size: 0.9rem; text-align: center; padding: 40px 0; }
+    .error   { color: var(--k-tx-e07070, #e07070); font-size: 0.85rem; text-align: center; padding: 20px 0; }
+
+    /* ── Menú de módulos ── */
+    #view-menu {
+      align-items: stretch;
+      justify-content: flex-start;
+      min-height: calc(100vh / var(--ziv-z, 1));
+      padding: 0;
+    }
+    .menu-wrap {
+      width: 100%;
+      min-height: calc(100vh / var(--ziv-z, 1));
+      display: flex;
+      flex-direction: column;
+    }
+    .demo-menu-head {
+      position: relative;
+      padding: 24px 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
+      max-width: 1180px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .demo-menu-top {
+      position: static;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+    }
+    .menu-top-spacer { display: none; }
+
+    /* ── Título de congregación ── */
+    .menu-congre { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+    .menu-congre { position: relative; }
+
+    .menu-congre-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 20px;
+      padding: 3px;
+      overflow: hidden;
+      --neon-color: #7F77DD;
+      --neon-color-dim: rgba(127,119,221,0.3);
+    }
+    .menu-congre-wrapper::before {
+      content: '';
+      position: absolute;
+      aspect-ratio: 1;
+      width: 220%;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) rotate(0deg);
+      background: conic-gradient(
+        from 0deg,
+        transparent 0%,
+        transparent 50%,
+        rgba(255,255,255,0.15) 60%,
+        var(--neon-color) 68%,
+        white 73%,
+        var(--neon-color) 78%,
+        var(--neon-color-dim) 87%,
+        transparent 100%
+      );
+      animation: menu-border-spin 2.8s linear infinite;
+      z-index: 0;
+    }
+    @keyframes menu-border-spin {
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    .menu-congre-inner {
+      position: relative;
+      background: var(--bg-card, #232628);
+      border-radius: 18px;
+      padding: 20px 72px 18px;
+      display: block;
+      align-items: center;
+      gap: 16px;
+      z-index: 1;
+    }
+    .menu-congre-icon { display: none; }
+    .menu-congre-copy { min-width: 0; text-align: center; }
+    .dash-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-secondary, #aaa);
+      margin-bottom: 4px;
+      text-align: center;
+    }
+    .demo-menu-head .cs-logo-sub { display: none; }
+    #menu-titulo {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary, #e8e8e8);
+      letter-spacing: -0.4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
+    }
+    .menu-congre-sub {
+      font-size: 13px;
+      color: var(--text-muted, #666);
+      line-height: 1.35;
+      text-align: center;
+    }
+    .dash-content {
+      padding: 8px 24px 32px;
+      max-width: 1180px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-secondary, #aaa);
+      margin-bottom: 14px;
+    }
+    .module-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    #view-menu .cs-back-btn,
+    #view-menu .menu-back-top {
+      display: none !important;
+    }
+    #view-menu .menu-session-slot {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      z-index: 3;
+    }
+    #view-menu .menu-session-slot #ziv-session {
+      position: relative;
+      top: auto;
+      right: auto;
+      z-index: 5;
+    }
+    #view-menu .menu-session-slot #ziv-session .ziv-sBtn {
+      max-width: 236px;
+      padding: 7px 12px 7px 7px;
+      border-radius: 22px;
+    }
+
+
+    /* ── Vista de autenticación ── */
+    #view-auth {
+      position: relative;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh / var(--ziv-z, 1));
+      padding: 28px;
+    }
+    .auth-screen {
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .auth-congre-block { margin-bottom: 10px; }
+    .auth-back-btn {
+      position: absolute;
+      top: 14px;
+      left: 18px;
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: none;
+      color: var(--text-secondary, #aaa);
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: color .15s, background .15s;
+    }
+    .auth-back-btn:hover {
+      color: var(--text-primary, #e8e8e8);
+      background: rgba(127,119,221,.08);
+    }
+    .auth-icon-wrap {
+      width: 60px;
+      height: 60px;
+      border-radius: 18px;
+      background: var(--bg-card, #232628);
+      border: 1px solid var(--border-primary, #2e3033);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,.25));
+    }
+    .auth-congre-label {
+      font-size: 12px;
+      color: var(--text-muted, #666);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .auth-congre-name {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -.03em;
+      color: var(--text-primary, #e8e8e8);
+      margin-bottom: 10px;
+    }
+    .auth-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -.03em;
+      color: var(--text-primary, #e8e8e8);
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .auth-sub {
+      font-size: 14px;
+      color: var(--text-secondary, #aaa);
+      line-height: 1.55;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .btn-google {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: #fff;
+      color: #1f2937;
+      font-size: 15px;
+      font-weight: 500;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,.2);
+      transition: background .15s, transform .12s, opacity .15s;
+      font-family: inherit;
+      margin-bottom: 12px;
+    }
+    .btn-google:hover  { background: #f3f4f6; }
+    .btn-google:active { transform: scale(.97); }
+    .btn-google:disabled { opacity: 0.4; cursor: default; }
+    .btn-skip {
+      width: 100%;
+      padding: 14px 20px;
+      background: none;
+      border: 1px solid var(--border-primary, #2e3033);
+      color: var(--text-secondary, #aaa);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 14px;
+      transition: color .15s, border-color .15s, background .15s, opacity .15s;
+      font-family: inherit;
+    }
+    .btn-skip:hover {
+      color: var(--text-primary, #e8e8e8);
+      border-color: var(--border-input, #4a4d52);
+      background: var(--bg-card, #232628);
+    }
+    .btn-skip:disabled { opacity: 0.4; cursor: default; }
+    .auth-note {
+      font-size: 12px;
+      color: var(--text-muted, #666);
+      line-height: 1.45;
+      margin-top: 16px;
+    }
+    #view-auth .cs-back-btn { display: none; }
+
+    /* ── Botón instalar PWA ── */
+    .btn-instalar {
+      position: fixed;
+      bottom: 20px;
+      right: 72px;
+      width: 44px;
+      height: 44px;
+      background: var(--k-bg-1a1f1e, #1a1f1e);
+      border: 1px solid rgba(29,158,117,0.35);
+      border-radius: 12px;
+      color: var(--k-tx-1d9e75, #1D9E75);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .btn-instalar:hover { background: var(--k-bg-1c2420, #1c2420); border-color: rgba(29,158,117,0.6); color: var(--k-tx-25c491, #25c491); }
+    .btn-instalar.oculto { display: none; }
+    body.en-menu .btn-instalar { display: none !important; }
+    body.light-mode .btn-instalar {
+      background: #dbeee6;
+      border-color: rgba(29,158,117,0.35);
+      color: #168563;
+      box-shadow: 0 4px 18px rgba(29,158,117,0.12);
+    }
+    body.light-mode .btn-instalar:hover {
+      background: #cfe6dc;
+      border-color: rgba(29,158,117,0.55);
+      color: #127055;
+    }
+
+    /* ── Integración pantalla inicial demo ── */
+    #view-welcome {
+      align-items: stretch;
+      min-height: calc(100vh / var(--ziv-z, 1));
+      padding: 0;
+    }
+    .welcome-shell {
+      width: 100%;
+      min-height: calc(100vh / var(--ziv-z, 1));
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px 0 24px;
+    }
+    .s1-bar,
+    .s1-hero,
+    .s1-slider,
+    .s1-foot {
+      width: min(100%, 760px);
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .s1-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 20px;
+    }
+    .welcome-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-pwa,
+    .btn-theme {
+      border: 1px solid var(--border-light, #3a3d42);
+      background: var(--bg-card, #232628);
+      color: var(--text-secondary, #aaa);
+      font-family: inherit;
+      transition: color .15s, border-color .15s, background .15s, transform .12s;
+    }
+    .btn-pwa {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 13px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .btn-pwa { display: none; }
+    .btn-pwa.visible { display: inline-flex; }
+    .btn-pwa:hover,
+    .btn-theme:hover {
+      color: var(--text-primary, #e8e8e8);
+      border-color: var(--border-input, #4a4d52);
+      background: var(--bg-hover, #272a2e);
+    }
+    .btn-pwa:active,
+    .btn-theme:active { transform: scale(.97); }
+    .btn-theme {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .btn-theme-float {
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+      z-index: 10020;
+      display: flex !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      box-shadow: 0 12px 28px rgba(0,0,0,.22);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .s1-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 16px 28px 12px;
+      gap: 12px;
+    }
+    .app-icon-shell {
+      position: relative;
+      width: 116px;
+      height: 116px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 34px;
+      isolation: isolate;
+    }
+    .app-icon-shell::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 38px;
+      background: conic-gradient(from 0deg, rgba(127,119,221,0.0), rgba(127,119,221,0.6), rgba(55,138,221,0.42), rgba(29,158,117,0.16), rgba(127,119,221,0.0));
+      filter: blur(10px);
+      animation: hero-spin 10s linear infinite;
+      opacity: .9;
+      z-index: 0;
+    }
+    .app-icon-shell::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 34px;
+      background: radial-gradient(circle at 30% 25%, var(--k-bg-w18, rgba(255,255,255,.18)), transparent 38%), var(--k-bg-w04, rgba(255,255,255,.04));
+      border: 1px solid var(--k-bd-w08, rgba(255,255,255,.08));
+      z-index: 1;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .app-icon-orbit {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #97C459;
+      box-shadow: 0 0 0 5px rgba(151,196,89,.14);
+      z-index: 3;
+      transform: translate(-50%, -50%) rotate(var(--clock-angle, 35deg)) translateY(-46px);
+      transition: transform .5s cubic-bezier(.22,.68,0,1);
+    }
+    .app-icon {
+      position: relative;
+      z-index: 2;
+      filter: drop-shadow(0 0 14px rgba(127,119,221,.4));
+    }
+    .app-name {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: var(--text-primary, #e8e8e8);
+    }
+    .app-tagline {
+      font-size: 16px;
+      color: var(--text-secondary, #aaa);
+      line-height: 1.55;
+      max-width: 320px;
+    }
+    @keyframes hero-spin { to { transform: rotate(360deg); } }
+    .s1-slider {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .slider-viewport {
+      overflow: hidden;
+      height: 178px;
+      padding: 0 20px;
+      touch-action: pan-y;
+      cursor: grab;
+    }
+    .slider-viewport.dragging { cursor: grabbing; }
+    .slider-track {
+      display: flex;
+      height: 100%;
+      transition: transform .4s cubic-bezier(.32,.72,0,1);
+      will-change: transform;
+    }
+    .slide {
+      flex: 0 0 100%;
+      padding: 0 4px;
+      height: 100%;
+    }
+    .slide-card {
+      position: relative;
+      overflow: hidden;
+      height: 100%;
+      background: var(--bg-card, #232628);
+      border: 1px solid var(--border-primary, #2e3033);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,.25));
+      transition: background .3s, border-color .3s, box-shadow .3s;
+    }
+    .slide-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--slide-accent, var(--accent, #7F77DD)) 0%, transparent 78%);
+      opacity: .95;
+    }
+    .slide-card::after {
+      content: '';
+      position: absolute;
+      inset: auto -18% -42% auto;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      background: radial-gradient(circle, color-mix(in srgb, var(--slide-accent, var(--accent, #7F77DD)) 22%, transparent 78%) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .slide-card:hover {
+      border-color: color-mix(in srgb, var(--slide-accent, var(--accent, #7F77DD)) 42%, var(--border-primary, #2e3033) 58%);
+      background: color-mix(in srgb, var(--bg-card, #232628) 92%, var(--slide-accent, var(--accent, #7F77DD)) 8%);
+      box-shadow: 0 8px 28px rgba(0,0,0,.28);
+    }
+    .slide-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .slide-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .slide-feature-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary, #e8e8e8);
+    }
+    .slide-feature-desc {
+      font-size: 12px;
+      color: var(--text-secondary, #aaa);
+      line-height: 1.35;
+    }
+    .slide-body {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    .fake-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border-primary, #2e3033);
+    }
+    .fake-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .fake-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .fake-line {
+      height: 7px;
+      border-radius: 4px;
+      background: var(--border-primary, #2e3033);
+    }
+    .fake-line-s { width: 38%; }
+    .fake-line-m { width: 55%; }
+    .fake-line-l { flex: 1; }
+    .fake-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .slider-dots {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .sdot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      background: var(--border-primary, #2e3033);
+      transition: background .2s, transform .2s, width .2s;
+    }
+    .sdot.active {
+      width: 18px;
+      border-radius: 3px;
+      background: var(--accent, #7F77DD);
+    }
+    .s1-foot {
+      padding: 8px 24px 24px;
+    }
+    .btn-primary {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 15px 20px;
+      background: var(--accent, #7F77DD);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(127,119,221,.28);
+      transition: background .15s, transform .12s, box-shadow .15s;
+      font-family: inherit;
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover, #6a62cc);
+      box-shadow: 0 6px 24px rgba(127,119,221,.35);
+    }
+    .btn-primary:active { transform: scale(.97); }
+    body[data-view="view-welcome"] .btn-instalar {
+      display: none !important;
+    }
+
+    .menu-congre-inner {
+      background: var(--bg-card, #232628);
+      border-color: var(--border-primary, #2e3033);
+      box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,.25));
+    }
+    .cs-nav-card {
+      width: 100%;
+      background: var(--bg-card, #232628);
+      border: 1px solid var(--border-primary, #2e3033);
+      border-radius: 18px;
+      padding: 1.1rem 1.25rem;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: border-color 0.18s, background 0.18s, transform 0.1s, box-shadow 0.18s;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: var(--shadow-card, 0 2px 12px rgba(0,0,0,.25));
+      font-family: inherit;
+    }
+    .cs-nav-card:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-hover, 0 8px 28px rgba(0,0,0,.24));
+    }
+    .cs-nav-card:active { transform: scale(0.98); box-shadow: none; }
+    .cs-nav-icon-map {
+      --nav-c: #C94A3D;
+      --nav-c-dim: rgba(201,74,61,0.2);
+      background: rgba(201,74,61,0.13);
+      border: 1px solid rgba(201,74,61,0.22);
+    }
+    .cs-nav-card-map:hover {
+      border-color: rgba(201,74,61,0.55);
+      background: var(--k-bg-2a1711, #2a1711);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(201,74,61,0.55), 0 4px 20px rgba(201,74,61,0.12);
+    }
+    body.light-mode .cs-nav-card-map:hover {
+      border-color: rgba(201,74,61,0.52);
+      background: #efdfd6;
+      box-shadow: 0 8px 26px rgba(174,76,41,0.16), 0 0 0 1px rgba(201,74,61,0.5);
+    }
+    .cs-nav-icon-admin {
+      background: rgba(127,119,221,0.13);
+      border: 1px solid rgba(127,119,221,0.22);
+    }
+    .cs-nav-card-admin:hover {
+      border-color: rgba(127,119,221,0.55);
+      background: var(--k-bg-1a1730, #1a1730);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(127,119,221,0.55), 0 4px 20px rgba(127,119,221,0.12);
+    }
+    body.light-mode .cs-nav-card-admin:hover {
+      border-color: rgba(127,119,221,0.52);
+      background: #e6e1f0;
+      box-shadow: 0 8px 26px rgba(127,119,221,0.16), 0 0 0 1px rgba(127,119,221,0.5);
+    }
+    .cs-nav-title {
+      font-size: 19px;
+      font-weight: 600;
+      color: var(--text-primary, #e8e8e8);
+      margin-bottom: 3px;
+    }
+    .cs-nav-sub {
+      font-size: 14px;
+      color: var(--text-muted, #666);
+      line-height: 1.4;
+    }
+    .auth-congre-label,
+    .auth-sub,
+    .auth-note,
+    .loading,
+    .congre-id,
+    .congre-arrow {
+      color: var(--text-muted, #666);
+    }
+    .auth-congre-name,
+    .auth-title {
+      color: var(--text-primary, #e8e8e8);
+    }
+    .btn-skip {
+      border-color: var(--border-light, #3a3d42);
+      color: var(--text-secondary, #aaa);
+    }
+    .btn-skip:hover {
+      background: var(--bg-hover, #272a2e);
+      border-color: var(--border-input, #4a4d52);
+      color: var(--text-primary, #e8e8e8);
+    }
+
+    @media (min-width: 420px) {
+      .module-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 520px) {
+      body {
+        min-height: 100svh;
+        overflow-x: hidden;
+      }
+      .view {
+        min-height: 100svh;
+      }
+      .wrap {
+        max-width: 352px;
+        gap: 10px;
+        padding: 1.15rem 1rem 1.25rem;
+      }
+      #view-welcome,
+      #view-auth {
+        min-height: 100svh;
+      }
+      .welcome-shell {
+        min-height: 100svh;
+        padding: 10px 0 14px;
+      }
+      .s1-bar {
+        padding: 0 16px;
+      }
+      .s1-hero {
+        padding: 8px 22px 8px;
+        gap: 8px;
+      }
+      .app-icon-shell {
+        width: 92px;
+        height: 92px;
+      }
+      .app-icon-orbit {
+        transform: translate(-50%, -50%) rotate(var(--clock-angle, 35deg)) translateY(-37px);
+      }
+      .app-name {
+        font-size: 2.1rem;
+      }
+      .app-tagline {
+        font-size: 14px;
+        line-height: 1.45;
+      }
+      .s1-slider {
+        gap: 8px;
+      }
+      .slider-viewport {
+        height: 150px;
+        padding: 0 16px;
+      }
+      .slide-card {
+        padding: 12px 14px;
+        gap: 8px;
+      }
+      .s1-foot {
+        padding: 6px 20px 14px;
+      }
+      .btn-primary {
+        padding: 14px 18px;
+        border-radius: 14px;
+      }
+      .congre-card {
+        padding: 0.95rem 1rem;
+        border-radius: 16px;
+      }
+      .congre-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+      }
+      .congre-nombre {
+        font-size: 20px;
+      }
+      #view-auth {
+        padding: 18px 18px 16px;
+      }
+      .auth-screen {
+        max-width: 332px;
+      }
+      .auth-icon-wrap {
+        width: 54px;
+        height: 54px;
+        margin-bottom: 18px;
+      }
+      .auth-congre-block {
+        margin-bottom: 8px;
+      }
+      .auth-congre-name {
+        font-size: 22px;
+        margin-bottom: 8px;
+      }
+      .auth-title {
+        font-size: 1.32rem;
+      }
+      .auth-sub {
+        font-size: 13px;
+        line-height: 1.45;
+        margin-bottom: 22px;
+      }
+      .btn-google,
+      .btn-skip {
+        padding: 13px 16px;
+        border-radius: 13px;
+      }
+      .auth-note {
+        margin-top: 12px;
+      }
+      .demo-menu-head {
+        padding: 16px 16px 10px;
+      }
+      #view-menu .menu-session-slot {
+        position: static;
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 10px;
+      }
+      #view-menu .menu-session-slot #ziv-session {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+      }
+      #view-menu .menu-session-slot #ziv-session .ziv-sBtn {
+        max-width: min(100%, 220px);
+      }
+      .menu-congre-wrapper {
+        width: 100%;
+      }
+      .menu-congre-inner {
+        padding: 16px 18px 15px;
+      }
+      #menu-titulo {
+        font-size: 20px;
+      }
+      .menu-congre-sub {
+        font-size: 12px;
+      }
+      .dash-content {
+        padding: 6px 16px 24px;
+      }
+      .btn-theme-float {
+        left: 12px;
+        bottom: 12px;
+      }
+    }
+    @media (min-width: 600px) {
+      .demo-menu-head { padding: 28px 28px 18px; }
+      .dash-content { padding: 10px 28px 40px; }
+      .module-grid { gap: 14px; }
+      .cs-nav-card { padding: 1.2rem 1.3rem; gap: 16px; }
+      .cs-nav-icon { width: 52px; height: 52px; border-radius: 14px; }
+      .cs-nav-title { font-size: 20px; }
+      .cs-nav-sub { font-size: 13px; }
+    }
+    @media (min-width: 900px) {
+      .welcome-shell { padding-bottom: 32px; }
+      .slider-viewport { padding: 0; }
+      .module-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+      .demo-menu-head { padding: 30px 34px 22px; }
+      .demo-menu-top { top: 24px; left: 34px; right: 34px; }
+      .menu-congre-inner { padding: 22px 84px 20px; }
+      .dash-content { padding: 14px 34px 44px; }
+      .cs-nav-card { min-height: 112px; }
+    }
+    @media (min-width: 1100px) {
+      .module-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+      .demo-menu-head { padding: 32px 40px 24px; }
+      .demo-menu-top { top: 26px; left: 40px; right: 40px; }
+      .menu-congre-inner { padding: 24px 92px 22px; }
+      .dash-content { padding: 18px 40px 52px; }
+      .cs-nav-card { min-height: 120px; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ── VISTA: BIENVENIDA (demo integrada) ── -->
+  <div id="view-welcome" class="view" style="display:none">
+    <button class="btn-theme btn-theme-float" onclick="window.uiToggleTheme(); syncThemeButtonUI()" aria-label="Cambiar tema">
+      <svg data-theme-sun width="16" height="16" viewBox="0 0 24 24" fill="none" style="display:none;">
+        <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <svg data-theme-moon width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="welcome-shell">
+      <div class="s1-bar">
+        <button id="pwa-btn" class="btn-pwa" onclick="instalarApp()" aria-label="Instalar aplicación">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Instalar app
+        </button>
+      </div>
+
+      <div class="s1-hero">
+        <div class="app-icon-shell" aria-hidden="true">
+          <div class="app-icon-orbit"></div>
+          <img src="/assets/icon-192.png" alt="Ziv" class="app-icon" width="88" height="88" style="border-radius:22px;">
+        </div>
+        <h1 class="app-name">Ziv</h1>
+        <p class="app-tagline">Organización e información.</p>
+      </div>
+
+      <div class="s1-slider">
+        <div class="slider-viewport" id="welcome-slider-vp" ontouchstart="welcomeTouch(event,'start')" ontouchend="welcomeTouch(event,'end')">
+          <div class="slider-track" id="welcome-slider-track">
+            <div class="slide">
+              <div class="slide-card" style="--slide-accent:#5DB85D;">
+                <div class="slide-header">
+                  <div class="slide-icon" style="background:rgba(93,184,93,0.12)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5DB85D" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  </div>
+                  <div>
+                    <div class="slide-feature-title">Territorios</div>
+                    <div class="slide-feature-desc">Asigná zonas y controlá el estado de cada área.</div>
+                  </div>
+                </div>
+                <div class="slide-body">
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:#5DB85D"></div>
+                    <div class="fake-line fake-line-m"></div>
+                    <div class="fake-badge" style="background:rgba(93,184,93,0.12);color:var(--k-tx-5db85d, #5DB85D)">Activo</div>
+                  </div>
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:#EF9F27"></div>
+                    <div class="fake-line fake-line-s"></div>
+                    <div class="fake-badge" style="background:rgba(239,159,39,0.12);color:var(--k-tx-ef9f27, #EF9F27)">En curso</div>
+                  </div>
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
+                    <div class="fake-line fake-line-l"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide">
+              <div class="slide-card" style="--slide-accent:#5B8DDE;">
+                <div class="slide-header">
+                  <div class="slide-icon" style="background:rgba(91,141,222,0.12)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B8DDE" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/><line x1="14" y1="14" x2="20" y2="14"/><line x1="14" y1="17" x2="20" y2="17"/></svg>
+                  </div>
+                  <div>
+                    <div class="slide-feature-title">Asignaciones</div>
+                    <div class="slide-feature-desc">Consultá tus partes en la reunión semanal.</div>
+                  </div>
+                </div>
+                <div class="slide-body">
+                  <div class="fake-row">
+                    <div class="fake-badge" style="background:rgba(91,141,222,0.12);color:var(--k-tx-5b8dde, #5B8DDE);min-width:60px;text-align:center">LECTOR</div>
+                    <div class="fake-line fake-line-l"></div>
+                  </div>
+                  <div class="fake-row">
+                    <div class="fake-badge" style="background:rgba(91,141,222,0.12);color:var(--k-tx-5b8dde, #5B8DDE);min-width:60px;text-align:center">SONIDO</div>
+                    <div class="fake-line fake-line-m"></div>
+                  </div>
+                  <div class="fake-row">
+                    <div class="fake-badge" style="background:rgba(91,141,222,0.12);color:var(--k-tx-5b8dde, #5B8DDE);min-width:60px;text-align:center">MICRO</div>
+                    <div class="fake-line fake-line-s"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide">
+              <div class="slide-card" style="--slide-accent:#1D9E75;">
+                <div class="slide-header">
+                  <div class="slide-icon" style="background:rgba(29,158,117,0.12)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                  </div>
+                  <div>
+                    <div class="slide-feature-title">Vida y Ministerio</div>
+                    <div class="slide-feature-desc">Programa de reuniones VM con asignaciones.</div>
+                  </div>
+                </div>
+                <div class="slide-body">
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:#1D9E75"></div>
+                    <div class="fake-line" style="width:30%"></div>
+                    <div class="fake-badge" style="background:rgba(29,158,117,0.12);color:var(--k-tx-1d9e75, #1D9E75)">Canción 52</div>
+                  </div>
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
+                    <div class="fake-line fake-line-l"></div>
+                  </div>
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
+                    <div class="fake-line fake-line-m"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide">
+              <div class="slide-card" style="--slide-accent:#EF9F27;">
+                <div class="slide-header">
+                  <div class="slide-icon" style="background:rgba(239,159,39,0.12)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF9F27" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><line x1="19" y1="8" x2="23" y2="8"/><line x1="21" y1="6" x2="21" y2="10"/></svg>
+                  </div>
+                  <div>
+                    <div class="slide-feature-title">Administrador</div>
+                    <div class="slide-feature-desc">Gestioná hermanos, roles y semanas especiales.</div>
+                  </div>
+                </div>
+                <div class="slide-body">
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:#7F77DD"></div>
+                    <div class="fake-line fake-line-m"></div>
+                    <div class="fake-badge" style="background:rgba(127,119,221,0.10);color:var(--k-tx-7f77dd, #7F77DD)">Anciano</div>
+                  </div>
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
+                    <div class="fake-line fake-line-l"></div>
+                  </div>
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
+                    <div class="fake-line fake-line-s"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide">
+              <div class="slide-card" style="--slide-accent:#E05277;">
+                <div class="slide-header">
+                  <div class="slide-icon" style="background:rgba(224,82,119,0.12)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E05277" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7"/><path d="M9 22V12h6v10"/><path d="M21 22H3"/></svg>
+                  </div>
+                  <div>
+                    <div class="slide-feature-title">Predicación</div>
+                    <div class="slide-feature-desc">Tiempos, revisitas y estudios en una sola vista.</div>
+                  </div>
+                </div>
+                <div class="slide-body">
+                  <div class="fake-row">
+                    <div class="fake-badge" style="background:rgba(224,82,119,0.12);color:var(--k-tx-e05277, #E05277);min-width:44px;text-align:center">12 h</div>
+                    <div class="fake-line fake-line-m"></div>
+                  </div>
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:#E05277"></div>
+                    <div class="fake-line fake-line-l"></div>
+                    <div class="fake-badge" style="background:rgba(224,82,119,0.12);color:var(--k-tx-e05277, #E05277)">3 estudios</div>
+                  </div>
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
+                    <div class="fake-line fake-line-s"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide">
+              <div class="slide-card" style="--slide-accent:#0DB6CC;">
+                <div class="slide-header">
+                  <div class="slide-icon" style="background:rgba(13,182,204,0.12)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0DB6CC" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 11l2 2 4-4"/></svg>
+                  </div>
+                  <div>
+                    <div class="slide-feature-title">Conferencias</div>
+                    <div class="slide-feature-desc">Seguimiento simple de visitas y discursos del fin de semana.</div>
+                  </div>
+                </div>
+                <div class="slide-body">
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:#0DB6CC"></div>
+                    <div class="fake-line fake-line-m"></div>
+                    <div class="fake-badge" style="background:rgba(13,182,204,0.10);color:var(--k-tx-0db6cc, #0DB6CC)">Confirmada</div>
+                  </div>
+                  <div class="fake-row">
+                    <div class="fake-badge" style="background:rgba(13,182,204,0.10);color:var(--k-tx-0db6cc, #0DB6CC)">Domingo</div>
+                    <div class="fake-line fake-line-l"></div>
+                  </div>
+                  <div class="fake-row">
+                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
+                    <div class="fake-line fake-line-s"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slider-dots" id="welcome-slider-dots">
+          <button class="sdot active" onclick="goWelcomeSlide(0)" aria-label="Slide 1"></button>
+          <button class="sdot" onclick="goWelcomeSlide(1)" aria-label="Slide 2"></button>
+          <button class="sdot" onclick="goWelcomeSlide(2)" aria-label="Slide 3"></button>
+          <button class="sdot" onclick="goWelcomeSlide(3)" aria-label="Slide 4"></button>
+          <button class="sdot" onclick="goWelcomeSlide(4)" aria-label="Slide 5"></button>
+          <button class="sdot" onclick="goWelcomeSlide(5)" aria-label="Slide 6"></button>
+        </div>
+      </div>
+
+      <div class="s1-foot">
+        <button class="btn-primary" onclick="startWelcomeIntroTransition()">
+          Comenzar
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── VISTA: ELEGIR CONGREGACIÓN ── -->
+  <div id="view-congres" class="view" style="display:none">
+    <button class="btn-theme btn-theme-float" onclick="window.uiToggleTheme(); syncThemeButtonUI()" aria-label="Cambiar tema">
+      <svg data-theme-sun width="16" height="16" viewBox="0 0 24 24" fill="none" style="display:none;">
+        <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <svg data-theme-moon width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="wrap">
+      <div class="logo">
+        <div class="cs-logo-placeholder"></div>
+        <div class="cs-logo-title">Ziv</div>
+        <div class="cs-logo-sub">Seleccioná tu congregación</div>
+      </div>
+      <div id="congre-list">
+        <div class="loading">Cargando congregaciones…</div>
+      </div>
+      <div class="cs-footer">Ziv · Sistema interno</div>
+    </div>
+  </div>
+
+  <!-- ── VISTA: AUTENTICACIÓN ── -->
+  <div id="view-auth" class="view" style="display:none">
+    <button class="btn-theme btn-theme-float" onclick="window.uiToggleTheme(); syncThemeButtonUI()" aria-label="Cambiar tema">
+      <svg data-theme-sun width="16" height="16" viewBox="0 0 24 24" fill="none" style="display:none;">
+        <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <svg data-theme-moon width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button class="auth-back-btn" onclick="volverACongres()" aria-label="Volver">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
+
+    <div class="auth-screen">
+      <div class="auth-icon-wrap">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent, #7F77DD)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <polyline points="9 12 11 14 15 10"/>
+        </svg>
+      </div>
+
+      <div class="auth-congre-block">
+          <div class="auth-congre-label">Congregación seleccionada</div>
+          <div class="auth-congre-name" id="auth-congre-name">—</div>
+        </div>
+        <div class="auth-title">Iniciá sesión para continuar</div>
+        <div class="auth-sub">Usamos tu cuenta de Google para identificarte dentro de la congregación</div>
+
+        <button class="btn-google" id="btn-google" onclick="handleGoogleSignIn()">
+          <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continuar con Google
+        </button>
+
+        <button class="btn-skip" id="btn-skip" onclick="handleSkip()">Omitir por ahora</button>
+        <div class="auth-note">Solo para uso interno de la congregación</div>
+      </div>
+
+      <a class="cs-back-btn" href="#" onclick="volverACongres();return false;">← Cambiar congregación</a>
+    </div>
+  </div>
+
+  <!-- ── VISTA: ELEGIR MÓDULO ── -->
+  <div id="view-menu" class="view" style="display:none">
+    <div class="menu-wrap">
+      <header class="demo-menu-head">
+        <div class="demo-menu-top">
+          <a class="cs-back-btn menu-back-top" href="#" onclick="volverACongres();return false;" aria-label="Volver a congregaciones">← Congregaciones</a>
+          <div class="menu-top-spacer" aria-hidden="true"></div>
+        </div>
+        <div class="menu-congre">
+          <div class="menu-congre-wrapper" id="menu-congre-wrapper">
+            <div class="menu-congre-inner">
+              <div class="menu-congre-icon" id="menu-congre-icon"></div>
+              <div class="menu-congre-copy">
+                <p class="dash-eyebrow">Ziv App</p>
+                <div id="menu-titulo">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="menu-session-slot" id="menu-session-slot"></div>
+          <p class="menu-congre-sub">Seleccioná un módulo para continuar.</p>
+        </div>
+      </header>
+
+      <div class="dash-content">
+        <p class="section-label">Módulos disponibles</p>
+        <div class="module-grid">
+      <a id="menu-card-terr" class="cs-nav-card cs-nav-card-terr" href="territorios/index.html" style="display:none;">
+        <div class="cs-nav-icon cs-nav-icon-terr">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 8V9m0 0L9 7"
+              stroke="#5DB85D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-nav-title">Territorios</div>
+          <div class="cs-nav-sub">Planificar y registrar salidas</div>
+        </div>
+      </a>
+
+      <a class="cs-nav-card cs-nav-card-map" href="#" onclick="openPublicMap(event)">
+        <div class="cs-nav-icon cs-nav-icon-map">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M3 6.5l6-2.5 6 2.5 6-2.5v13l-6 2.5-6-2.5-6 2.5v-13z" stroke="#C94A3D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 4v13.5M15 6.5V20" stroke="#C94A3D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-nav-title">Ver mapa</div>
+          <div class="cs-nav-sub">Mapa de la Congregación</div>
+        </div>
+      </a>
+
+      <a id="menu-card-asign" class="cs-nav-card cs-nav-card-asign" href="asignaciones/index.html" style="display:none;">
+        <div class="cs-nav-icon cs-nav-icon-asign">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
+              stroke="#5B8DDE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-nav-title">Asignaciones</div>
+          <div class="cs-nav-sub">Acomodadores, sonido y más</div>
+        </div>
+      </a>
+
+      <a id="menu-card-herm" class="cs-nav-card cs-nav-card-herm" href="hermanos/index.html" style="display:none;">
+        <div class="cs-nav-icon cs-nav-icon-herm">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#D85A30" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="9" cy="7" r="4" stroke="#D85A30" stroke-width="1.8"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#D85A30" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-nav-title">Administrador</div>
+          <div class="cs-nav-sub">Publicadores, roles y más</div>
+        </div>
+      </a>
+
+      <a id="menu-card-vm" class="cs-nav-card cs-nav-card-vm" href="vida-ministerio/index.html" style="display:none;">
+        <div class="cs-nav-icon cs-nav-icon-vm">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" stroke="#EF9F27" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" stroke="#EF9F27" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-nav-title">Vida y Ministerio</div>
+          <div class="cs-nav-sub">Programa de la reunión semanal</div>
+        </div>
+      </a>
+
+      <a class="cs-nav-card cs-nav-card-pred" href="predicacion/index.html">
+        <div class="cs-nav-icon cs-nav-icon-pred">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="#E05277" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 22V12h6v10" stroke="#E05277" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-nav-title">Predicación</div>
+          <div class="cs-nav-sub">Tiempos, revisitas y estudios</div>
+        </div>
+      </a>
+
+      <a id="menu-card-conf" class="cs-nav-card cs-nav-card-conf" href="conferencias/index.html" style="display:none;">
+        <div class="cs-nav-icon cs-nav-icon-conf">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#0DB6CC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="9" cy="7" r="4" stroke="#0DB6CC" stroke-width="1.8"/>
+            <path d="M23 11l-4 4-2-2" stroke="#0DB6CC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-nav-title">Conferencias</div>
+          <div class="cs-nav-sub">Arreglos de discursos del fin de semana</div>
+        </div>
+      </a>
+
+      <a id="menu-card-admin" class="cs-nav-card cs-nav-card-admin" href="/admin.html" style="display:none">
+        <div class="cs-nav-icon cs-nav-icon-admin">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#7F77DD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-nav-title">Super Admin</div>
+          <div class="cs-nav-sub">Panel de administración global</div>
+        </div>
+      </a>
+
+        </div>
+        <div class="cs-footer" id="menu-footer"></div>
+      <a class="cs-back-btn" href="#" onclick="volverACongres();return false;">← Congregaciones</a>
+    </div>
+  </div>
+
+  <!-- ── Botón Instalar PWA (fijo, solo Android Chrome) ── -->
+  <button class="btn-instalar" id="btn-instalar" title="Instalar app" onclick="instalarApp()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M12 3v13M7 11l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M5 21h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+  </button>
+
+
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+
+    const btnInstalar = document.getElementById('btn-instalar');
+    const btnPwaDemo = document.getElementById('pwa-btn');
+    function syncInstallButtons() {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches;
+      const visible = !!_installPrompt && !standalone;
+      btnInstalar.classList.toggle('oculto', standalone);
+      if (btnPwaDemo) btnPwaDemo.classList.toggle('visible', visible);
+    }
+
+    // Ocultar el botón si ya está instalada (modo standalone)
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      btnInstalar.classList.add('oculto');
+    }
+
+    let _installPrompt = null;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      _installPrompt = e;
+      syncInstallButtons();
+    });
+    window.addEventListener('appinstalled', () => {
+      _installPrompt = null;
+      syncInstallButtons();
+    });
+
+    function instalarApp() {
+      if (_installPrompt) {
+        // Android Chrome: prompt nativo
+        _installPrompt.prompt();
+        _installPrompt.userChoice.then(() => {
+          _installPrompt = null;
+          syncInstallButtons();
+        });
+      } else {
+        // iOS o cuando Chrome no ofrece el prompt: mostrar instrucciones
+        const esIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        const msg = esIOS
+          ? 'Para instalar la app en iOS:\n\n1. Tocá el botón compartir (⬆) en la barra del navegador\n2. Seleccioná "Agregar a inicio"'
+          : 'Para instalar la app:\n\nTocá el menú (⋮) del navegador → "Instalar app" o "Agregar a pantalla de inicio"';
+        uiAlert(msg, 'Instalar Ziv');
+      }
+    }
+    syncInstallButtons();
+  </script>
+  <script src="shared/ui-utils.js?v=3.5"></script>
+  <script type="module">
+    import { db } from './shared/firebase.js';
+    import './shared/auth.js';
+    import { TERMINOS_VERSION } from './shared/auth-config.js';
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+    function necesitaCompletarPerfil(user) {
+      if (!user || user.isAnonymous) return false;
+      if (user.primerLogin) return true;
+      return user.terminosAceptados !== true || user.terminosVersion !== TERMINOS_VERSION;
+    }
+
+    const PALETA = [
+      { bg: 'rgba(55,138,221,0.18)',  border: 'rgba(55,138,221,0.35)',  color: '#378ADD' },
+      { bg: 'rgba(151,196,89,0.18)',  border: 'rgba(151,196,89,0.35)',  color: '#97C459' },
+      { bg: 'rgba(127,119,221,0.18)', border: 'rgba(127,119,221,0.35)', color: '#7F77DD' },
+      { bg: 'rgba(239,159,39,0.18)',  border: 'rgba(239,159,39,0.35)',  color: '#EF9F27' },
+      { bg: 'rgba(29,158,117,0.18)',  border: 'rgba(29,158,117,0.35)',  color: '#1D9E75' },
+      { bg: 'rgba(216,90,48,0.18)',   border: 'rgba(216,90,48,0.35)',   color: '#D85A30' },
+    ];
+
+    function iniciales(nombre) {
+      return (nombre || '?').trim().split(/\s+/).slice(0,2).map(w => w.charAt(0).toUpperCase()).join('');
+    }
+
+    function hexToRgba(hex, a) {
+      const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    function colorPara(id) {
+      let h = 0;
+      for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffff;
+      return PALETA[h % PALETA.length];
+    }
+
+    let welcomeSlideIdx = 0;
+    let welcomeSlideTimer = null;
+    let welcomeTouchStartX = 0;
+    let welcomeIntroRunning = false;
+    let congreAuthTransitionRunning = false;
+    let authCongreTransitionRunning = false;
+    let authFlowInProgress = false;
+    let authNavigationStarted = false;
+    let welcomePointerStartX = 0;
+    let welcomePointerDragging = false;
+
+    function syncThemeButtonIcons() {
+      const isLight = document.body.classList.contains('light-mode');
+      document.querySelectorAll('[data-theme-sun]').forEach(el => {
+        el.style.display = isLight ? '' : 'none';
+      });
+      document.querySelectorAll('[data-theme-moon]').forEach(el => {
+        el.style.display = isLight ? 'none' : '';
+      });
+    }
+
+    function syncThemeButtonUI() {
+      syncThemeButtonIcons();
+    }
+
+    function syncHeroClock() {
+      const now = new Date();
+      const hours = now.getHours() % 12;
+      const minutes = now.getMinutes();
+      const angle = ((hours + minutes / 60) * 30);
+      document.documentElement.style.setProperty('--clock-angle', `${angle}deg`);
+    }
+
+    window.goWelcomeSlide = function(i) {
+      const dots = document.querySelectorAll('#welcome-slider-dots .sdot');
+      const total = dots.length || 4;
+      welcomeSlideIdx = ((i % total) + total) % total;
+      document.getElementById('welcome-slider-track').style.transform = `translateX(-${welcomeSlideIdx * 100}%)`;
+      dots.forEach((dot, idx) => dot.classList.toggle('active', idx === welcomeSlideIdx));
+    };
+
+    function startWelcomeSlider() {
+      stopWelcomeSlider();
+      welcomeSlideTimer = setInterval(() => window.goWelcomeSlide(welcomeSlideIdx + 1), 3600);
+    }
+
+    function stopWelcomeSlider() {
+      if (welcomeSlideTimer) {
+        clearInterval(welcomeSlideTimer);
+        welcomeSlideTimer = null;
+      }
+    }
+
+    window.welcomeTouch = function(event, phase) {
+      if (phase === 'start') {
+        welcomeTouchStartX = event.touches[0].clientX;
+        stopWelcomeSlider();
+        return;
+      }
+      const dx = event.changedTouches[0].clientX - welcomeTouchStartX;
+      if (Math.abs(dx) > 38) window.goWelcomeSlide(dx < 0 ? welcomeSlideIdx + 1 : welcomeSlideIdx - 1);
+      startWelcomeSlider();
+    };
+
+    function bindWelcomeDrag() {
+      const viewport = document.getElementById('welcome-slider-vp');
+      const track = document.getElementById('welcome-slider-track');
+      if (!viewport || !track) return;
+
+      viewport.addEventListener('pointerdown', event => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        welcomePointerDragging = true;
+        welcomePointerStartX = event.clientX;
+        viewport.classList.add('dragging');
+        stopWelcomeSlider();
+      });
+
+      viewport.addEventListener('pointermove', event => {
+        if (!welcomePointerDragging) return;
+        const dx = event.clientX - welcomePointerStartX;
+        const preview = (welcomeSlideIdx * -100) + ((dx / Math.max(viewport.clientWidth, 1)) * 18);
+        track.style.transition = 'none';
+        track.style.transform = `translateX(${preview}%)`;
+      });
+
+      function finishPointerDrag(clientX) {
+        if (!welcomePointerDragging) return;
+        const dx = clientX - welcomePointerStartX;
+        welcomePointerDragging = false;
+        viewport.classList.remove('dragging');
+        track.style.transition = '';
+        if (Math.abs(dx) > 42) {
+          window.goWelcomeSlide(dx < 0 ? welcomeSlideIdx + 1 : welcomeSlideIdx - 1);
+        } else {
+          window.goWelcomeSlide(welcomeSlideIdx);
+        }
+        startWelcomeSlider();
+      }
+
+      viewport.addEventListener('pointerup', event => finishPointerDrag(event.clientX));
+      viewport.addEventListener('pointercancel', () => finishPointerDrag(welcomePointerStartX));
+      viewport.addEventListener('lostpointercapture', () => finishPointerDrag(welcomePointerStartX));
+      viewport.addEventListener('pointerleave', event => {
+        if (event.pointerType === 'mouse' && welcomePointerDragging) finishPointerDrag(event.clientX);
+      });
+    }
+
+    syncHeroClock();
+    setInterval(syncHeroClock, 60000);
+    bindWelcomeDrag();
+
+    function relocateSessionHeader(viewId) {
+      const session = document.getElementById('ziv-session');
+      if (!session) return;
+      const menuSlot = document.getElementById('menu-session-slot');
+      if (viewId === 'view-menu' && menuSlot) {
+        if (session.parentElement !== menuSlot) menuSlot.appendChild(session);
+      } else if (session.parentElement !== document.body) {
+        document.body.appendChild(session);
+      }
+    }
+
+    window.startWelcomeIntroTransition = async function() {
+      if (welcomeIntroRunning) return;
+      const welcome = document.getElementById('view-welcome');
+      const congre = document.getElementById('view-congres');
+      const congreBox = congre ? congre.querySelector('.wrap') : null;
+      if (!welcome || !congre) return window.continuarDesdeInicio();
+      if (savedId && savedNombre) return window.continuarDesdeInicio();
+      welcomeIntroRunning = true;
+      stopWelcomeSlider();
+      congre.classList.add('no-view-anim');
+      welcome.classList.add('intro-layer');
+      congre.classList.add('intro-layer');
+      congre.style.display = 'flex';
+      if (congreBox) congreBox.classList.add('congre-wrap-prep');
+      document.body.dataset.view = 'view-welcome';
+      relocateSessionHeader('view-congres');
+      requestAnimationFrame(() => {
+        welcome.classList.add('welcome-out');
+        if (congreBox) congreBox.classList.add('congre-wrap-in');
+      });
+      window.setTimeout(() => {
+        welcome.style.display = 'none';
+        welcome.classList.remove('welcome-out');
+        welcome.classList.remove('intro-layer');
+        document.body.dataset.view = 'view-congres';
+        requestAnimationFrame(() => {
+          if (congreBox) congreBox.classList.remove('congre-wrap-prep', 'congre-wrap-in');
+          congre.classList.remove('intro-layer');
+        });
+        welcomeIntroRunning = false;
+      }, 740);
+    };
+
+    function showView(id) {
+      document.querySelectorAll('.view').forEach(v => { v.style.display = 'none'; });
+      const el = document.getElementById(id);
+      el.style.animation = 'none';
+      el.style.display = 'flex';
+      el.offsetHeight;
+      el.style.animation = '';
+      document.body.dataset.view = id;
+      relocateSessionHeader(id);
+    }
+
+    const titulo     = document.getElementById('menu-titulo');
+    const congreIcon = document.getElementById('menu-congre-icon');
+    const congreWrap = document.getElementById('menu-congre-wrapper');
+    const savedId = sessionStorage.getItem('congreId') || localStorage.getItem('ziv_congre_id');
+    const savedNombre = sessionStorage.getItem('congreNombre') || localStorage.getItem('ziv_congre_nombre');
+    const savedColor  = sessionStorage.getItem('congreColor')  || localStorage.getItem('ziv_congre_color');
+    let menuBootShown = false;
+
+    function isViewVisible(id) {
+      const el = document.getElementById(id);
+      return !!el && el.style.display !== 'none';
+    }
+
+    function mostrarMenu(nombre, color, opts = {}) {
+      const { skipIfVisible = false, skipAnim = false } = opts;
+      if (skipIfVisible && isViewVisible('view-menu')) {
+        document.body.classList.add('en-menu');
+        return;
+      }
+      const col = color || '#7F77DD';
+      congreWrap.style.setProperty('--neon-color', col);
+      congreWrap.style.setProperty('--neon-color-dim', hexToRgba(col, 0.3));
+      congreWrap.style.boxShadow = `0 0 40px ${hexToRgba(col, 0.35)}, 0 0 16px ${hexToRgba(col, 0.5)}, 0 0 6px ${hexToRgba(col, 0.6)}`;
+      congreIcon.textContent      = iniciales(nombre);
+      congreIcon.style.background = hexToRgba(col, 0.18);
+      congreIcon.style.border     = `1px solid ${hexToRgba(col, 0.3)}`;
+      congreIcon.style.color      = col;
+      titulo.textContent = nombre;
+      document.getElementById('menu-footer').textContent = '';
+      document.body.classList.add('en-menu');
+      if (skipAnim) {
+        document.querySelectorAll('.view').forEach(v => { v.style.display = 'none'; });
+        const menu = document.getElementById('view-menu');
+        menu.style.animation = 'none';
+        menu.style.display = 'flex';
+        document.body.dataset.view = 'view-menu';
+        relocateSessionHeader('view-menu');
+        requestAnimationFrame(() => {
+          menu.style.animation = '';
+        });
+        return;
+      }
+      showView('view-menu');
+    }
+
+    function mostrarViewAuth(nombre) {
+      document.getElementById('auth-congre-name').textContent = nombre;
+      const congre = document.getElementById('view-congres');
+      const congreVisible = congre && congre.style.display !== 'none';
+      if (congreVisible) {
+        startCongreAuthTransition();
+        return;
+      }
+      showView('view-auth');
+    }
+
+    function startCongreAuthTransition() {
+      if (congreAuthTransitionRunning) return;
+      const congre = document.getElementById('view-congres');
+      const auth = document.getElementById('view-auth');
+      const authScreen = auth ? auth.querySelector('.auth-screen') : null;
+      if (!congre || !auth || !authScreen) {
+        showView('view-auth');
+        return;
+      }
+      congreAuthTransitionRunning = true;
+      document.body.classList.remove('en-menu');
+      congre.classList.add('no-view-anim', 'intro-layer');
+      auth.classList.add('no-view-anim', 'intro-layer');
+      auth.style.display = 'flex';
+      authScreen.classList.add('auth-screen-prep');
+      document.body.dataset.view = 'view-congres';
+      relocateSessionHeader('view-auth');
+      requestAnimationFrame(() => {
+        congre.classList.add('congre-out-left');
+        authScreen.classList.add('auth-screen-in');
+      });
+      window.setTimeout(() => {
+        congre.style.display = 'none';
+        congre.classList.remove('congre-out-left', 'intro-layer');
+        document.body.dataset.view = 'view-auth';
+        requestAnimationFrame(() => {
+          auth.classList.remove('intro-layer');
+          authScreen.classList.remove('auth-screen-prep', 'auth-screen-in');
+        });
+        congreAuthTransitionRunning = false;
+      }, 740);
+    }
+
+    function startAuthCongreTransition() {
+      if (authCongreTransitionRunning) return;
+      const auth = document.getElementById('view-auth');
+      const congre = document.getElementById('view-congres');
+      const congreBox = congre ? congre.querySelector('.wrap') : null;
+      if (!auth || !congre || !congreBox) {
+        showView('view-congres');
+        return;
+      }
+      authCongreTransitionRunning = true;
+      auth.classList.add('no-view-anim', 'intro-layer');
+      congre.classList.add('no-view-anim', 'intro-layer');
+      congre.style.display = 'flex';
+      congreBox.classList.add('congre-back-prep');
+      document.body.dataset.view = 'view-auth';
+      relocateSessionHeader('view-congres');
+      requestAnimationFrame(() => {
+        auth.classList.add('auth-out-right');
+        congreBox.classList.add('congre-back-in');
+      });
+      window.setTimeout(() => {
+        auth.style.display = 'none';
+        auth.classList.remove('auth-out-right', 'intro-layer');
+        document.body.dataset.view = 'view-congres';
+        requestAnimationFrame(() => {
+          congre.classList.remove('intro-layer');
+          congreBox.classList.remove('congre-back-prep', 'congre-back-in');
+        });
+        authCongreTransitionRunning = false;
+      }, 740);
+    }
+
+    window.continuarDesdeInicio = async function() {
+      document.body.classList.remove('en-menu');
+      if (savedId && savedNombre) {
+        if (!sessionStorage.getItem('congreId')) {
+          sessionStorage.setItem('congreId', savedId);
+          sessionStorage.setItem('congreNombre', savedNombre);
+          sessionStorage.setItem('congreColor', savedColor || '');
+        }
+        await navegarDespuesDeAuth(savedNombre, savedColor);
+        return;
+      }
+      showView('view-congres');
+    };
+
+    window.volverACongres = function() {
+      // Limpia solo la sesión actual (no localStorage — se recuerda en próxima visita)
+      sessionStorage.removeItem('congreId');
+      sessionStorage.removeItem('congreNombre');
+      sessionStorage.removeItem('congreColor');
+      document.body.classList.remove('en-menu');
+      const auth = document.getElementById('view-auth');
+      if (auth && auth.style.display !== 'none') {
+        startAuthCongreTransition();
+        return;
+      }
+      showView('view-congres');
+    };
+
+    window.openPublicMap = function(event) {
+      if (event) event.preventDefault();
+      const congreId = sessionStorage.getItem('congreId') || localStorage.getItem('ziv_congre_id');
+      if (!congreId) return;
+      window.location.href = `territorios/mapa.html?congre=${encodeURIComponent(congreId)}&modo=public`;
+    };
+
+    function setAuthButtonsBusy(busy, googleText = 'Continuar con Google') {
+      const googleBtn = document.getElementById('btn-google');
+      const skipBtn = document.getElementById('btn-skip');
+      if (googleBtn) {
+        googleBtn.disabled = busy;
+        googleBtn.innerHTML = busy ? googleText : `
+          <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continuar con Google`;
+      }
+      if (skipBtn) {
+        skipBtn.disabled = busy;
+        skipBtn.textContent = busy ? 'Conectando…' : 'Omitir por ahora';
+      }
+    }
+
+    function resetAuthFlowUI() {
+      authFlowInProgress = false;
+      authNavigationStarted = false;
+      setAuthButtonsBusy(false);
+      if (window.uiLoading) window.uiLoading.hide();
+    }
+
+    async function finishAuthEntry(user) {
+      if (authNavigationStarted) return;
+      authNavigationStarted = true;
+      const finalUser = user ?? await window.waitForAuth();
+      if (!document.getElementById('view-auth') || document.getElementById('view-auth').style.display === 'none') {
+        resetAuthFlowUI();
+        return;
+      }
+      if (!finalUser) {
+        // S148: el sign-in de Google puede salir BIEN y aun asi quedarse sin usuario, si
+        // falla la creacion del doc en Firestore (regla que rechaza, red, permisos). Antes
+        // eso volvia al boton en silencio y era indistinguible de "cancele el popup" —
+        // paso de verdad el 07/09 y costo ~20 reintentos a ciegas. Ahora se dice.
+        const authErr = window.lastAuthError?.();
+        if (authErr) {
+          const code = authErr.code ? ` (${authErr.code})` : '';
+          uiToast(`Entraste con Google pero no pudimos crear tu perfil${code}. Reintentá en un minuto.`, 'error');
+        }
+        resetAuthFlowUI();
+        return;
+      }
+      const nombre = sessionStorage.getItem('congreNombre') || '';
+      const color  = sessionStorage.getItem('congreColor')  || '';
+      if (window.uiLoading) window.uiLoading.hide();
+      if (necesitaCompletarPerfil(finalUser)) {
+        window.location.href = '/perfil.html';
+        return;
+      }
+      document.getElementById('btn-google')?.blur();
+      document.getElementById('btn-skip')?.blur();
+      mostrarMenu(nombre, color);
+      syncMenuCards();
+      authFlowInProgress = false;
+    }
+
+    window.handleGoogleSignIn = async function() {
+      if (authFlowInProgress) return;
+      authFlowInProgress = true;
+      authNavigationStarted = false;
+      setAuthButtonsBusy(true, 'Conectando con Google…');
+      if (window.uiLoading) window.uiLoading.show('Conectando con Google...');
+      try {
+        await window.signInWithGoogle();
+        await finishAuthEntry();
+      } catch (err) {
+        console.error(err);
+        // Cerrar el popup a proposito no es un error que valga contarle al usuario;
+        // cualquier otra cosa SI (dominio no autorizado, red, config de Firebase).
+        const silenciosos = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/user-cancelled'];
+        if (!silenciosos.includes(err?.code)) {
+          const code = err?.code ? ` (${err.code})` : '';
+          uiToast(`No se pudo entrar con Google${code}. Probá de nuevo.`, 'error');
+        }
+        resetAuthFlowUI();
+      }
+    };
+
+    window.handleSkip = async function() {
+      if (authFlowInProgress) return;
+      authFlowInProgress = true;
+      authNavigationStarted = false;
+      setAuthButtonsBusy(true, 'Preparando acceso…');
+      if (window.uiLoading) window.uiLoading.show('Preparando acceso...');
+      try {
+        await window.signInAnonymousUser();
+        await finishAuthEntry();
+      } catch (err) {
+        console.error(err);
+        resetAuthFlowUI();
+      }
+    };
+
+    // Reaccionar a cambios de auth (login completado, sesión restaurada)
+    window.addEventListener('authStateChanged', ({ detail: { user } }) => {
+      const enViewAuth = document.getElementById('view-auth').style.display !== 'none';
+      if (!enViewAuth) return;
+
+      if (!user) return; // se deslogueó estando en view-auth (no debería pasar)
+      finishAuthEntry(user);
+    });
+
+    function syncMenuCards() {
+      const user = window.currentUser;
+
+      // Admin: solo admin_general
+      const cardAdmin = document.getElementById('menu-card-admin');
+      if (cardAdmin) cardAdmin.style.display = window.hasPermission?.('acceso_admin') ? '' : 'none';
+
+      // Cada card se oculta según el permiso real del rol (evita mostrar una card
+      // que el authGuard va a rebotar apenas se toque)
+      const cardTerr  = document.getElementById('menu-card-terr');
+      const cardAsign = document.getElementById('menu-card-asign');
+      const cardHerm  = document.getElementById('menu-card-herm');
+      const cardConf  = document.getElementById('menu-card-conf');
+      if (cardTerr)  cardTerr.style.display  = window.hasPermission?.('acceso_territorios')  ? '' : 'none';
+      if (cardAsign) cardAsign.style.display = window.hasPermission?.('acceso_asignaciones') ? '' : 'none';
+      if (cardHerm)  cardHerm.style.display  = window.hasPermission?.('acceso_hermanos')     ? '' : 'none';
+      if (cardConf)  cardConf.style.display  = window.hasPermission?.('acceso_conferencias') ? '' : 'none';
+
+      // Hermana registrada: ocultar módulos no relevantes, redirigir VM al visor público
+      const esHermana = user && !user.isAnonymous && user.sexo === 'M';
+      if (esHermana) {
+        [cardTerr, cardAsign, cardHerm].forEach(el => { if (el) el.style.display = 'none'; });
+        const cardVm = document.getElementById('menu-card-vm');
+        if (cardVm) {
+          cardVm.style.display = window.hasPermission?.('acceso_vm') ? '' : 'none';
+          const congreId = sessionStorage.getItem('congreId') || '';
+          cardVm.href = `vida-ministerio/programa.html?congre=${encodeURIComponent(congreId)}`;
+          cardVm.querySelector('.cs-nav-sub').textContent = 'Programa de esta semana';
+        }
+      } else {
+        const cardVm = document.getElementById('menu-card-vm');
+        if (cardVm) {
+          cardVm.style.display = window.hasPermission?.('acceso_vm') ? '' : 'none';
+          cardVm.href = 'vida-ministerio/index.html';
+          cardVm.querySelector('.cs-nav-sub').textContent = 'Programa de la reunión semanal';
+        }
+      }
+    }
+
+    async function navegarDespuesDeAuth(nombre, color) {
+      const user = await window.waitForAuth();
+      if (!user) {
+        mostrarViewAuth(nombre);
+        return;
+      }
+      if (necesitaCompletarPerfil(user)) {
+        window.location.href = '/perfil.html';
+        return;
+      }
+      mostrarMenu(nombre, color, { skipIfVisible: true });
+      syncMenuCards();
+    }
+
+    async function cargarCongres() {
+      const list = document.getElementById('congre-list');
+      try {
+        const snap = await getDocs(collection(db, 'congregaciones'));
+        if (snap.empty) {
+          list.innerHTML = '<div class="error">No hay congregaciones registradas.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        snap.forEach(doc => {
+          const data    = doc.data();
+          const id      = doc.id;
+          const nombre  = data.nombre || id;
+          const inicial = iniciales(nombre);
+          const c       = data.color
+            ? { color: data.color, bg: hexToRgba(data.color, 0.18), border: hexToRgba(data.color, 0.35) }
+            : colorPara(id);
+
+          const card = document.createElement('button');
+          card.className = 'congre-card';
+          card.style.setProperty('--c-border-hover', hexToRgba(c.color, 0.55));
+          card.style.setProperty('--c-bg-hover',     hexToRgba(c.color, 0.09));
+          card.style.setProperty('--c-glow',         hexToRgba(c.color, 0.18));
+          card.innerHTML = `
+            <div class="congre-icon" style="background:${c.bg};border:1px solid ${c.border};color:${c.color};">${inicial}</div>
+            <div class="congre-info">
+              <div class="congre-nombre">${nombre}</div>
+              <div class="congre-id">${id}</div>
+            </div>
+            <div class="congre-arrow">›</div>
+          `;
+          card.addEventListener('click', () => {
+            sessionStorage.setItem('congreId',     id);
+            sessionStorage.setItem('congreNombre', nombre);
+            sessionStorage.setItem('congreColor',  c.color);
+            localStorage.setItem('ziv_congre_id',     id);
+            localStorage.setItem('ziv_congre_nombre', nombre);
+            localStorage.setItem('ziv_congre_color',  c.color);
+            navegarDespuesDeAuth(nombre, c.color);
+          });
+          list.appendChild(card);
+        });
+      } catch (err) {
+        console.error(err);
+        list.innerHTML = `<div class="error">Error al cargar: ${err.message}</div>`;
+      }
+    }
+
+    // Mostrar toast si viene de un authGuard que rechazó
+    if (new URLSearchParams(location.search).get('sin_acceso')) {
+      history.replaceState({}, '', '/');
+      window.waitForAuth().then(() => uiToast('No tenés acceso a esa sección', 'error'));
+    }
+
+    syncThemeButtonUI();
+    startWelcomeSlider();
+
+    const wantsMenu = location.hash === '#menu';
+    if (wantsMenu) {
+      if (savedId && savedNombre) {
+        if (!sessionStorage.getItem('congreId')) {
+          sessionStorage.setItem('congreId', savedId);
+          sessionStorage.setItem('congreNombre', savedNombre);
+          sessionStorage.setItem('congreColor', savedColor || '');
+        }
+        menuBootShown = true;
+        mostrarMenu(savedNombre, savedColor, { skipAnim: true });
+        navegarDespuesDeAuth(savedNombre, savedColor);
+      } else {
+        cargarCongres();
+        showView('view-congres');
+      }
+    } else if (savedId && savedNombre) {
+      // Hay congregación guardada → saltear welcome, mostrar menú de inmediato y validar auth en background
+      if (!sessionStorage.getItem('congreId')) {
+        sessionStorage.setItem('congreId',     savedId);
+        sessionStorage.setItem('congreNombre', savedNombre);
+        sessionStorage.setItem('congreColor',  savedColor || '');
+      }
+      menuBootShown = true;
+      mostrarMenu(savedNombre, savedColor, { skipAnim: true });
+      navegarDespuesDeAuth(savedNombre, savedColor);
+    } else {
+      cargarCongres();
+      showView('view-welcome');
+    }
+  </script>
+
+</body>
+</html>

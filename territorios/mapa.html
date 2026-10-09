@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a1c1f">
+<title>Mapa de Territorios</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: #1a1a1a; overflow: hidden; }
+  #map { width: 100%; height: 100%; }
+
+  .map-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(18,18,18,0.92); backdrop-filter: blur(8px);
+    padding: 10px 14px; border-bottom: 0.5px solid #333;
+  }
+  .map-back-btn {
+    background: #2a2a2a; border: 0.5px solid #444; color: #eee;
+    border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+  }
+  .map-title { font-size: 14px; color: #ccc; font-weight: 500; flex: 1; }
+
+  .map-filters {
+    position: fixed; top: 47px; left: 0; right: 0; z-index: 999;
+    display: flex; gap: 6px; padding: 8px 12px;
+    background: rgba(18,18,18,0.85); backdrop-filter: blur(6px);
+    border-bottom: 0.5px solid #333; overflow-x: auto; scrollbar-width: none;
+  }
+  .map-filters::-webkit-scrollbar { display: none; }
+  .filter-btn {
+    background: #2a2a2a; border: 0.5px solid var(--fc, #444); color: var(--fc, #888);
+    border-radius: 20px; padding: 4px 12px; font-size: 12px; cursor: pointer;
+    white-space: nowrap; transition: all 0.15s;
+  }
+  /* Fijado: queda "presionado" — relleno del color del grupo + check */
+  .filter-btn.active {
+    border-width: 1.5px; color: #fff; background: var(--fc-bg, #333);
+    font-weight: 600; box-shadow: inset 0 1px 4px rgba(0,0,0,0.4);
+  }
+  .filter-btn.pinnable.active::before { content: '✓ '; }
+
+  /* Picker bar */
+  .picker-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 1001;
+    background: rgba(20,20,30,0.96); backdrop-filter: blur(8px);
+    border-top: 0.5px solid #4A44A5; padding: 12px 14px;
+    display: none; align-items: center; gap: 10px;
+  }
+  .picker-bar.visible { display: flex; }
+  #picker-info { flex: 1; font-size: 13px; color: #aaa; line-height: 1.4; }
+  #picker-info strong { color: #eee; }
+  #picker-clear { background: #2e1a1a; color: #F09595; border: 0.5px solid #A32D2D; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+  #picker-confirm { background: #1a2e0a; color: #97C459; border: 0.5px solid #3B6D11; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  .map-toast {
+    position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: rgba(40,40,40,0.95); color: #eee; border-radius: 10px;
+    padding: 8px 16px; font-size: 13px; z-index: 1002;
+    opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none;
+    white-space: nowrap;
+  }
+  .map-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .map-toast.remove-toast { background: rgba(46,26,26,0.95); color: #F09595; }
+
+  .map-legend {
+    position: fixed; bottom: 70px; left: 10px; z-index: 999;
+    background: rgba(18,18,18,0.88); border: 0.5px solid #333;
+    border-radius: 10px; padding: 8px 10px; font-size: 11px; color: #bbb;
+  }
+  .legend-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .legend-row:last-child { margin-bottom: 0; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Popup */
+  .terr-popup-num { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
+  .terr-popup-group { font-size: 12px; font-weight: 500; margin-bottom: 8px; opacity: 0.8; }
+  .terr-popup-row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 4px; font-size: 12px; }
+  .terr-popup-label { color: #888; }
+  .terr-popup-val { color: #eee; font-weight: 500; }
+  .badge-progreso { margin-top: 8px; background: rgba(239,159,39,0.2); color: #EF9F27; border: 0.5px solid #EF9F27; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 600; text-align: center; }
+
+  /* Salón del Reino — color de la congregación via --sc */
+  .salon-pin {
+    position: relative; width: 28px; height: 28px; border-radius: 50%;
+    background: #232628; border: 2px solid var(--sc, #E8E8E8);
+    color: var(--sc, #E8E8E8);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.55);
+  }
+  .salon-pin::after {
+    content: ''; position: absolute; left: 50%; top: 100%;
+    transform: translate(-50%, -2px);
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 7px solid var(--sc, #E8E8E8);
+  }
+  .salon-pin svg { width: 15px; height: 15px; display: block; }
+  .leaflet-tooltip.salon-tooltip {
+    background: rgba(18,18,18,0.92); border: 1.5px solid var(--sc, #E8E8E8); color: var(--sc, #E8E8E8);
+    border-radius: 6px; padding: 3px 7px; font-size: 11px; font-weight: 600;
+    font-family: system-ui, sans-serif; box-shadow: none;
+  }
+  .leaflet-tooltip.salon-tooltip::before { display: none; }
+
+  /* Zoom control — esquina inferior derecha, estilo oscuro */
+  .leaflet-control-zoom {
+    margin-bottom: 14px !important;
+    margin-right: 10px !important;
+    border: none !important;
+  }
+  .leaflet-control-zoom a {
+    background: rgba(30,30,30,0.92) !important;
+    color: #ccc !important;
+    border: 0.5px solid #444 !important;
+    width: 40px !important;
+    height: 40px !important;
+    line-height: 40px !important;
+    font-size: 20px !important;
+  }
+  .leaflet-control-zoom a:hover {
+    background: rgba(50,50,50,0.95) !important;
+    color: #eee !important;
+  }
+
+  /* Loading overlay */
+  #map-loading {
+    position: fixed; inset: 0; z-index: 2000;
+    background: #1a1a1a; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    color: #888; font-size: 14px;
+  }
+  .loading-spinner {
+    width: 36px; height: 36px; border: 3px solid #333;
+    border-top-color: #7F77DD; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #map-loading.hidden { display: none; }
+
+  /* Encuentro bar */
+  .encuentro-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 1001;
+    background: rgba(20,20,30,0.96); backdrop-filter: blur(8px);
+    border-top: 0.5px solid #3B6D11; padding: 12px 14px;
+    display: none; flex-direction: column; gap: 10px;
+  }
+  .encuentro-bar.visible { display: flex; }
+  .encuentro-corners { display: flex; gap: 6px; }
+  .corner-btn {
+    flex: 1; background: #1a1a2e; color: #97C459;
+    border: 0.5px solid #3B6D11; border-radius: 8px;
+    padding: 8px 4px; font-size: 14px; cursor: pointer;
+    text-align: center; line-height: 1.2;
+  }
+  .corner-btn:active { background: #1a2e0a; }
+  .encuentro-result {
+    display: none; flex-direction: column; gap: 8px;
+    padding-top: 8px; border-top: 0.5px solid #2a2a3a;
+  }
+  .encuentro-result.visible { display: flex; }
+  #encuentro-address {
+    font-size: 13px; color: #eee; text-align: center;
+    min-height: 18px; line-height: 1.4;
+  }
+  #encuentro-confirm {
+    background: #1a2e0a; color: #97C459; border: 0.5px solid #3B6D11;
+    border-radius: 8px; padding: 9px; font-size: 13px;
+    font-weight: 600; cursor: pointer; width: 100%;
+  }
+</style>
+</head>
+<body>
+
+<div id="map-loading">
+  <div class="loading-spinner"></div>
+  <span id="loading-text">Cargando territorios...</span>
+</div>
+
+<div id="map"></div>
+
+<div class="map-header">
+  <button class="map-back-btn" onclick="handleBack()">← Volver</button>
+  <div class="map-title" id="map-title">Territorios</div>
+</div>
+
+<div class="map-filters" id="map-filters-bar">
+  <button class="filter-btn active" id="filter-all" onclick="limpiarFiltros()">Todos</button>
+</div>
+
+<div class="picker-bar" id="picker-bar">
+  <div id="picker-info">Tocá un territorio para seleccionarlo</div>
+  <button id="picker-clear" style="display:none;" onclick="clearPickerSelection()">✕ Limpiar</button>
+  <button id="picker-confirm" onclick="confirmPickerSelection()">Confirmar ✓</button>
+</div>
+
+<div class="encuentro-bar" id="encuentro-bar">
+  <div style="font-size:12px;color:#aaa;text-align:center;">Tocá el mapa o elegí una esquina del territorio</div>
+  <div class="encuentro-corners" id="encuentro-corners">
+    <button class="corner-btn" onclick="selectCorner('nw')">↖<br><span style="font-size:10px;color:#7aab5a;">NO</span></button>
+    <button class="corner-btn" onclick="selectCorner('ne')">↗<br><span style="font-size:10px;color:#7aab5a;">NE</span></button>
+    <button class="corner-btn" onclick="selectCorner('sw')">↙<br><span style="font-size:10px;color:#7aab5a;">SO</span></button>
+    <button class="corner-btn" onclick="selectCorner('se')">↘<br><span style="font-size:10px;color:#7aab5a;">SE</span></button>
+  </div>
+  <div class="encuentro-result" id="encuentro-result">
+    <div id="encuentro-address"></div>
+    <button id="encuentro-confirm" onclick="confirmEncuentro()">Usar esta dirección ✓</button>
+  </div>
+</div>
+
+<div class="map-toast" id="map-toast"></div>
+<div class="map-legend" id="map-legend"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { db } from '../shared/firebase.js';
+import {
+  collection, doc, getDoc, getDocs, query, where, orderBy, limit
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+const _params = new URLSearchParams(window.location.search);
+const CONGRE_ID = _params.get('congre') || sessionStorage.getItem('congreId') || 'sur';
+
+// Dinámico — se construye en cargarGrupos()
+let GRUPO_COLORS = {};
+let GRUPO_LABEL  = {};
+let GRUPOS_DATA  = [];  // [{ id, label, color }]
+
+function _hexToRgba(hex, alpha) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return `rgba(255,255,255,${alpha})`;
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function _darkenHex(hex) {
+  // Devuelve versión más oscura del color para el borde
+  const r = Math.round(parseInt(hex.slice(1,3),16) * 0.6);
+  const g = Math.round(parseInt(hex.slice(3,5),16) * 0.6);
+  const b = Math.round(parseInt(hex.slice(5,7),16) * 0.6);
+  return `rgb(${r},${g},${b})`;
+}
+
+async function cargarGrupos() {
+  try {
+    const gruposCol = isPublicMapMode()
+      ? collection(db, 'congregaciones', CONGRE_ID, 'mapa_grupos')
+      : collection(db, 'congregaciones', CONGRE_ID, 'grupos');
+    const snap = await getDocs(gruposCol);
+    GRUPOS_DATA = [];
+    snap.forEach(d => {
+      const { id, label, color } = d.data();
+      if (id) {
+        GRUPOS_DATA.push({ id: String(id), label: label || (id === 'C' ? 'Congregación' : `Grupo ${id}`), color: color || '#888' });
+      }
+    });
+    GRUPOS_DATA.sort((a, b) => {
+      const aNum = parseInt(a.id), bNum = parseInt(b.id);
+      if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+      if (!isNaN(aNum)) return -1;
+      if (!isNaN(bNum)) return 1;
+      return 0;
+    });
+    GRUPOS_DATA.forEach(g => {
+      GRUPO_COLORS[g.id] = { fill: g.color, border: _darkenHex(g.color) };
+      GRUPO_LABEL[g.id]  = g.label;
+    });
+  } catch(e) {
+    console.warn('No se pudieron cargar grupos:', e);
+  }
+}
+
+function renderFilterButtons() {
+  const bar = document.getElementById('map-filters-bar');
+  // Quitar botones de grupo previos (no tocar ciudades ni el botón "Todos")
+  bar.querySelectorAll('[data-grupo-filter]').forEach(b => b.remove());
+  GRUPOS_DATA.forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn pinnable';
+    btn.id = `filter-${g.id}`;
+    btn.dataset.grupoFilter = g.id;
+    btn.style.setProperty('--fc', g.color);
+    btn.style.setProperty('--fc-bg', _hexToRgba(g.color, 0.3));
+    btn.textContent = g.label;
+    btn.onclick = () => toggleGrupoFijado(g.id);
+    bar.appendChild(btn);
+  });
+}
+
+// Territorios cargados desde Firestore — formato: [{num, grupo, coords, punto, tipo, ciudad}]
+let TERRITORIOS  = [];
+let ciudadesExtras = []; // [{ nombre, offset }] — cargado del doc de congregación
+let salonDelReino  = null; // { lat, lng, nombre } — cargado del doc de congregación
+let congreColor    = null; // color de la congregación — usado por el pin del salón
+
+let map;
+let allLayers = [];
+let territoriosInfo = {};  // { [id]: { lastFin, lastIni, enProgreso } }
+let pickerSelected = new Set();
+window.__allLayers = allLayers;
+
+const _grupoParam = _params.get('grupo') || 'all';
+const _modoParam  = _params.get('modo')  || 'full';
+const _enProgreso = (_params.get('enprogreso') || '').split(',').filter(Boolean);
+const _salidaId   = _params.get('salidaid') || null;
+const _terrIdParam = _params.get('terrid') || null;
+
+let encuentroMarker = null;
+let encuentroLatLng = null;
+let terrCorners     = null;
+
+function isPublicMapMode() {
+  return _modoParam === 'public';
+}
+
+// ── Cargar datos desde Firestore ──
+async function cargarTerritorios() {
+  const terrCol = isPublicMapMode()
+    ? collection(db, 'congregaciones', CONGRE_ID, 'mapa_territorios')
+    : collection(db, 'congregaciones', CONGRE_ID, 'territorios');
+  const snap = await getDocs(terrCol);
+
+  TERRITORIOS = snap.docs.flatMap(d => {
+    const t = d.data();
+    const poligonos = t.poligonos || [];
+    // Estructura real en Firestore: poligonos[i].coords[j] = {lat, lng}
+    function normCoords(poly) {
+      const arr = poly.coords || poly; // soporta {coords:[]} y [[lat,lng]]
+      return (Array.isArray(arr) ? arr : [])
+        .map(v => Array.isArray(v) ? [v[0], v[1]] : [v.lat, v.lng])
+        .filter(v => Array.isArray(v) && v.length >= 2 && isFinite(v[0]) && isFinite(v[1]));
+    }
+    // punto puede ser {lat,lng} o [lat,lng]
+    function normPunto(p) {
+      if (!p) return null;
+      return Array.isArray(p) ? p : [p.lat, p.lng];
+    }
+    return poligonos.map((poly, idx) => ({
+      num:    String(t.id) + (poligonos.length > 1 ? String.fromCharCode(65 + idx) : ''),
+      grupo:  String(t.grupoId),
+      coords: normCoords(poly),
+      punto:  normPunto(t.punto),
+      tipo:   t.tipo || 'normal',
+      ciudad: t.ciudad || null,
+      notas:  isPublicMapMode() ? null : (t.notas || null),
+    })).filter(entry => entry.coords.length >= 3);
+  });
+}
+
+async function cargarHistorialInfo() {
+  // Para el modo info/picker necesitamos el último uso de cada territorio
+  // Cargamos con getDocs sobre la subcolección historial de cada territorio
+  // Para no hacer N queries, usamos collectionGroup si está disponible,
+  // pero como fallback hacemos queries por grupo solicitado.
+  try {
+    const gruposACargar = _grupoParam !== 'all' ? [_grupoParam] : GRUPOS_DATA.map(g => g.id);
+    const terrCol = collection(db, 'congregaciones', CONGRE_ID, 'territorios');
+
+    for (const g of gruposACargar) {
+      const q = query(terrCol, where('grupoId', '==', g));
+      const terrSnap = await getDocs(q);
+      await Promise.all(terrSnap.docs.map(async terrDoc => {
+        const data = terrDoc.data();
+        const id = String(data.id);
+        // ultimoHist lo mantiene territorios/app.js; si falta (territorio viejo) se consulta
+        let ult = data.ultimoHist;
+        if (ult === undefined) {
+          const histSnap = await getDocs(
+            query(
+              collection(db, 'congregaciones', CONGRE_ID, 'territorios', terrDoc.id, 'historial'),
+              orderBy('fechaInicio', 'desc'),
+              limit(1)
+            )
+          );
+          if (histSnap.empty) ult = null;
+          else {
+            const h = histSnap.docs[0].data();
+            ult = { ini: h.fechaInicio || null, fin: h.fechaFin || null };
+          }
+        }
+        if (ult) {
+          territoriosInfo[id] = {
+            lastFin:    ult.fin || null,
+            lastIni:    ult.ini || null,
+            enProgreso: !!ult.ini && !ult.fin,
+          };
+        }
+      }));
+    }
+  } catch(e) {
+    console.warn('Error cargando historial:', e);
+  }
+}
+
+// ── Carga ciudades extra y Salón del Reino del doc de congregación ──
+function normSalon(s) {
+  if (!s) return null;
+  const lat = Number(s.lat), lng = Number(s.lng);
+  if (!isFinite(lat) || !isFinite(lng)) return null;
+  return { lat, lng, nombre: s.nombre || 'Salón del Reino' };
+}
+
+async function cargarCiudadesExtras() {
+  try {
+    let publicCities = null;
+    if (isPublicMapMode()) {
+      const publicSnap = await getDoc(doc(db, 'congregaciones', CONGRE_ID, 'mapa_config', 'publico'));
+      if (publicSnap.exists()) {
+        const pd = publicSnap.data();
+        salonDelReino = normSalon(pd.salonDelReino);
+        congreColor   = pd.color || null;
+        const cities = pd.ciudadesExtras;
+        if (Array.isArray(cities) && cities.length > 0) publicCities = cities;
+      }
+      // Solo se evita leer el doc de congregación si el espejo público ya trae todo
+      if (publicCities && salonDelReino) { ciudadesExtras = publicCities; return; }
+    }
+
+    const snap = await getDoc(doc(db, 'congregaciones', CONGRE_ID));
+    if (snap.exists()) {
+      const d = snap.data();
+      ciudadesExtras = publicCities || d.ciudadesExtras || [];
+      if (!salonDelReino) salonDelReino = normSalon(d.salonDelReino);
+      if (!congreColor)   congreColor   = d.color || null;
+    } else if (publicCities) {
+      ciudadesExtras = publicCities;
+    }
+  } catch(e) { /* sin ciudades extras ni salón */ }
+}
+
+// Marcador del Salón del Reino — independiente de los filtros de grupo/ciudad
+function renderSalon() {
+  if (!salonDelReino) return;
+  // En picker/encuentro el click en el mapa es la interacción principal: el pin no la intercepta
+  const interactivo = _modoParam === 'full' || _modoParam === 'info' || isPublicMapMode();
+  // Color del grupo "Congregación" (los territorios de congregación) — fallback al color del doc
+  const color = GRUPO_COLORS['C']?.fill || congreColor || '#E8E8E8';
+  const marker = L.marker([salonDelReino.lat, salonDelReino.lng], {
+    interactive: interactivo,
+    keyboard: false,
+    zIndexOffset: 500,
+    icon: L.divIcon({
+      className: '',
+      html: `<div class="salon-pin" style="--sc:${color}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 12 3l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg></div>`,
+      iconSize: [28, 35], iconAnchor: [14, 35],
+    })
+  });
+  if (interactivo) {
+    marker.bindTooltip(salonDelReino.nombre, {
+      className: 'salon-tooltip', direction: 'top', offset: [0, -34],
+    });
+    marker.on('tooltipopen', e => { e.tooltip.getElement()?.style.setProperty('--sc', color); });
+  }
+  marker.addTo(map);
+}
+
+// ── Init ──
+async function initMap() {
+  try {
+    document.getElementById('loading-text').textContent = 'Cargando territorios...';
+    await Promise.all([cargarTerritorios(), cargarCiudadesExtras(), cargarGrupos()]);
+    renderFilterButtons();
+
+    // En info/picker el historial es necesario antes de renderizar (colorea polígonos)
+    if (_modoParam === 'info' || _modoParam === 'picker') {
+      document.getElementById('loading-text').textContent = 'Cargando historial...';
+      await cargarHistorialInfo();
+    }
+  } catch(err) {
+    document.getElementById('loading-text').textContent = 'Error al cargar: ' + err.message;
+    return;
+  }
+
+  document.getElementById('map-loading').classList.add('hidden');
+
+  // Ocultar header y filtros si viene embebido
+  if (_modoParam !== 'full' && _modoParam !== 'picker' && !isPublicMapMode()) {
+    document.querySelector('.map-header').style.display = 'none';
+    document.querySelector('.map-filters').style.display = 'none';
+  }
+  if (_modoParam === 'picker' || _params.get('picker') === '1') {
+    document.getElementById('picker-bar').classList.add('visible');
+    document.querySelector('.map-filters').style.display = 'none';
+    document.querySelector('.map-header').style.display = 'none';
+    updatePickerBar();
+  }
+
+  map = L.map('map', {
+    center: [-36.62, -64.29],
+    zoom: 13,
+    zoomControl: false,
+    attributionControl: false,
+  });
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+  setTimeout(() => { map.invalidateSize(); }, 100);
+
+  renderSalon();
+
+  // En modo encuentro el render se hace después de cargar el historial
+  if (_modoParam !== 'encuentro') {
+    renderTerritories();
+  }
+
+  // En modo full cargamos el historial en background (el mapa ya está visible)
+  if (_modoParam === 'full') {
+    cargarHistorialInfo().catch(e => console.warn('Historial:', e));
+  }
+
+  // Botones de ciudad (solo para congregación o modo full — territorios extra son siempre del grupo C)
+  const esPicker = _modoParam === 'picker' || _params.get('picker') === '1';
+  const esCiudadVisible = ciudadesExtras.length > 0 && (_grupoParam === 'all' || _grupoParam === 'C');
+  if (esCiudadVisible) {
+    if (esPicker) {
+      // Picker: agregar al picker-bar (map-filters está oculto)
+      const bar = document.getElementById('picker-bar');
+      ciudadesExtras.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn pinnable';
+        btn.id = `filter-ciudad-${c.offset}`;
+        btn.dataset.ciudadFilter = c.nombre;
+        btn.style.cssText = 'flex-shrink:0;';
+        btn.style.setProperty('--fc', '#5DCAA5');
+        btn.style.setProperty('--fc-bg', _hexToRgba('#5DCAA5', 0.3));
+        btn.textContent = `📍 ${c.nombre}`;
+        btn.onclick = () => filterCiudad(c.nombre);
+        bar.insertBefore(btn, bar.firstChild);
+      });
+    } else {
+      // Full, registrar, info: agregar a la barra de filtros y mostrarla
+      const bar = document.getElementById('map-filters-bar');
+      ciudadesExtras.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn pinnable';
+        btn.id = `filter-ciudad-${c.offset}`;
+        btn.dataset.ciudadFilter = c.nombre;
+        btn.style.cssText = 'flex-shrink:0;';
+        btn.style.setProperty('--fc', '#5DCAA5');
+        btn.style.setProperty('--fc-bg', _hexToRgba('#5DCAA5', 0.3));
+        btn.textContent = `📍 ${c.nombre}`;
+        btn.onclick = () => filterCiudad(c.nombre);
+        bar.appendChild(btn);
+      });
+      // En modos sin header (registrar/info): ocultar botones de grupo, solo mostrar ciudad
+      // y bajar la barra a top:0 (el header está oculto en estos modos)
+      if (_modoParam !== 'full' && !isPublicMapMode()) {
+        document.querySelectorAll('#map-filters-bar .filter-btn:not([id^="filter-ciudad-"])').forEach(b => b.style.display = 'none');
+        const filtersEl = document.querySelector('.map-filters');
+        filtersEl.style.top = '0';
+        filtersEl.style.display = '';
+      }
+    }
+  }
+
+  if (_modoParam === 'encuentro') {
+    await cargarHistorialInfo();
+    renderTerritories();
+    initEncuentroMode();
+  } else if (_modoParam === 'picker' || _params.get('picker') === '1') {
+    // Con ciudades extra: ir directo a ciudad principal (evita conflicto de animaciones)
+    // Sin ciudades extra: zoom al grupo del picker
+    if (ciudadesExtras.length > 0 && allLayers.length) {
+      applyCityViewport(null, false);
+    } else {
+      applyPickerFilter(_grupoParam);
+    }
+  } else if (_grupoParam !== 'all') {
+    filterGroup(_grupoParam);
+    // Viewport inicial a ciudad principal si hay multi-ciudad
+    if (ciudadesExtras.length > 0 && allLayers.length) applyCityViewport(null, false);
+  } else if (allLayers.length) {
+    // Viewport inicial: ciudad principal sin animación (evita mostrar ambas ciudades)
+    applyCityViewport(null, false);
+  }
+
+  // Zoom a territorio(s) específico(s) si viene el param terrid (ej: desde Predicación)
+  if (_terrIdParam && (_modoParam === 'full' || _modoParam === 'registrar')) {
+    const ids = String(_terrIdParam).split(',').map(s => s.trim()).filter(Boolean);
+    const terrLayers = allLayers.filter(l =>
+      ids.some(id => String(l.numero).replace(/[A-Za-z]+$/, '') === String(id).replace(/[A-Za-z]+$/, ''))
+    );
+    if (terrLayers.length) {
+      const b = terrLayers[0].polygon.getBounds();
+      terrLayers.slice(1).forEach(l => b.extend(l.polygon.getBounds()));
+      setTimeout(() => map.flyToBounds(b, { padding: [50, 50], maxZoom: 17, duration: 0.8 }), 300);
+    }
+  }
+
+  // Leyenda según modo
+  const legend = document.getElementById('map-legend');
+  if (isPublicMapMode()) {
+    legend.innerHTML = GRUPOS_DATA.map(g =>
+      `<div class="legend-row"><div class="legend-dot" style="background:${g.color};"></div>${g.label}</div>`
+    ).join('');
+  } else if (_modoParam === 'full') {
+    legend.innerHTML = GRUPOS_DATA.map(g =>
+      `<div class="legend-row"><div class="legend-dot" style="background:${g.color};"></div>${g.label}</div>`
+    ).join('');
+  } else if (_modoParam === 'encuentro') {
+    legend.innerHTML = `
+      <div class="legend-row"><div class="legend-dot" style="background:#4CAF50;"></div>≤ 30 días</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#FFC107;"></div>31–60 días</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#FF9800;"></div>61–90 días</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#F44336;"></div>&gt; 90 días</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#555;"></div>Sin registro</div>`;
+  } else if (_modoParam === 'registrar') {
+    legend.innerHTML = `<div class="legend-row"><div class="legend-dot" style="background:#EF9F27;"></div>En progreso</div>`;
+  } else if (_modoParam === 'info' || _modoParam === 'picker') {
+    legend.innerHTML = `
+      <div class="legend-row"><div class="legend-dot" style="background:#4CAF50;"></div>≤ 30 días</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#8BC34A;"></div>31–45 días</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#FFC107;"></div>46–60 días</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#FF9800;"></div>61–90 días</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#FF5722;"></div>91–120 días</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#F44336;"></div>&gt; 120 días</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#555;"></div>Sin registro</div>
+      ${_modoParam === 'picker' ? '<div class="legend-row"><div class="legend-dot" style="background:#97C459;border:1.5px solid #3B6D11;"></div>Seleccionado</div>' : ''}`;
+  }
+}
+
+function baseNum(num) {
+  return String(num).replace(/[A-Ca-c]$/i, '');
+}
+
+function makeLabel(coords, fill, text) {
+  // Guard: coords debe ser array de al menos 3 puntos válidos
+  const valid = coords.filter(v => Array.isArray(v) && v.length >= 2 && isFinite(v[0]) && isFinite(v[1]));
+  if (valid.length < 3) return L.marker([0,0], { opacity: 0, interactive: false, icon: L.divIcon({ html: '' }) });
+
+  let labelCenter;
+  const n = valid.length;
+  let A = 0, cLat = 0, cLon = 0;
+  for (let i = 0; i < n; i++) {
+    const [la0, lo0] = valid[i];
+    const [la1, lo1] = valid[(i + 1) % n];
+    const cr = lo0 * la1 - lo1 * la0;
+    A += cr; cLat += (la0 + la1) * cr; cLon += (lo0 + lo1) * cr;
+  }
+  A *= 0.5;
+  if (Math.abs(A) > 1e-10) {
+    labelCenter = L.latLng(cLat / (6 * A), cLon / (6 * A));
+  } else {
+    // Fallback: promedio simple de todos los vértices
+    const avgLat = valid.reduce((s, v) => s + v[0], 0) / n;
+    const avgLng = valid.reduce((s, v) => s + v[1], 0) / n;
+    labelCenter = L.latLng(avgLat, avgLng);
+  }
+
+  const w = Math.max(26, text.length*7+10);
+  return L.marker(labelCenter, {
+    interactive: false,
+    icon: L.divIcon({
+      className: '',
+      html: `<div style="background:rgba(18,18,18,0.9);border:1.5px solid ${fill};color:${fill};border-radius:6px;padding:2px 5px;font-size:10px;font-weight:700;font-family:system-ui,sans-serif;white-space:nowrap;pointer-events:none;text-align:center;">${text}</div>`,
+      iconSize: [w,18], iconAnchor: [w/2,9],
+    })
+  });
+}
+
+function renderTerritories() {
+  window.__allLayers = allLayers;
+  TERRITORIOS.forEach(t => {
+    if (!t.coords || t.coords.length < 3) return; // skip polígonos inválidos
+
+    if (_modoParam === 'registrar') {
+      if (!_enProgreso.includes(baseNum(t.num))) return;
+      const fill = '#EF9F27', border = '#A86800';
+      const polygon = L.polygon(t.coords, { color:border, fillColor:fill, fillOpacity:0.45, weight:2.5, opacity:0.9 });
+      const label   = makeLabel(t.coords, fill, t.num);
+      polygon.on('click',     () => openPopup(polygon, t.num, t.grupo));
+      polygon.on('mouseover', () => polygon.setStyle({ fillOpacity:0.65, weight:3 }));
+      polygon.on('mouseout',  () => polygon.setStyle({ fillOpacity:0.45, weight:2.5 }));
+      allLayers.push({ polygon, label, group:t.grupo, numero:t.num, ciudad:t.ciudad||null, coords:t.coords });
+      polygon.addTo(map); label.addTo(map);
+      return;
+    }
+
+    if (_modoParam === 'encuentro') {
+      if (String(t.grupo) !== String(_grupoParam)) return;
+      const info = territoriosInfo[baseNum(t.num)] || {};
+      const lastDate = info.lastFin || info.lastIni;
+      const c = colorByDias(lastDate ? daysSince(lastDate) : null);
+      const polygon = L.polygon(t.coords, { color:c.border, fillColor:c.fill, fillOpacity:0.22, weight:2, opacity:0.9 });
+      const label   = makeLabel(t.coords, c.fill, t.num);
+      polygon.on('click', (e) => { L.DomEvent.stopPropagation(e); selectEncuentroPoint(e.latlng); });
+      polygon.on('mouseover', () => polygon.setStyle({ fillOpacity: 0.45, weight: 2.5 }));
+      polygon.on('mouseout',  () => polygon.setStyle({ fillOpacity: 0.22, weight: 2 }));
+      allLayers.push({ polygon, label, group:t.grupo, numero:t.num, ciudad:t.ciudad||null, coords:t.coords });
+      polygon.addTo(map); label.addTo(map);
+      return;
+    }
+
+    if (_modoParam === 'picker' || _params.get('picker') === '1') {
+      const isMainGroup = String(t.grupo) === String(_grupoParam);
+      if (!isMainGroup) return;
+
+      const info = territoriosInfo[baseNum(t.num)] || {};
+      const lastDate = info.lastFin || info.lastIni;
+      const c = colorByDias(lastDate ? daysSince(lastDate) : null);
+      const fillOp = 0.22;
+      const weight = 2;
+      const opacity = 0.9;
+
+      const polygon = L.polygon(t.coords, { color:c.border, fillColor:c.fill, fillOpacity:fillOp, weight, opacity });
+      const label   = makeLabel(t.coords, c.fill, t.num);
+      polygon.on('click', () => togglePickerTerritory(t.num, polygon, t.grupo, label, c, { fillOp, weight, opacity, isMainGroup }));
+      polygon.on('mouseover', () => {
+        if (!pickerSelected.has(t.num))
+          polygon.setStyle({ fillOpacity: 0.45, weight: 2.5 });
+      });
+      polygon.on('mouseout', () => {
+        if (!pickerSelected.has(t.num))
+          polygon.setStyle({ fillOpacity: fillOp, weight });
+      });
+      allLayers.push({ polygon, label, group:t.grupo, numero:t.num, ciudad:t.ciudad||null, coords:t.coords, baseStyle:{ fillOp, weight, opacity, isMainGroup }, c });
+      polygon.addTo(map); label.addTo(map);
+      return;
+    }
+
+    // MODO PUBLIC
+    if (isPublicMapMode()) {
+      const c = GRUPO_COLORS[t.grupo] || { fill:'#888', border:'#555' };
+      const polygon = L.polygon(t.coords, { color:c.border, fillColor:c.fill, fillOpacity:0.22, weight:2, opacity:0.9 });
+      const label   = makeLabel(t.coords, c.fill, t.num);
+      // Sin popup: el mapa público solo muestra los límites y el número del territorio,
+      // ningún dato interno (último uso, conductor, notas, etc.)
+      polygon.on('mouseover', () => polygon.setStyle({ fillOpacity:0.45, weight:2.5 }));
+      polygon.on('mouseout',  () => polygon.setStyle({ fillOpacity:0.22, weight:2 }));
+      allLayers.push({ polygon, label, group:t.grupo, numero:t.num, ciudad:t.ciudad||null, coords:t.coords });
+      polygon.addTo(map); label.addTo(map);
+      return;
+    }
+
+    // MODO FULL e INFO
+    let c;
+    if (_modoParam === 'info' || _modoParam === 'picker') {
+      const info     = territoriosInfo[baseNum(t.num)] || {};
+      const lastDate = info.lastFin || info.lastIni;
+      c = colorByDias(lastDate ? daysSince(lastDate) : null);
+    } else {
+      c = GRUPO_COLORS[t.grupo] || { fill:'#888', border:'#555' };
+    }
+    const polygon = L.polygon(t.coords, { color:c.border, fillColor:c.fill, fillOpacity:0.22, weight:2, opacity:0.9 });
+    const label   = makeLabel(t.coords, c.fill, t.num);
+    polygon.on('click',     () => openPopup(polygon, t.num, t.grupo));
+    polygon.on('mouseover', () => polygon.setStyle({ fillOpacity:0.45, weight:2.5 }));
+    polygon.on('mouseout',  () => polygon.setStyle({ fillOpacity:0.22, weight:2 }));
+    allLayers.push({ polygon, label, group:t.grupo, numero:t.num, ciudad:t.ciudad||null, coords:t.coords });
+    polygon.addTo(map); label.addTo(map);
+  });
+}
+
+// ── Picker ──
+function togglePickerTerritory(num, polygon, grupo, label, c, baseStyleOverride) {
+  map.closePopup();
+  if (pickerSelected.has(num)) {
+    pickerSelected.delete(num);
+    const layer = allLayers.find(l => l.numero === num);
+    if (layer) {
+      const { fillOp, weight, opacity } = layer.baseStyle;
+      polygon.setStyle({ fillColor: layer.c.fill, color: layer.c.border, fillOpacity: fillOp, weight, opacity });
+    }
+    showToast(`Territorio ${num} quitado`, true);
+  } else {
+    pickerSelected.add(num);
+    polygon.setStyle({ fillColor:'#97C459', color:'#3B6D11', fillOpacity:0.70, weight:3, opacity:1 });
+    showToast(`Territorio ${num} agregado ✓`);
+  }
+  updatePickerBar();
+}
+
+function updatePickerBar() {
+  const count = pickerSelected.size;
+  const info = document.getElementById('picker-info');
+  const clearBtn = document.getElementById('picker-clear');
+  if (count === 0) {
+    info.innerHTML = 'Tocá un territorio para seleccionarlo';
+    clearBtn.style.display = 'none';
+  } else {
+    const nums = [...pickerSelected].join(', ');
+    info.innerHTML = `<strong>${count}</strong> seleccionado${count>1?'s':''}: <strong>${nums}</strong>`;
+    clearBtn.style.display = '';
+  }
+}
+
+function clearPickerSelection() {
+  pickerSelected.forEach(num => {
+    const layer = allLayers.find(l => l.numero === num);
+    if (layer) {
+      const { fillOp, weight, opacity } = layer.baseStyle;
+      layer.polygon.setStyle({ fillColor: layer.c.fill, color: layer.c.border, fillOpacity: fillOp, weight, opacity });
+    }
+  });
+  pickerSelected.clear();
+  updatePickerBar();
+}
+
+function confirmPickerSelection() {
+  const territorios = [...pickerSelected];
+  const msg = { type: 'picker-result', salidaId: _salidaId, territorios };
+  if (window.parent && window.parent !== window) window.parent.postMessage(msg, '*');
+  else if (window.opener) window.opener.postMessage(msg, '*');
+}
+
+// ── Modo Encuentro ──
+function initEncuentroMode() {
+  document.getElementById('encuentro-bar').classList.add('visible');
+
+  // Zoom al grupo completo (igual que el picker de territorios)
+  const grupoLayers = allLayers.filter(l => l.polygon.getBounds().isValid());
+  if (grupoLayers.length) {
+    const b = grupoLayers[0].polygon.getBounds();
+    grupoLayers.slice(1).forEach(l => b.extend(l.polygon.getBounds()));
+    map.flyToBounds(b, { padding: [24, 24], maxZoom: 16, duration: 0.4 });
+  }
+
+  // Calcular esquinas del territorio seleccionado (si hay uno)
+  if (_terrIdParam) {
+    const baseId = String(_terrIdParam).replace(/[A-Za-z]$/, '');
+    const terrLayers = allLayers.filter(l => String(l.numero).replace(/[A-Za-z]$/, '') === baseId);
+    if (terrLayers.length) {
+      const b = terrLayers[0].polygon.getBounds();
+      terrLayers.slice(1).forEach(l => b.extend(l.polygon.getBounds()));
+      const sw = b.getSouthWest();
+      const ne = b.getNorthEast();
+      terrCorners = {
+        nw: L.latLng(ne.lat, sw.lng),
+        ne: L.latLng(ne.lat, ne.lng),
+        sw: L.latLng(sw.lat, sw.lng),
+        se: L.latLng(sw.lat, ne.lng),
+      };
+    } else {
+      document.getElementById('encuentro-corners').style.display = 'none';
+    }
+  } else {
+    document.getElementById('encuentro-corners').style.display = 'none';
+  }
+
+  map.on('click', function(e) { selectEncuentroPoint(e.latlng); });
+}
+
+window.selectCorner = function(corner) {
+  if (!terrCorners) return;
+  selectEncuentroPoint(terrCorners[corner]);
+};
+
+async function selectEncuentroPoint(latlng) {
+  encuentroLatLng = latlng;
+
+  if (encuentroMarker) {
+    encuentroMarker.setLatLng(latlng);
+  } else {
+    encuentroMarker = L.marker(latlng, {
+      icon: L.divIcon({
+        className: '',
+        html: '<div style="width:14px;height:14px;background:#EF9F27;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 5px rgba(0,0,0,0.6);"></div>',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      })
+    }).addTo(map);
+  }
+
+  const resultDiv  = document.getElementById('encuentro-result');
+  const addressDiv = document.getElementById('encuentro-address');
+  const confirmBtn = document.getElementById('encuentro-confirm');
+  addressDiv.style.color = '#888';
+  addressDiv.textContent = 'Buscando dirección…';
+  confirmBtn.style.display = 'none';
+  resultDiv.classList.add('visible');
+
+  const lat = latlng.lat, lng = latlng.lng;
+
+  // Overpass: calles nombradas en radio 40m (con timeout de 6s)
+  let calles = [];
+  try {
+    const overpassQ = `[out:json][timeout:6];way["highway"]["name"](around:65,${lat},${lng});out tags;`;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 7000);
+    const overpassResp = await fetch('https://overpass-api.de/api/interpreter',
+      { method:'POST', body: overpassQ, signal: ctrl.signal });
+    clearTimeout(timer);
+    const overpassData = await overpassResp.json();
+    calles = [...new Set(
+      (overpassData.elements || []).map(e => e.tags && e.tags.name).filter(Boolean)
+    )];
+  } catch(_) { /* Overpass falló o tardó demasiado — usamos solo Nominatim */ }
+
+  let texto = '';
+  if (calles.length >= 2) {
+    texto = `${calles[0]} y ${calles[1]}`;
+  } else {
+    // Fallback: Nominatim para dirección exacta
+    try {
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        { headers: { 'Accept-Language': 'es' } }
+      );
+      const data = await resp.json();
+      const addr = data.address || {};
+      if (addr.road) {
+        texto = addr.road;
+        if (addr.house_number) texto += ' ' + addr.house_number;
+      } else {
+        texto = (data.display_name || '').split(',').slice(0, 2).join(', ').trim();
+      }
+    } catch(_) { texto = ''; }
+  }
+
+  addressDiv.style.color = '#eee';
+  addressDiv.textContent = texto || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  confirmBtn.style.display = '';
+}
+
+window.confirmEncuentro = function() {
+  const texto = document.getElementById('encuentro-address').textContent;
+  const msg = { type: 'encuentro-result', salidaId: _salidaId, texto };
+  if (window.parent && window.parent !== window) window.parent.postMessage(msg, '*');
+  else if (window.opener) window.opener.postMessage(msg, '*');
+};
+
+function applyPickerFilter(grupo) {
+  if (allLayers.length === 0) return;
+
+  const validLayers = allLayers.filter(l => String(l.group) === String(grupo));
+  const b = boundsFromLayers(validLayers);
+  if (b) {
+    map.flyToBounds(b, { padding:[24,24], maxZoom:16, duration:0.4 });
+  }
+}
+
+// ── Toast ──
+let toastTimer = null;
+function showToast(msg, isRemove = false) {
+  const toast = document.getElementById('map-toast');
+  toast.textContent = msg;
+  toast.className = 'map-toast' + (isRemove ? ' remove-toast' : '');
+  void toast.offsetWidth;
+  toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ── Popup normal ──
+function openPopup(layer, numero, grupo) {
+  // Modo público: nunca se muestra información del territorio
+  if (isPublicMapMode()) return;
+  const c = GRUPO_COLORS[grupo] || { fill:'#888' };
+  const info = territoriosInfo[baseNum(numero)] || {};
+  const lastDate = info.lastFin || info.lastIni;
+  const dias = lastDate ? daysSince(lastDate) : null;
+  let diasHtml = '<span style="color:#888;">—</span>';
+  if (dias !== null) {
+    const col = dias > 90 ? '#F09595' : dias > 45 ? '#FAC775' : '#C0DD97';
+    diasHtml = `<span style="color:${col};font-weight:600;">${dias}d atrás</span>`;
+  }
+  const badge = info.enProgreso ? '<div class="badge-progreso">En progreso</div>' : '';
+  const terrEntry = TERRITORIOS.find(t => baseNum(t.num) === baseNum(numero));
+  const notasHtml = terrEntry?.notas
+    ? `<div class="terr-popup-row" style="margin-top:6px;"><span style="color:#888;font-style:italic;">${terrEntry.notas}</span></div>`
+    : '';
+  const html = `
+    <div>
+      <div class="terr-popup-num" style="color:${c.fill};">${numero}</div>
+      <div class="terr-popup-group" style="color:${c.fill};">${GRUPO_LABEL[grupo] || ''}</div>
+      <div class="terr-popup-row"><span class="terr-popup-label">Último uso</span><span class="terr-popup-val">${lastDate ? fmtDate(lastDate) : '—'}</span></div>
+      <div class="terr-popup-row"><span class="terr-popup-label">Hace</span><span class="terr-popup-val">${diasHtml}</span></div>
+      ${badge}${notasHtml}
+    </div>`;
+  const center = layer.getBounds ? layer.getBounds().getCenter() : layer.getLatLng();
+  L.popup({ maxWidth: 240, closeButton: true }).setLatLng(center).setContent(html).openOn(map);
+}
+
+// ── handleBack ──
+window.handleBack = function() {
+  if (_modoParam === 'encuentro') {
+    const msg = { type: 'encuentro-cancel', salidaId: _salidaId };
+    if (window.parent && window.parent !== window) window.parent.postMessage(msg, '*');
+    else if (window.opener) window.opener.postMessage(msg, '*');
+  } else if (_modoParam === 'picker' || _params.get('picker') === '1') {
+    const msg = { type: 'picker-cancel', salidaId: _salidaId };
+    if (window.parent && window.parent !== window) window.parent.postMessage(msg, '*');
+    else if (window.opener) window.opener.postMessage(msg, '*');
+  } else {
+    if (isPublicMapMode()) window.location.href = '../index.html';
+    else history.back();
+  }
+};
+
+// ── Bounds dinámicos por ciudad ──
+// Devuelve los bounds ajustados de las capas de una ciudad (null = ciudad principal)
+function getCityBounds(ciudad) {
+  const layers = allLayers.filter(l => (ciudad === null ? !l.ciudad : l.ciudad === ciudad));
+  return boundsFromLayers(layers);
+}
+
+function boundsFromLayers(layers) {
+  let minLat = Infinity, minLng = Infinity, maxLat = -Infinity, maxLng = -Infinity;
+  layers.forEach(l => {
+    (l.coords || []).forEach(([lat, lng]) => {
+      if (!isFinite(lat) || !isFinite(lng)) return;
+      if (lat < minLat) minLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lat > maxLat) maxLat = lat;
+      if (lng > maxLng) maxLng = lng;
+    });
+  });
+  if (!isFinite(minLat) || !isFinite(minLng) || !isFinite(maxLat) || !isFinite(maxLng)) return null;
+  return L.latLngBounds([minLat, minLng], [maxLat, maxLng]);
+}
+
+// Aplica maxBounds y minZoom recortados a una ciudad
+// animate=false para el load inicial (sin transición), true para toggles de ciudad
+function applyCityViewport(ciudad, animate = true) {
+  const tight = getCityBounds(ciudad);
+  if (!tight) return;
+  const padRatio = isPublicMapMode() ? 0.12 : 0.22;
+  const fitPadding = isPublicMapMode() ? [16, 16] : [28, 28];
+  const padded = tight.pad(padRatio);
+  map.setMaxBounds(padded);
+  const fitZoom = map.getBoundsZoom(tight, false);
+  map.setMinZoom(Math.max(fitZoom - 1, 10));
+  if (animate) {
+    map.flyToBounds(tight, { padding: fitPadding, maxZoom: 18, duration: 0.7 });
+  } else {
+    map.fitBounds(tight, { padding: fitPadding, maxZoom: 18 });
+  }
+}
+
+// ── Filtros: grupos fijados (multi) + ciudad extra (excluyente) ──
+// Se pueden fijar varios grupos a la vez (union). Las ciudades extra se fijan
+// solas: fijar una limpia los grupos y viceversa. Sin nada fijado → toda la congregación.
+let gruposFijados = new Set();
+let _ciudadFiltro = null;
+
+// Los territorios de ciudades extra tienen su propio botón, así que no entran
+// en el fijado de grupos (son todos del grupo "C"). Solo aplica donde hay barra
+// de filtros — los embeds (registrar/encuentro/picker) siguen como antes.
+function _hayBarraFiltros() {
+  return isPublicMapMode() || _modoParam === 'full';
+}
+
+function _layerVisible(l) {
+  if (_ciudadFiltro)     return l.ciudad === _ciudadFiltro;
+  if (!gruposFijados.size) return true;
+  if (!gruposFijados.has(String(l.group))) return false;
+  if (_hayBarraFiltros() && ciudadesExtras.length > 0 && l.ciudad) return false;
+  return true;
+}
+
+function _syncFilterButtons() {
+  document.querySelectorAll('[data-grupo-filter]').forEach(b => {
+    b.classList.toggle('active', gruposFijados.has(String(b.dataset.grupoFilter)));
+  });
+  document.querySelectorAll('[data-ciudad-filter]').forEach(b => {
+    b.classList.toggle('active', _ciudadFiltro === b.dataset.ciudadFilter);
+  });
+  const todos = document.getElementById('filter-all');
+  if (todos) todos.classList.toggle('active', !gruposFijados.size && !_ciudadFiltro);
+}
+
+// Aplica visibilidad + viewport según lo que esté fijado
+function aplicarFiltros(animate = true) {
+  _syncFilterButtons();
+
+  const destacar = !!(gruposFijados.size || _ciudadFiltro);
+  const visibles = [];
+  allLayers.forEach(l => {
+    if (_layerVisible(l)) {
+      visibles.push(l);
+      if (!map.hasLayer(l.polygon)) l.polygon.addTo(map);
+      if (!map.hasLayer(l.label))   l.label.addTo(map);
+      // No pisar el estilo de los territorios seleccionados en el picker
+      if (!pickerSelected.has(l.numero)) {
+        l.polygon.setStyle(destacar ? { fillOpacity: 0.35, weight: 2.5 }
+                                    : { fillOpacity: 0.22, weight: 2 });
+      }
+    } else {
+      if (map.hasLayer(l.polygon)) map.removeLayer(l.polygon);
+      if (map.hasLayer(l.label))   map.removeLayer(l.label);
+    }
+  });
+
+  if (_ciudadFiltro) {
+    applyCityViewport(_ciudadFiltro, animate);
+  } else if (gruposFijados.size) {
+    const b = boundsFromLayers(visibles);
+    if (b) {
+      map.setMaxBounds(null);
+      map.setMinZoom(10);
+      if (animate) map.flyToBounds(b, { padding:[30,30], maxZoom:16, duration:0.5 });
+      else         map.fitBounds(b,   { padding:[30,30], maxZoom:16 });
+    }
+  } else {
+    // Nada fijado: vuelve a la vista completa de la ciudad principal
+    applyCityViewport(null, animate);
+  }
+  map.closePopup();
+}
+
+// Botón de grupo: fija / desfija (se pueden acumular)
+window.toggleGrupoFijado = function(id) {
+  const g = String(id);
+  if (gruposFijados.has(g)) gruposFijados.delete(g);
+  else {
+    gruposFijados.add(g);
+    _ciudadFiltro = null;   // los pueblos se fijan solos
+  }
+  aplicarFiltros();
+};
+
+// Botón de ciudad extra: se fija sola (limpia los grupos)
+window.filterCiudad = function(nombre) {
+  if (_ciudadFiltro === nombre) {
+    _ciudadFiltro = null;
+    // En los embeds (sin barra de grupos) se vuelve al grupo con el que se abrió el mapa
+    if (!_hayBarraFiltros() && _grupoParam !== 'all') gruposFijados.add(String(_grupoParam));
+  } else {
+    _ciudadFiltro = nombre;
+    gruposFijados.clear();
+  }
+  aplicarFiltros();
+};
+
+// "Todos": desfija todo
+window.limpiarFiltros = function() {
+  gruposFijados.clear();
+  _ciudadFiltro = null;
+  aplicarFiltros();
+};
+
+// Fijar un único grupo — lo usan el init con ?grupo=N y los embeds
+window.filterGroup = function(group) {
+  gruposFijados.clear();
+  _ciudadFiltro = null;
+  if (group && group !== 'all') gruposFijados.add(String(group));
+  aplicarFiltros();
+};
+
+window.debugGrupo = function(group) {
+  const visibles = allLayers.filter(l => {
+    if (String(l.group) !== String(group)) return false;
+    if (_ciudadFiltro) return l.ciudad === _ciudadFiltro;
+    if (isPublicMapMode() && String(group) === 'C' && ciudadesExtras.length > 0) return !l.ciudad;
+    return true;
+  });
+  const rows = visibles.map(l => {
+    const b = l.polygon.getBounds();
+    const center = b.getCenter();
+    return {
+      numero: l.numero,
+      grupo: l.group,
+      ciudad: l.ciudad || '(principal)',
+      south: +b.getSouth().toFixed(6),
+      west: +b.getWest().toFixed(6),
+      north: +b.getNorth().toFixed(6),
+      east: +b.getEast().toFixed(6),
+      centerLat: +center.lat.toFixed(6),
+      centerLng: +center.lng.toFixed(6),
+    };
+  });
+  console.table(rows);
+  return rows;
+};
+
+window.debugVisibleBounds = function() {
+  const visibles = allLayers.filter(l => map.hasLayer(l.polygon));
+  const rows = visibles.map(l => {
+    const b = l.polygon.getBounds();
+    const center = b.getCenter();
+    return {
+      numero: l.numero,
+      grupo: l.group,
+      ciudad: l.ciudad || '(principal)',
+      south: +b.getSouth().toFixed(6),
+      west: +b.getWest().toFixed(6),
+      north: +b.getNorth().toFixed(6),
+      east: +b.getEast().toFixed(6),
+      centerLat: +center.lat.toFixed(6),
+      centerLng: +center.lng.toFixed(6),
+    };
+  });
+  console.table(rows);
+  return rows;
+};
+
+window.debugTerritorio = function(numero) {
+  const targets = allLayers.filter(l => String(l.numero) === String(numero) || String(l.numero).replace(/[A-Za-z]$/, '') === String(numero));
+  const rows = targets.map(l => {
+    const b = l.polygon.getBounds();
+    const center = b.getCenter();
+    return {
+      numero: l.numero,
+      grupo: l.group,
+      ciudad: l.ciudad || '(principal)',
+      south: +b.getSouth().toFixed(6),
+      west: +b.getWest().toFixed(6),
+      north: +b.getNorth().toFixed(6),
+      east: +b.getEast().toFixed(6),
+      centerLat: +center.lat.toFixed(6),
+      centerLng: +center.lng.toFixed(6),
+      puntos: l.polygon.getLatLngs()[0]?.length || 0,
+      coords: l.polygon.getLatLngs()[0]?.map(p => ({ lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6) })) || [],
+    };
+  });
+  console.log(rows);
+  return rows;
+};
+
+// ── Utilidades ──
+function fmtDate(ds) {
+  if (!ds) return '—';
+  const d = new Date(ds + 'T00:00:00');
+  if (isNaN(d)) return ds;
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)}`;
+}
+function daysSince(ds) {
+  if (!ds) return null;
+  const d = new Date(ds + 'T00:00:00');
+  if (isNaN(d)) return null;
+  return Math.floor((new Date() - d) / 86400000);
+}
+function colorByDias(dias) {
+  if (dias === null)  return { fill: '#555', border: '#444' };
+  if (dias <= 30)     return { fill: '#4CAF50', border: '#2E7D32' };
+  if (dias <= 45)     return { fill: '#8BC34A', border: '#558B2F' };
+  if (dias <= 60)     return { fill: '#FFC107', border: '#F57F17' };
+  if (dias <= 90)     return { fill: '#FF9800', border: '#E65100' };
+  if (dias <= 120)    return { fill: '#FF5722', border: '#BF360C' };
+  return               { fill: '#F44336', border: '#B71C1C' };
+}
+
+// Exponer funciones de picker al scope global
+window.clearPickerSelection = clearPickerSelection;
+window.confirmPickerSelection = confirmPickerSelection;
+
+// Arrancar
+initMap();
+</script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
+
+</body>
+</html>

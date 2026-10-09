@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conferencias — Ziv</title>
+  <link rel="icon" href="/assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a1c1f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ziv">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="../shared/styles-base.css?v=1.4">
+  <link rel="stylesheet" href="styles.css?v=1.5">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── HEADER ── -->
+  <div class="conf-header">
+    <a href="../index.html#menu" class="conf-back-link">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+    <div class="conf-header-center">
+      <div class="conf-header-title">Conferencias</div>
+      <div class="conf-header-sub js-congre">—</div>
+    </div>
+    <button class="conf-compartir-btn" onclick="compartirMes()" title="Compartir mes">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="1.8"/>
+        <circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+        <circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M8.59 13.51l6.83 3.98M15.41 6.51L8.59 10.49" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ── TABS ── -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" id="tab-btn-mes"       onclick="switchTab('mes')">Mes</button>
+    <button class="tab-btn"        id="tab-btn-oradores"  onclick="switchTab('oradores')">Oradores</button>
+    <button class="tab-btn"        id="tab-btn-circuito"  onclick="switchTab('circuito')">Circuito</button>
+  </div>
+
+  <!-- ── TAB MES ── -->
+  <div class="tab-panel active" id="tab-mes">
+    <div class="pred-body">
+
+      <div class="mes-nav">
+        <button class="month-nav-btn" onclick="navMes(-1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <span class="month-nav-label" id="mes-label">—</span>
+        <button class="month-nav-btn" onclick="navMes(1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="sabados-list">
+        <div class="loading-wrap"><div class="spinner"></div></div>
+      </div>
+
+      <div style="height:3rem;"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB ORADORES ── -->
+  <div class="tab-panel" id="tab-oradores">
+    <div class="pred-body">
+      <div class="tab-section-head">
+        <div class="tab-section-title">Nuestros oradores</div>
+        <div class="tab-section-sub">Ancianos y siervos ministeriales</div>
+      </div>
+      <div id="oradores-list">
+        <div class="loading-wrap"><div class="spinner"></div></div>
+      </div>
+      <div style="height:3rem;"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB CIRCUITO ── -->
+  <div class="tab-panel" id="tab-circuito">
+    <div class="pred-body">
+      <div class="tab-section-head">
+        <div class="tab-section-title">Congregaciones del circuito</div>
+        <button id="btn-nueva-circ" class="tab-add-btn" onclick="abrirNuevaCirc()" style="display:none;">+ Nueva</button>
+      </div>
+      <div id="circuito-list">
+        <div class="loading-wrap"><div class="spinner"></div></div>
+      </div>
+      <div style="height:3rem;"></div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: ARREGLO ── -->
+  <div id="modal-conf" class="modal-overlay" style="display:none;" onclick="if(event.target===this)cerrarModalConf()">
+    <div class="modal-card">
+      <div class="modal-titulo" id="modal-conf-title">Arreglo</div>
+
+      <label class="modal-campo-label">Tipo</label>
+      <div class="tipo-row">
+        <button type="button" id="btn-tipo-entrada" class="btn-tipo btn-tipo-active" onclick="setTipo('entrada')">🏠 Entrada</button>
+        <button type="button" id="btn-tipo-salida"  class="btn-tipo" onclick="setTipo('salida')">✈️ Salida</button>
+      </div>
+
+      <div id="wrap-nombre-orador">
+        <label class="modal-campo-label" style="margin-top:12px;">Nombre del orador</label>
+        <input type="text" id="conf-nombre-orador" class="modal-nombre-input" placeholder="Ej: Carlos Pérez">
+      </div>
+
+      <div id="wrap-pub-select" style="display:none;">
+        <label class="modal-campo-label" style="margin-top:12px;">Hermano que sale</label>
+        <input type="hidden" id="conf-pub-select" value="">
+        <button type="button" id="conf-pub-btn" class="pick-btn" onclick="elegirOradorSalida()">
+          <span id="conf-pub-btn-txt" class="pick-btn-txt empty">Elegir hermano</span>
+          <span class="pick-btn-chev">▾</span>
+        </button>
+      </div>
+
+      <label class="modal-campo-label" style="margin-top:12px;" id="conf-congre-label">Congregación de origen</label>
+      <div class="sug-wrap">
+        <input type="text" id="conf-congre-nombre" class="modal-nombre-input" placeholder="Ej: Congregación Norte" autocomplete="off">
+        <div id="conf-congre-sugs" class="sug-list" style="display:none;"></div>
+      </div>
+
+      <label class="modal-campo-label" style="margin-top:12px;">N° de conferencia</label>
+      <div id="conf-disc-chips" class="conf-disc-chips"></div>
+      <input type="number" id="conf-disc-num" class="modal-nombre-input" placeholder="Ej: 47" min="1" max="300">
+
+      <label class="modal-campo-label" style="margin-top:12px;">Título <span style="font-weight:400;text-transform:none;">(opcional)</span></label>
+      <input type="text" id="conf-disc-titulo" class="modal-nombre-input" placeholder="Título del discurso">
+
+      <label class="modal-campo-label" style="margin-top:12px;">Notas <span style="font-weight:400;text-transform:none;">(opcional)</span></label>
+      <input type="text" id="conf-notas" class="modal-nombre-input" placeholder="Hora, aclaraciones…">
+
+      <div class="modal-btns" style="margin-top:18px;">
+        <button class="btn-secondary" onclick="cerrarModalConf()">Cancelar</button>
+        <button class="btn-save" onclick="guardarConf()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: DISCURSOS ORADOR ── -->
+  <div id="modal-disc" class="modal-overlay" style="display:none;" onclick="if(event.target===this)cerrarModalDisc()">
+    <div class="modal-card">
+      <div class="modal-titulo">Discursos preparados</div>
+      <div class="modal-campo-label" id="modal-disc-nombre" style="font-size:14px;color:var(--text-secondary);margin-bottom:14px;text-transform:none;letter-spacing:0;"></div>
+      <div class="disc-instruccion">Ingresá un discurso por línea: <strong>número, título</strong></div>
+      <textarea id="disc-input" class="disc-textarea" placeholder="47, El amor que Dios tiene hacia nosotros&#10;15, La fe que mueve montañas&#10;132, …"></textarea>
+      <div class="modal-btns" style="margin-top:14px;">
+        <button class="btn-secondary" onclick="cerrarModalDisc()">Cancelar</button>
+        <button class="btn-save" onclick="guardarDiscursos()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: CONGREGACIÓN CIRCUITO ── -->
+  <div id="modal-circ" class="modal-overlay" style="display:none;" onclick="if(event.target===this)cerrarModalCirc()">
+    <div class="modal-card">
+      <div class="modal-titulo" id="modal-circ-title">Nueva congregación</div>
+      <label class="modal-campo-label">Nombre</label>
+      <input type="text" id="circ-nombre" class="modal-nombre-input" placeholder="Ej: Congregación Norte">
+      <label class="modal-campo-label" style="margin-top:12px;">Encargado de conferencias <span style="font-weight:400;text-transform:none;">(opcional)</span></label>
+      <input type="text" id="circ-contacto" class="modal-nombre-input" placeholder="Nombre del encargado">
+      <div class="modal-btns" style="margin-top:18px;">
+        <button class="btn-secondary" onclick="cerrarModalCirc()">Cancelar</button>
+        <button class="btn-save" onclick="guardarCirc()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.app -->
+
+<!-- Contenedor off-screen para generar imagen compartible -->
+<div id="conf-print-view"></div>
+
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="../shared/ui-utils.js?v=3.5"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

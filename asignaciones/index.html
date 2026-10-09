@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a1c1f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ziv">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<script>
+  if (!window.posthog || !window.posthog.__SV) {
+    !function(t,e){if(e.__SV)return;var o,n,p,r;window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.people.toString(1)+" (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1}(document,window.posthog||(window.posthog=[]));
+    posthog.init('phc_obb7Qh52WhPp01smBZOJpc6ozU0H7PSyxZ9HEMouOHl', {
+      api_host: 'https://app.posthog.com',
+    });
+  }
+  if (localStorage.getItem('posthog_dev')) {
+    posthog.identify('dev', { is_tester: true });
+  }
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asignaciones — Ziv</title>
+<link rel="stylesheet" href="../shared/styles-base.css?v=1.4">
+<link rel="stylesheet" href="/asignaciones/styles.css?v=3.6">
+</head>
+<body>
+
+<div class="offline-banner" id="offline-banner">
+  Sin conexión a internet — algunas funciones no están disponibles
+</div>
+  
+<button class="btn-home" id="btn-home" onclick="goToCover()" title="Inicio">
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M9 21V12h6v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+
+<div class="app">
+
+<!-- ── COVER ── -->
+  <div id="view-cover" class="view">
+    <div class="cs-module-cover">
+
+      <!-- Ícono del módulo -->
+      <div class="cs-module-icon-anim" style="--module-color:#7F77DD;--module-color-dim:rgba(127,119,221,0.35);">
+        <div class="cs-module-icon-wrap" style="background:rgba(127,119,221,0.18);">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#7F77DD" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="9" cy="7" r="4" stroke="#7F77DD" stroke-width="1.5"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#7F77DD" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="cs-module-title">Asignaciones</div>
+      <div class="cs-module-sub" id="congre-sub" style="color:var(--k-tx-7f77dd, #7F77DD);">—</div>
+      <div class="cs-module-label">¿Qué querés hacer?</div>
+
+      <button class="cs-module-card" onclick="goToVerSemana()" style="--card-hover-border:#1D9E75;--card-hover-bg:#1e2922;">
+        <div class="cs-module-card-icon" style="background:var(--k-bg-0d2318, #0d2318);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="#1D9E75" stroke-width="1.8"/>
+            <circle cx="12" cy="12" r="3" stroke="#1D9E75" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-module-card-title">Ver semana actual</div>
+          <div class="cs-module-card-sub">Programación de esta semana</div>
+        </div>
+      </button>
+
+      <button class="cs-module-card" onclick="goToBuscarHermano()" style="--card-hover-border:#378ADD;--card-hover-bg:#1e2430;">
+        <div class="cs-module-card-icon" style="background:var(--k-bg-0d1a2e, #0d1a2e);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="#378ADD" stroke-width="1.8"/>
+            <path d="m21 21-4.35-4.35" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-module-card-title">Mi asignación</div>
+          <div class="cs-module-card-sub">Buscar mi nombre esta semana</div>
+        </div>
+      </button>
+
+      <button id="btn-encargado-asig" class="cs-module-card" onclick="goToPin()" style="display:none;--card-hover-border:#7F77DD;--card-hover-bg:#1e1e2e;">
+        <div class="cs-module-card-icon" style="background:var(--k-bg-171730, #171730);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="11" width="18" height="11" rx="2" stroke="#7F77DD" stroke-width="1.8"/>
+            <path d="M7 11V7a5 5 0 0110 0v4" stroke="#7F77DD" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-module-card-title">Acceso encargado</div>
+          <div class="cs-module-card-sub">Editar y generar programación</div>
+        </div>
+      </button>
+
+      <a href="../index.html#menu" class="cs-back-btn">← Volver al módulo</a>
+
+    </div>
+  </div>
+
+  <!-- ── VER SEMANA ── -->
+  <div id="view-semana" class="view" style="display:none;">
+    <p class="section-title">Programación</p>
+    <div class="semana-nav-header">
+      <button onclick="cambiarSemanaVer(-1)" class="semana-nav-btn">←</button>
+      <span id="semana-label" class="semana-nav-label"></span>
+      <button onclick="cambiarSemanaVer(1)" class="semana-nav-btn">→</button>
+    </div>
+    <div id="semana-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando programación...</div></div>
+    <div id="semana-error" style="display:none;"></div>
+    <div id="semana-content" style="display:none;"><div id="semana-reuniones"></div></div>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;" onclick="goToCover()">← Volver</button>
+  </div>
+
+  <!-- ── BUSCAR HERMANO ── -->
+  <div id="view-buscar" class="view view-buscar-layout" style="display:none;">
+    <p class="section-title">Buscá tu nombre</p>
+    <div class="buscar-wrap">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="#888" stroke-width="1.8"/><path d="m21 21-4.35-4.35" stroke="#888" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input type="text" id="search-input" placeholder="Ej: Pérez Juan..." oninput="filtrarHermanos()" onfocus="inputFocus()" onkeydown="inputKeydown(event)" autocomplete="off">
+      </div>
+      <div id="search-suggestions" class="search-suggestions" style="display:none;"></div>
+      <div id="buscar-loading" class="loading-wrap" style="display:none;"><div class="spinner"></div><div class="loading-txt">Buscando...</div></div>
+      <div id="buscar-result" style="display:none;"></div>
+      <div id="buscar-empty" class="buscar-empty" style="display:none;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="#444" stroke-width="1.5"/><path d="m21 21-4.35-4.35" stroke="#444" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <p>No hay asignaciones para este nombre esta semana</p>
+      </div>
+    </div>
+    <button class="btn-secondary" style="width:100%;margin-top:16px;" onclick="goToCover()">← Volver</button>
+  </div>
+
+  <!-- ── MENÚ ENCARGADO ── -->
+  <div id="view-encargado" class="view" style="display:none;">
+    <div class="enc-hdr">
+      <div class="enc-hdr-eyebrow">Asignaciones · Encargado</div>
+      <div class="enc-hdr-row">
+        <div class="enc-hdr-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="enc-hdr-name">
+          <div class="enc-hdr-title">Panel</div>
+          <div class="enc-hdr-sub">Gestión de asignaciones</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="enc-section-hdr">Acciones</div>
+
+    <div class="enc-actions">
+      <button class="enc-act" style="--cc:#5DB1FF;" onclick="goToEditar()">
+        <div class="enc-act-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <div class="enc-act-tx">
+          <div class="t">Editar programación</div>
+          <div class="s">Modificar asignaciones de la semana</div>
+        </div>
+        <div class="enc-act-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 6l6 6-6 6"/></svg></div>
+      </button>
+
+      <button class="enc-act" style="--cc:#3FD969;" onclick="goToAutomatico()">
+        <div class="enc-act-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <div class="enc-act-tx">
+          <div class="t">Generar automático</div>
+          <div class="s">Rotación justa por 3 meses</div>
+        </div>
+        <div class="enc-act-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 6l6 6-6 6"/></svg></div>
+      </button>
+
+      <button class="enc-act" style="--cc:#FFA82E;" onclick="goToGenerarImagen()">
+        <div class="enc-act-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        </div>
+        <div class="enc-act-tx">
+          <div class="t">Generar imagen</div>
+          <div class="s">Tabla para compartir por WhatsApp</div>
+        </div>
+        <div class="enc-act-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 6l6 6-6 6"/></svg></div>
+      </button>
+    </div>
+
+    <div class="enc-footer">
+      <button id="btn-ver-planilla" class="enc-footer-btn" onclick="abrirPlanilla()" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        Ver planilla en Sheets
+      </button>
+      <button class="enc-footer-btn danger" onclick="cerrarSesionEncargado()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+        Cerrar sesión
+      </button>
+    </div>
+  </div><!-- view-encargado -->
+
+  <!-- ── EDITAR ── -->
+  <div id="view-editar" class="view" style="display:none;">
+    <p class="section-title">Editar programación</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px;">
+      <button onclick="cambiarSemanaEdit(-1)" class="semana-nav-btn">←</button>
+      <span id="editar-semana-info" style="font-size:14px;color:var(--k-tx-888888, #888);"></span>
+      <button onclick="cambiarSemanaEdit(1)" class="semana-nav-btn">→</button>
+    </div>
+    <div id="editar-loading" class="loading-wrap" style="display:none;"><div class="spinner"></div><div class="loading-txt">Cargando...</div></div>
+    <div id="editar-content"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn-secondary" onclick="goToEncargado()" style="flex:1;">← Volver</button>
+      <button class="btn-guardar" id="btn-guardar-edicion" onclick="guardarEdicion()" style="flex:2;">Guardar cambios</button>
+    </div>
+    <div class="save-status" id="editar-status"></div>
+  </div>
+
+  <!-- ── AUTOMÁTICO ── -->
+  <div id="view-automatico" class="view" style="display:none;">
+    <p class="section-title">Generar automático</p>
+    <div class="auto-info">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#7F77DD" stroke-width="1.5"/><path d="M12 8v4M12 16h.01" stroke="#7F77DD" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span>Genera asignaciones respetando rotación justa. Cada hermano máximo un rol por reunión.</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <button class="btn-chip" onclick="setAutoDesde('ultima')">Desde última guardada</button>
+      <button class="btn-chip" onclick="setAutoDesde('hoy')">Desde hoy</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <div style="flex:1;">
+        <label style="font-size:12px;color:var(--k-tx-888888, #888);display:block;margin-bottom:3px;">Desde</label>
+        <input type="date" id="auto-desde" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-1e1e1e, #1e1e1e);color:var(--k-tx-eeeeee, #eee);">
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:12px;color:var(--k-tx-888888, #888);display:block;margin-bottom:3px;">Hasta</label>
+        <input type="date" id="auto-hasta" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-1e1e1e, #1e1e1e);color:var(--k-tx-eeeeee, #eee);">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;background:var(--k-bg-252525, #252525);border:0.5px solid var(--k-bd-444444, #444);border-radius:10px;padding:12px 14px;">
+    <input type="checkbox" id="auto-usar-historial" style="width:16px;height:16px;accent-color:#7F77DD;cursor:pointer;">
+    <div>
+      <label for="auto-usar-historial" style="font-size:13px;color:var(--k-tx-eeeeee, #eee);cursor:pointer;font-weight:500;">Tener en cuenta historial previo</label>
+      <div style="font-size:11px;color:var(--k-tx-888888, #888);margin-top:2px;">Si está activado, respeta lo que ya está cargado en la planilla</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;background:var(--k-bg-252525, #252525);border:0.5px solid var(--k-bd-444444, #444);border-radius:10px;padding:12px 14px;">
+    <input type="checkbox" id="auto-reemplazar" style="width:16px;height:16px;accent-color:#F09595;cursor:pointer;">
+    <div>
+      <label for="auto-reemplazar" style="font-size:13px;color:var(--k-tx-eeeeee, #eee);cursor:pointer;font-weight:500;">Reemplazar semanas existentes</label>
+      <div style="font-size:11px;color:var(--k-tx-888888, #888);margin-top:2px;">Si está activado, regenera aunque ya haya datos en el rango elegido</div>
+    </div>
+  </div>
+  
+    <div id="auto-loading" class="loading-wrap" style="display:none;"><div class="spinner"></div><div class="loading-txt">Generando...</div></div>
+    <div id="auto-preview" style="display:none;"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="btn-secondary" onclick="goToEncargado()" style="flex:1;">← Volver</button>
+      <button class="btn-primary" onclick="generarAutomatico()" style="flex:2;">⚡ Generar</button>
+    </div>
+    <div id="auto-guardar-wrap" style="display:none;margin-top:8px;flex-direction:column;gap:8px;">
+      <button class="btn-guardar" style="width:100%;" onclick="guardarAutomatico()">Guardar</button>
+      <button id="btn-guardar-planilla" class="btn-secondary" style="width:100%;display:none;" onclick="guardarEnPlanilla()">Guardar también en planilla</button>
+      <div class="save-status" id="auto-status"></div>
+    </div>
+  </div>
+
+  <!-- ── GENERAR IMAGEN ── -->
+  <div id="view-imagen" class="view" style="display:none;">
+    <p class="section-title">Tabla para WhatsApp</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px;">
+      <button onclick="cambiarSemanaImagen(-1)" class="semana-nav-btn">←</button>
+      <span id="imagen-semana-label" style="font-size:14px;color:var(--k-tx-888888, #888);text-align:center;"></span>
+      <button onclick="cambiarSemanaImagen(1)" class="semana-nav-btn">→</button>
+    </div>
+    <div id="imagen-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando...</div></div>
+    <div id="imagen-content" style="display:none;">
+      <div class="card-tabla" id="card-tabla">
+        <div class="card-tabla-header">
+          <div class="card-tabla-top" id="card-congre-nombre">Congregación Sur</div>
+          <div class="card-tabla-main" id="imagen-titulo">Asignaciones de la semana</div>
+        </div>
+        <div id="tabla-reuniones"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn-secondary" onclick="goToEncargado()" style="flex:1;">← Volver</button>
+        <button class="btn-save" onclick="guardarImagen()" style="flex:1;">💾 Guardar imagen</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ── MODAL PREVIEW AUTOMÁTICO ── -->
+  <div id="auto-preview-modal" class="preview-modal" style="display:none;" onclick="if(event.target===this)cerrarPreviewModal()">
+    <div class="preview-modal-card">
+      <div class="preview-modal-header">
+        <span class="preview-modal-title" id="auto-preview-modal-title">Preview</span>
+        <button class="preview-modal-close" onclick="cerrarPreviewModal()">✕</button>
+      </div>
+      <div class="preview-modal-body" id="auto-preview-modal-body"></div>
+    </div>
+  </div>
+  
+</div><!-- /.app -->
+
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="../shared/ui-utils.js?v=3.5"></script>
+<script type="module" src="/asignaciones/app.js"></script>
+</body>
+</html>

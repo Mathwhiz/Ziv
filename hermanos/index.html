@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administrador — Ziv</title>
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a1c1f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ziv">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="../shared/styles-base.css?v=1.4">
+  <link rel="stylesheet" href="/hermanos/styles.css?v=2.6">
+</head>
+<body>
+
+<button class="btn-home" id="btn-home" onclick="goToMenu()" title="Inicio">
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M9 21V12h6v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+
+<div class="app">
+
+  <!-- ── MENU (post-PIN) ── -->
+  <div id="view-menu" class="view">
+    <div class="cover cs-module-cover">
+
+      <div class="cs-module-icon-anim" style="--module-color:#D85A30;--module-color-dim:rgba(216,90,48,0.35);">
+        <div class="cs-module-icon-wrap" style="background:rgba(216,90,48,0.15);">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#D85A30" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="9" cy="7" r="4" stroke="#D85A30" stroke-width="1.6"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#D85A30" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="cs-module-title">Administrador</div>
+      <div class="cs-module-sub js-congre" style="color:var(--k-tx-d85a30, #D85A30);">—</div>
+      <div class="cs-module-label">¿Qué querés hacer?</div>
+
+      <button class="cs-module-card" style="--card-hover-border:rgba(216,90,48,0.55);--card-hover-bg:#2a1711;--card-hover-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 1px rgba(216,90,48,0.55),0 4px 20px rgba(216,90,48,0.12);" onclick="goToHermanos()">
+        <div class="cs-module-card-icon" style="background:rgba(216,90,48,0.15);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#D85A30" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="9" cy="7" r="4" stroke="#D85A30" stroke-width="1.8"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#D85A30" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-module-card-title">Lista de Hermanos</div>
+          <div class="cs-module-card-sub">Gestionar publicadores y roles</div>
+        </div>
+      </button>
+
+      <button class="cs-module-card" style="--card-hover-border:rgba(127,119,221,0.55);--card-hover-bg:#1a1830;--card-hover-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 1px rgba(127,119,221,0.55),0 4px 20px rgba(127,119,221,0.12);" onclick="goToEspeciales()">
+        <div class="cs-module-card-icon" style="background:rgba(127,119,221,0.15);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="4" width="18" height="18" rx="3" stroke="#7F77DD" stroke-width="1.8"/>
+            <path d="M16 2v4M8 2v4M3 10h18" stroke="#7F77DD" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M8 14h2M11 14h2M8 17h2M11 17h2M14 14h2M14 17h2" stroke="#7F77DD" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-module-card-title" style="color:var(--k-tx-9b93ee, #9b93ee);">Semanas especiales</div>
+          <div class="cs-module-card-sub">Asambleas, conmemoración y más</div>
+        </div>
+      </button>
+
+      <button class="cs-module-card" style="--card-hover-border:rgba(29,158,117,0.55);--card-hover-bg:#0f1e1a;--card-hover-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 1px rgba(29,158,117,0.55),0 4px 20px rgba(29,158,117,0.12);" onclick="goToResponsabilidades()">
+        <div class="cs-module-card-icon" style="background:rgba(29,158,117,0.12);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#1D9E75" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="#1D9E75" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-module-card-title" style="color:var(--k-tx-2dbd8e, #2dbd8e);">Responsabilidades</div>
+          <div class="cs-module-card-sub">Cargos y encargados de la congregación</div>
+        </div>
+      </button>
+
+      <button class="cs-module-card" style="--card-hover-border:rgba(70,145,255,0.55);--card-hover-bg:#101a2b;--card-hover-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 1px rgba(70,145,255,0.55),0 4px 20px rgba(70,145,255,0.12);" onclick="goToGrupos()">
+        <div class="cs-module-card-icon" style="background:rgba(70,145,255,0.14);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M4 7h16M4 12h10M4 17h16" stroke="#4691FF" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="18" cy="12" r="2.5" stroke="#4691FF" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-module-card-title" style="color:var(--k-tx-76abff, #76abff);">Grupos</div>
+          <div class="cs-module-card-sub">Ver publicadores por grupo</div>
+        </div>
+      </button>
+
+      <button id="btn-ver-planilla" class="btn-secondary btn-planilla-menu" onclick="abrirPlanilla()" style="display:none;">
+        📊 Ver planilla
+      </button>
+
+      <a href="../index.html#menu" class="cs-back-btn">← Volver al módulo</a>
+
+    </div>
+  </div>
+
+  <!-- ── RESPONSABILIDADES ── -->
+  <div id="view-responsabilidades" class="view">
+    <div class="main-header">
+      <div>
+        <div class="main-title" style="color:var(--k-tx-d85a30, #D85A30);">Responsabilidades</div>
+        <div class="main-sub js-congre">—</div>
+      </div>
+    </div>
+
+    <div id="resp-loading" class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-txt">Cargando…</div>
+    </div>
+
+    <div id="resp-content" style="display:none;">
+
+      <div class="resp-section">
+        <div class="resp-section-title">Encargados</div>
+        <div id="resp-encargados-list"></div>
+      </div>
+
+      <div class="resp-section">
+        <div class="resp-section-title">Categorías</div>
+        <div id="resp-categorias-list"></div>
+      </div>
+
+      <div class="resp-section">
+        <div class="resp-section-title">Precursores</div>
+        <div id="resp-precursores-list"></div>
+      </div>
+
+    </div>
+
+    <a href="#" class="cs-back-btn" onclick="showView('view-menu');return false;">← Volver</a>
+    <div style="height:4rem;"></div>
+  </div>
+
+  <!-- ── GRUPOS ── -->
+  <div id="view-grupos" class="view">
+    <div class="main-header">
+      <div>
+        <div class="main-title" style="color:var(--k-tx-76abff, #76abff);">Grupos</div>
+        <div class="main-sub js-congre">—</div>
+      </div>
+    </div>
+
+    <div id="grupos-loading" class="loading-wrap" style="display:none;">
+      <div class="spinner"></div>
+      <div class="loading-txt">Cargando grupos…</div>
+    </div>
+
+    <div id="grupos-board"></div>
+
+    <a href="#" class="cs-back-btn" onclick="showView('view-menu');return false;">← Volver</a>
+    <div style="height:2rem;"></div>
+  </div>
+
+  <!-- ── MAIN: LISTA ── -->
+  <div id="view-main" class="view">
+    <div class="main-header">
+      <div>
+        <div class="main-title">Hermanos</div>
+        <div class="main-sub js-congre">—</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-dupes" onclick="abrirDuplicados()" title="Detectar duplicados">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M17 7H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V9a2 2 0 00-2-2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M14 7V5a2 2 0 00-2-2H7a2 2 0 00-2 2v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button class="btn-nuevo" onclick="abrirNuevo()">+ Nuevo</button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="#666" stroke-width="1.8"/><path d="m21 21-4.35-4.35" stroke="#666" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input type="text" id="h-search" placeholder="Buscar hermano…" oninput="filtrarLista()" autocomplete="off">
+      </div>
+    </div>
+
+    <select id="h-rol" class="rol-filter" onchange="filtrarLista()">
+      <option value="">— Todos los roles —</option>
+      <option value="__sin_roles__">Sin asignación</option>
+      <optgroup label="Asignaciones" id="opt-asign">
+        <!-- se rellena dinámicamente desde buildConductorUI() -->
+        <option value="LECTOR">Lector</option>
+        <option value="SONIDO">Sonido</option>
+        <option value="PLATAFORMA">Plataforma</option>
+        <option value="MICROFONISTAS">Micrófonos</option>
+        <option value="ACOMODADOR_AUDITORIO">Acod. Auditorio</option>
+        <option value="ACOMODADOR_ENTRADA">Acod. Entrada</option>
+        <option value="PRESIDENTE">Pres. Reunión</option>
+        <option value="REVISTAS">Revistas</option>
+        <option value="PUBLICACIONES">Publicaciones</option>
+        <!-- conductores de grupo y fijos: se insertan por buildConductorUI() -->
+      </optgroup>
+      <optgroup label="Congregación">
+        <option value="SUPERINTENDENTE_SERVICIO">Sup. de Servicio</option>
+        <option value="ENCARGADO_ASIGNACIONES">Enc. Asignaciones</option>
+        <option value="ENCARGADO_VM">Enc. V y M</option>
+        <option value="ENCARGADO_CONFERENCIAS">Enc. Conferencias</option>
+        <option value="ANCIANO">Anciano</option>
+        <option value="SIERVO_MINISTERIAL">Siervo ministerial</option>
+        <option value="PRECURSOR_REGULAR">Precursor regular</option>
+        <option value="PRECURSOR_AUXILIAR">Precursor auxiliar</option>
+      </optgroup>
+      <optgroup label="Vida y Ministerio">
+        <option value="VM_PRESIDENTE">Presidente VM</option>
+        <option value="VM_ORACION">Oración</option>
+        <option value="VM_TESOROS">Discurso Tesoros</option>
+        <option value="VM_JOYAS">Perlas escondidas</option>
+        <option value="VM_LECTURA">Lectura Bíblica</option>
+        <option value="VM_MINISTERIO_CONVERSACION">Min. Conversación</option>
+        <option value="VM_MINISTERIO_REVISITA">Min. Revisita</option>
+        <option value="VM_MINISTERIO_ESCENIFICACION">Min. Escenificación</option>
+        <option value="VM_MINISTERIO_DISCURSO">Min. Discurso</option>
+        <option value="VM_VIDA_CRISTIANA">Vida Cristiana</option>
+        <option value="VM_ESTUDIO_CONDUCTOR">Conductor Estudio</option>
+        <option value="VM_QUE_DIRIA">¿Qué diría? (s. min.)</option>
+      </optgroup>
+    </select>
+
+    <div id="hermanos-list">
+      <div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
+    </div>
+
+    <div style="height:5rem;"></div>
+  </div>
+
+  <!-- ── SEMANAS ESPECIALES ── -->
+  <div id="view-especiales" class="view">
+    <div class="main-header">
+      <div>
+        <div class="main-title" style="color:var(--k-tx-9b93ee, #9b93ee);">Semanas especiales</div>
+        <div class="main-sub js-congre">—</div>
+      </div>
+      <button class="btn-esp-add" onclick="toggleFormEspecial()" title="Agregar">+</button>
+    </div>
+
+    <div id="especiales-resumen"></div>
+    <div id="especiales-lista"><div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div></div>
+
+    <div style="height:2rem;"></div>
+  </div>
+
+  <!-- ── DUPLICADOS ── -->
+  <div id="view-duplicados" class="view">
+    <div class="main-header">
+      <div>
+        <div class="main-title" style="color:var(--k-tx-ef9f27, #EF9F27);">Duplicados</div>
+        <div class="main-sub js-congre">—</div>
+      </div>
+    </div>
+    <div id="dupes-loading" class="loading-wrap" style="display:none;">
+      <div class="spinner"></div>
+      <div class="loading-txt">Buscando duplicados…</div>
+    </div>
+    <div id="dupes-list"></div>
+    <a href="#" class="cs-back-btn" onclick="showView('view-main');return false;">← Volver</a>
+    <div style="height:2rem;"></div>
+  </div>
+
+  <!-- ── MODAL HERMANO ── -->
+  <div id="modal-hermano" class="modal-overlay" style="display:none;" onclick="if(event.target===this)cerrarModal()">
+    <div class="modal-card">
+      <div id="modal-nav-row" class="modal-nav-row" style="display:none;">
+        <button class="modal-nav-btn" id="modal-nav-prev" onclick="navHermano(-1)">‹</button>
+        <span class="modal-nav-counter" id="modal-nav-counter"></span>
+        <button class="modal-nav-btn" id="modal-nav-next" onclick="navHermano(1)">›</button>
+      </div>
+      <div class="modal-titulo" id="modal-titulo">Hermano</div>
+
+      <label class="modal-campo-label">Nombre</label>
+      <input type="text" id="modal-nombre" class="modal-nombre-input" placeholder="Ej: Pérez Juan"
+        onkeydown="if(event.key==='Enter')guardarHermano()">
+
+      <label class="modal-campo-label" style="margin-top:10px;">Sexo</label>
+      <div class="sexo-row">
+        <button type="button" id="btn-sexo-H" class="btn-sexo btn-sexo-h" onclick="selectSexo('H')">♂ Hombre</button>
+        <button type="button" id="btn-sexo-M" class="btn-sexo btn-sexo-m" onclick="selectSexo('M')">♀ Mujer</button>
+      </div>
+
+      <!-- Roles Asignaciones — se rellena dinámicamente desde buildConductorUI() -->
+      <div style="margin-bottom:8px;">
+        <span class="roles-section-titulo roles-titulo-asign">Asignaciones</span>
+      </div>
+      <div class="roles-grid" id="modal-roles-asign-grid" style="margin-bottom:18px;"></div>
+
+      <!-- Roles VM -->
+      <div style="margin-bottom:8px;">
+        <span class="roles-section-titulo roles-titulo-vm">Vida y Ministerio</span>
+      </div>
+      <div class="roles-grid" style="margin-bottom:8px;">
+        <label class="rol-checkbox"><input type="checkbox" id="hcb-VM_PRESIDENTE"><span>Presidente</span></label>
+        <label class="rol-checkbox"><input type="checkbox" id="hcb-VM_ORACION"><span>Oración</span></label>
+        <label class="rol-checkbox"><input type="checkbox" id="hcb-VM_TESOROS"><span>Disc. Tesoros</span></label>
+        <label class="rol-checkbox"><input type="checkbox" id="hcb-VM_JOYAS"><span>Perlas escondidas</span></label>
+        <label class="rol-checkbox"><input type="checkbox" id="hcb-VM_LECTURA"><span>Lectura Bíblica</span></label>
+        <label class="rol-checkbox"><input type="checkbox" id="hcb-VM_MINISTERIO_CONVERSACION"><span>Min. Conversación</span></label>
+        <label class="rol-checkbox"><input type="checkbox" id="hcb-VM_MINISTERIO_REVISITA"><span>Min. Revisita</span></label>
+        <label class="rol-checkbox"><input type="checkbox" id="hcb-VM_MINISTERIO_ESCENIFICACION"><span>Min. Escenificación</span></label>
+        <label class="rol-checkbox"><input type="checkbox" id="hcb-VM_MINISTERIO_DISCURSO"><span>Min. Discurso</span></label>
+        <label class="rol-checkbox"><input type="checkbox" id="hcb-VM_VIDA_CRISTIANA"><span>Vida Cristiana</span></label>
+        <label class="rol-checkbox"><input type="checkbox" id="hcb-VM_ESTUDIO_CONDUCTOR"><span>Conductor Estudio</span></label>
+        <label class="rol-checkbox"><input type="checkbox" id="hcb-VM_QUE_DIRIA"><span>¿Qué diría? (s. min.)</span></label>
+      </div>
+
+      <div class="modal-status" id="modal-status"></div>
+      <div class="modal-btns">
+        <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-primary" onclick="guardarHermano()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHAT FAB ── -->
+  <button id="chat-fab" class="chat-fab" onclick="openChatPanel()" style="display:none;" title="Notas compartidas">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <div id="chat-overlay" class="chat-overlay" style="display:none;" onclick="if(event.target===this)closeChatPanel()">
+    <div class="chat-panel">
+      <div class="chat-panel-body">
+        <div class="chat-panel-head">
+          <span id="chat-panel-titulo" class="chat-panel-title">Notas — Congregación</span>
+          <button class="chat-close-btn" onclick="closeChatPanel()">✕</button>
+        </div>
+        <div id="chat-loading" style="display:none;text-align:center;padding:2rem;color:var(--k-tx-555555, #555);font-size:13px;">Cargando…</div>
+        <div id="chat-error"  style="display:none;"></div>
+        <div id="chat-empty"  style="display:none;text-align:center;padding:2rem;color:var(--k-tx-555555, #555);font-size:13px;">Sin notas todavía.</div>
+        <div id="chat-list"   class="chat-list" style="display:none;"></div>
+        <div class="chat-composer">
+          <textarea id="chat-mensaje" class="chat-textarea" placeholder="Escribí una nota…" rows="2"></textarea>
+          <button class="chat-send-btn" onclick="sendChatNota(this)">Publicar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CARGANDO (estado neutral por defecto, antes de saber el permiso) ── -->
+  <div id="view-cargando" class="pin-modal" style="display:flex;">
+    <div class="pin-card">
+      <div class="loading-wrap" style="padding:0;">
+        <div class="spinner"></div>
+        <div class="loading-txt">Cargando…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SIN PERMISO ── -->
+  <div id="view-sin-permiso" class="pin-modal" style="display:none;">
+    <div class="pin-card">
+      <div class="pin-title">Administrador</div>
+      <div class="pin-sub js-congre">—</div>
+      <div class="pin-sub" style="margin-top:14px;line-height:1.5;">
+        No tenés permiso para acceder a este módulo.<br>Pedile a un admin que te asigne el rol de encargado.
+      </div>
+      <button class="pin-cancel" style="margin-top:24px;" onclick="goToCover()">← Volver</button>
+    </div>
+  </div>
+
+  <!-- ── MODAL: SEMANA ESPECIAL ── -->
+  <div id="especiales-modal-overlay" class="modal-overlay" style="display:none;" onclick="if(event.target===this)cerrarFormEspecial()">
+    <div class="modal-card">
+      <div id="esp-form-title" class="modal-titulo">Nuevo evento especial</div>
+      <label class="modal-campo-label" style="margin-top:4px;">Tipo de evento</label>
+      <select id="esp-tipo" onchange="actualizarLabelFechaEsp()" class="esp-select">
+        <option value="conmemoracion">Conmemoración</option>
+        <option value="superintendente">Visita superintendente</option>
+        <option value="asamblea">Asamblea</option>
+      </select>
+      <div id="esp-subtipo-wrap" style="display:none;">
+        <label class="modal-campo-label" style="margin-top:12px;">Tipo de asamblea</label>
+        <select id="esp-subtipo" class="esp-select" style="margin-bottom:0;">
+          <option value="circuito">Asamblea de Circuito</option>
+          <option value="regional">Asamblea Regional</option>
+        </select>
+      </div>
+      <label id="esp-fecha-label" class="modal-campo-label" style="margin-top:14px;">Fecha exacta del evento</label>
+      <input type="date" id="esp-fecha" class="esp-date-input" style="margin-bottom:0;">
+      <div class="modal-btns" style="margin-top:16px;">
+        <button class="btn-secondary" onclick="cerrarFormEspecial()">Cancelar</button>
+        <button id="btn-guardar-especial" class="btn-save" onclick="guardarEspecial()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="chat-edit-modal" class="chat-edit-modal" style="display:none;" onclick="if(event.target===this)closeChatEdit()">
+    <div class="chat-edit-card">
+      <div style="font-size:14px;font-weight:600;color:var(--k-tx-cccccc, #ccc);margin-bottom:10px;">Editar nota</div>
+      <textarea id="chat-edit-texto" class="chat-textarea" rows="4"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn-secondary" onclick="closeChatEdit()" style="flex:1;padding:9px;">Cancelar</button>
+        <button class="btn-primary" onclick="confirmarEditNota()" style="flex:2;padding:9px;">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.app -->
+
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
+<script src="../shared/ui-utils.js?v=3.5"></script>
+<script type="module" src="/hermanos/app.js"></script>
+</body>
+</html>

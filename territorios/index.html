@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a1c1f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ziv">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<script>
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.people.toString(1)+" (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||(window.posthog=[]));
+  posthog.init('phc_obb7Qh52WhPp01smBZOJpc6ozU0H7PSyxZ9HEMouOHl', {
+    api_host: 'https://app.posthog.com',
+    person_profiles: 'identified_only'
+  })
+  if (localStorage.getItem('posthog_dev')) {
+    posthog.identify('dev', { is_tester: true })
+  }
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Territorios — Ziv</title>
+<link rel="stylesheet" href="../shared/styles-base.css?v=1.4">
+<link rel="stylesheet" href="/territorios/styles.css?v=1.8">
+</head>
+<body>
+
+<div class="offline-banner" id="offline-banner">
+  Sin conexión a internet — algunas funciones no están disponibles
+</div>
+
+<button class="btn-home" id="btn-home" onclick="goToModo()" title="Inicio">
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 21V12h6v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<button class="btn-mapa-float" id="btn-mapa-float" title="Ver mapa">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 8V9m0 0L9 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  Mapa
+</button>
+
+<div class="app">
+
+  <!-- Barra de pasos -->
+  <div class="step-bar" id="step-bar" style="display:none;">
+    <div class="step" id="s1"></div>
+    <div class="step" id="s2"></div>
+    <div class="step" id="s3"></div>
+  </div>
+
+ <!-- ── COVER ── -->
+  <div id="view-cover" class="view">
+    <div class="cs-module-cover">
+
+      <!-- Ícono del módulo -->
+      <div class="cs-module-icon-anim" style="--module-color:#97C459;--module-color-dim:rgba(151,196,89,0.35);">
+        <div class="cs-module-icon-wrap" style="background:rgba(151,196,89,0.18);">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+            <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 8V9m0 0L9 7" stroke="#97C459" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="cs-module-title">Territorios</div>
+      <div class="cs-module-sub" id="congre-sub" style="color:var(--k-tx-97c459, #97C459);">—</div>
+      <div class="cs-module-label">¿Con qué grupo trabajás?</div>
+
+      <div id="grupos-wrap" style="display:flex;flex-direction:column;gap:8px;width:100%;"></div>
+      <button class="btn-start" id="btn-start" onclick="entrarGrupoSeleccionado()" style="width:100%;display:none;">Empezar →</button>
+
+      <a href="../index.html#menu" class="cs-back-btn">← Volver al módulo</a>
+
+    </div>
+  </div>
+
+  <!-- ── SIN GRUPO ASIGNADO ── -->
+  <div id="view-sin-grupo" class="view" style="display:none;">
+    <div class="cs-module-cover">
+      <div class="cs-module-icon-anim" style="--module-color:#97C459;--module-color-dim:rgba(151,196,89,0.35);">
+        <div class="cs-module-icon-wrap" style="background:rgba(151,196,89,0.18);">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+            <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 8V9m0 0L9 7" stroke="#97C459" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="cs-module-title">Territorios</div>
+      <div class="cs-module-sub" id="congre-sub-sg" style="color:var(--k-tx-97c459, #97C459);">—</div>
+      <div class="cs-module-label" style="text-align:center;line-height:1.5;">
+        No pudimos identificar tu grupo de territorios.<br>Pedile a un encargado que te vincule con tu publicador o te asigne un grupo.
+      </div>
+      <a href="../index.html#menu" class="cs-back-btn">← Volver al módulo</a>
+    </div>
+  </div>
+
+  <!-- ── ELEGIR MODO ── -->
+  <div id="view-modo" class="view" style="display:none;">
+    <div class="modo-wrap">
+      <div class="modo-sup" id="modo-sup-label" style="color:var(--grupo-color,#97C459)">Territorios</div>
+      <div class="modo-titulo">Grupo <span id="modo-grupo-label" style="color:var(--grupo-color,#97C459)">?</span></div>
+      <div class="modo-congre-sub">Seleccioná qué querés hacer hoy</div>
+
+      <div class="plan-hero" onclick="goToStep1()">
+        <div class="plan-hero-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="var(--grupo-color,#378ADD)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="plan-hero-title">Planificar salidas</div>
+          <div class="plan-hero-sub" id="plan-hero-week">Semana del —</div>
+        </div>
+        <div class="plan-status-dot sin-plan" id="plan-hero-status">Sin planificar</div>
+      </div>
+
+      <div class="modo-grid">
+        <div class="modo-card-v2 mc-reg-v2" onclick="goToRegistrar()">
+          <div class="mc-icon-v2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4M7 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-2M9 3h6" stroke="#1D9E75" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="mc-texts-v2">
+            <div class="mc-title-v2">Registrar territorios</div>
+            <div class="mc-sub-v2">Cerrar los de esta semana</div>
+          </div>
+        </div>
+        <div class="modo-card-v2 mc-grupo-v2" onclick="goToInfoGrupo()">
+          <div class="mc-icon-v2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="#7F77DD" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <div class="mc-texts-v2">
+            <div class="mc-title-v2">Ver mi grupo</div>
+            <div class="mc-sub-v2">Territorios y configuración</div>
+          </div>
+        </div>
+        <div class="modo-card-v2 mc-hist-v2" onclick="goToHistorial()">
+          <div class="mc-icon-v2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 8v4l3 3M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="#EF9F27" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <div class="mc-texts-v2">
+            <div class="mc-title-v2">Ver historial</div>
+            <div class="mc-sub-v2">Salidas anteriores</div>
+          </div>
+        </div>
+        <div class="modo-card-v2 mc-mapa-v2" onclick="goToMapa()">
+          <div class="mc-icon-v2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 8V9m0 0L9 7" stroke="#e88080" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="mc-texts-v2">
+            <div class="mc-title-v2">Ver mapa</div>
+            <div class="mc-sub-v2">Territorios en el mapa</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-secondary" onclick="cerrarSesion()" style="width:100%;max-width:440px;border-color:rgba(163,45,45,0.2);color:var(--k-tx-9a6060, #9a6060);">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <!-- ── CHAT FLOTANTE: botón ── -->
+  <button id="chat-fab" class="chat-fab" onclick="openChatPanel()" title="Chat / Notas" style="display:none;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M8 10h8M8 14h5M6 19l-2 2V5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H6z"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span id="chat-fab-badge" class="chat-fab-badge" style="display:none;"></span>
+  </button>
+
+  <!-- ── CHAT PANEL OVERLAY ── -->
+  <div id="chat-overlay" class="chat-overlay" style="display:none;" onclick="if(event.target===this)closeChatPanel()">
+    <div class="chat-panel">
+      <!-- Tabs verticales izquierda -->
+      <div class="chat-vtabs">
+        <button id="cvt-grupo" class="chat-vtab active" onclick="switchChatScope('grupo')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/></svg>
+          <span>Grupo</span>
+        </button>
+        <button id="cvt-congregacion" class="chat-vtab" onclick="switchChatScope('congregacion')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span>Cong.</span>
+        </button>
+      </div>
+      <!-- Contenido principal -->
+      <div class="chat-panel-body">
+        <div class="chat-panel-head">
+          <span class="chat-panel-titulo" id="chat-panel-titulo">Notas del Grupo</span>
+          <button class="chat-panel-refresh" onclick="refreshChatNotas()" title="Actualizar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="chat-panel-close" onclick="closeChatPanel()">✕</button>
+        </div>
+
+        <div id="chat-loading" class="loading-wrap" style="padding:1.5rem 0;">
+          <div class="spinner"></div><div class="loading-txt">Cargando notas...</div>
+        </div>
+        <div id="chat-error" style="display:none;"></div>
+        <div id="chat-empty" class="reg-empty" style="display:none;padding:1.5rem 0;font-size:13px;">Todavía no hay notas en este canal.</div>
+        <div id="chat-list" class="chat-list" style="display:none;flex:1;overflow-y:auto;"></div>
+
+        <div class="chat-composer">
+          <textarea id="chat-mensaje" rows="2" placeholder="Escribí una nota…" style="resize:none;"></textarea>
+          <button class="btn-primary" style="margin-top:8px;width:100%;font-size:14px;padding:10px;" onclick="sendChatNota(this)">Publicar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal editar nota -->
+  <div id="chat-edit-modal" class="chat-edit-modal" style="display:none;" onclick="if(event.target===this)closeChatEdit()">
+    <div class="chat-edit-card">
+      <div style="font-size:14px;font-weight:600;color:var(--k-tx-eeeeee, #eee);margin-bottom:10px;">Editar nota</div>
+      <textarea id="chat-edit-texto" rows="4" style="width:100%;resize:vertical;background:var(--bg-primary, #1a1c1f);border:0.5px solid var(--k-bd-444444, #444);border-radius:8px;padding:8px 10px;color:var(--k-tx-eeeeee, #eee);font-size:13px;font-family:inherit;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn-secondary" onclick="closeChatEdit()" style="flex:1;">Cancelar</button>
+        <button class="btn-save" onclick="confirmarEditNota()" style="flex:2;">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REGISTRAR TERRITORIOS ── -->
+  <div id="view-registrar" class="view" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <p class="section-title" style="margin-bottom:0;">Registrar territorios</p>
+    </div>
+    <p class="section-sub">Grupo <span id="reg-grupo-label">?</span> &mdash; marcá los que se completaron</p>
+    <div id="reg-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando...</div></div>
+    <div id="reg-error" style="display:none;"></div>
+    <div id="reg-container" style="display:none;"></div>
+    <div id="reg-footer" style="display:none;">
+      <button class="btn-guardar" id="btn-guardar" onclick="guardarRegistros()">Guardar cambios</button>
+      <div class="save-status" id="save-status"></div>
+      <div style="margin-top:10px;">
+        <button class="btn-secondary" style="width:100%;" onclick="goToModo()">← Volver</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── INFO GRUPO ── -->
+  <div id="view-info" class="view" style="display:none;">
+    <div class="info-vh">
+      <div class="info-back" onclick="goToModo()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888798" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+      </div>
+      <div style="flex:1;">
+        <div class="va-header-sup" id="info-header-sup">Territorios</div>
+        <div class="va-header-title"><span id="info-titulo-prefix">Grupo </span><span id="info-titulo-num" style="color:var(--grupo-color,#97C459)">?</span></div>
+      </div>
+      <div class="info-count-pill" id="info-count-pill" style="display:none;"></div>
+    </div>
+    <div class="va-legend">
+      <div class="va-legend-item"><div class="va-dot va-dot-gc"></div>Normal</div>
+      <div class="va-legend-item"><div class="va-dot" style="background:#EF9F27;"></div>Peligroso</div>
+      <div class="va-legend-item"><div class="va-dot" style="background:#e06060;"></div>No predica</div>
+      <div class="va-legend-item"><div class="va-dot" style="background:var(--k-bg-444350, #444350);"></div>Sin reg.</div>
+    </div>
+    <div id="info-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando...</div></div>
+    <div id="info-error" style="display:none;"></div>
+    <div id="info-content" style="display:none;">
+      <div class="va-grid" id="info-grid"></div>
+      <button class="va-informe-full" id="btn-informe-super" style="display:none;" onclick="goToInforme()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4M7 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-2M9 3h6"/></svg>
+        Informe para el Superintendente
+      </button>
+    </div>
+  </div>
+
+  <!-- ── INFORME PARA EL SUPER ── -->
+  <div id="view-informe" class="view" style="display:none;">
+    <div class="informe-nav no-print">
+      <button class="informe-back-btn" onclick="salirDelInforme()">← Volver</button>
+      <span class="informe-nav-title">Informe para el Super</span>
+    </div>
+    <div id="informe-loading" class="loading-wrap" style="display:none;">
+      <div class="spinner"></div>
+      <div class="loading-txt">Cargando historial...</div>
+    </div>
+    <div id="informe-content" style="display:none;">
+      <div id="informe-meta"></div>
+      <div id="informe-lista"></div>
+      <div class="informe-pdf-wrap no-print">
+        <button class="btn-pdf" onclick="descargarInformePDF()">📄 Descargar PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL TERRITORIO ── -->
+  <div id="estado-modal" class="estado-modal" style="display:none;" onclick="handleModalBg(event)">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-sheet-header">
+        <div>
+          <div class="modal-terr-num" id="modal-terr-title">?</div>
+          <div class="modal-terr-sub" id="modal-terr-sub">Territorio</div>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal()">✕</button>
+      </div>
+
+      <div class="modal-estado-section">
+        <div class="modal-section-label">Estado del territorio</div>
+        <div class="modal-estado-btns">
+          <button class="modal-estado-btn me-normal"    onclick="setTerritoryEstado('normal')">Normal</button>
+          <button class="modal-estado-btn me-peligroso" onclick="setTerritoryEstado('peligroso')">Peligroso</button>
+          <button class="modal-estado-btn me-nopredica" onclick="setTerritoryEstado('no_predica')">No predica</button>
+        </div>
+      </div>
+
+      <div class="modal-hist-section">
+        <div class="modal-section-label">Historial de salidas</div>
+        <div id="modal-hist-loading" style="font-size:13px;color:var(--k-tx-888798, #888798);margin-bottom:10px;">Cargando...</div>
+        <div id="modal-hist-content" style="display:none;">
+          <table class="hist-table">
+            <thead><tr><th>Conductor</th><th>Inicio</th><th>Fin</th><th style="text-align:right;"></th></tr></thead>
+            <tbody id="modal-hist-body"></tbody>
+          </table>
+        </div>
+        <div id="modal-edit-form" style="display:none;">
+          <div class="edit-row-form">
+            <div class="edit-row-title">Editando fila</div>
+            <div class="form-row">
+              <div><label>Conductor</label><input type="text" id="edit-cond" list="conductores-list" placeholder="Elegir o escribir..."><datalist id="conductores-list"></datalist></div>
+              <div><label>Inicio</label><input type="date" id="edit-ini"></div>
+            </div>
+            <div><label>Fin</label><input type="date" id="edit-fin" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid var(--k-bd-w01, rgba(255,255,255,0.1));border-radius:8px;background:var(--k-bg-1e2126, #1e2126);color:var(--k-tx-eeeeee, #eee);margin-top:3px;"></div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn-secondary" style="flex:1;font-size:13px;padding:7px;" onclick="cancelEdit()">Cancelar</button>
+              <button class="btn-primary"   style="flex:1;font-size:13px;padding:7px;" onclick="saveEdit()">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="modal-notas-section" class="modal-notas-section">
+        <div class="modal-section-label">Notas</div>
+        <textarea id="modal-notas" class="modal-notas-textarea" placeholder="Observaciones sobre este territorio..." rows="3"></textarea>
+        <button class="modal-guardar-nota" onclick="saveNota()">Guardar nota</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HISTORIAL ── -->
+  <div id="view-historial" class="view" style="display:none;">
+    <p class="section-title" id="hist-titulo" style="font-size:32px;margin-bottom:4px;">Historial</p>
+    <p class="section-sub" style="margin-bottom:14px;">Salidas registradas</p>
+    <div id="hist-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando...</div></div>
+    <div id="hist-error" style="display:none;"></div>
+    <div id="hist-content" style="display:none;"></div>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;" onclick="goToModo()">← Volver</button>
+  </div>
+
+  <!-- ── PLANIFICADOR ── -->
+  <div id="view-config" class="view" style="display:none;">
+    <div class="plan-header">
+      <div>
+        <p class="plan-titulo">Planificar salidas</p>
+        <p id="plan-grupo-label" style="font-size:14px;font-weight:600;margin-top:2px;color:var(--grupo-color,#97C459);">—</p>
+      </div>
+      <div class="plan-btns">
+        <button class="btn-add-tel"   onclick="addSalida('tel')">+ Telefónica</button>
+        <button class="btn-add-salida" onclick="addSalida('campo')">+ Salida</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;">
+      <button id="btn-semana-prev" onclick="cambiarSemana(-1)" style="font-size:18px;padding:2px 10px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-2a2a2a, #2a2a2a);color:var(--text-secondary, #aaa);cursor:pointer;">←</button>
+      <span id="week-info" style="font-size:14px;color:var(--k-tx-888888, #888);"></span>
+      <button onclick="cambiarSemana(1)" style="font-size:18px;padding:2px 10px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-2a2a2a, #2a2a2a);color:var(--text-secondary, #aaa);cursor:pointer;">→</button>
+    </div>
+    <div id="terr-loading" class="loading-wrap" style="display:none;">
+      <div class="spinner"></div>
+      <div class="loading-txt">Cargando territorios...</div>
+    </div>
+    <div id="terr-error" style="display:none;"></div>
+    <div id="salidas-container"></div>
+    <div class="plan-footer">
+      <button class="btn-secondary" onclick="goToModo()" style="flex:1;">← Volver</button>
+      <button class="btn-primary"   id="btn-generar-tabla" onclick="generatePreview()" style="flex:2;font-size:12px;padding:7px 12px;">Generar tabla →</button>
+    </div>
+  </div>
+
+  <!-- ── VISTA PREVIA ── -->
+  <div id="view-preview" class="view" style="display:none;">
+    <div class="preview-header-wrap">
+      <div class="preview-tag" id="preview-tag-label">Tabla de Salidas</div>
+      <div class="preview-title-line">
+        <span id="preview-grupo-color"></span>
+        <span class="preview-sep">·</span>
+        <span id="preview-congre-color"></span>
+      </div>
+    </div>
+    <div class="card-preview">
+      <div class="card-preview-header">
+        <div class="card-preview-top">Congregación Sur</div>
+        <div class="card-preview-main" id="preview-grupo-title">Grupo — Salidas de la semana</div>
+      </div>
+      <table class="preview">
+        <thead><tr><th>ENCUENTRO</th><th>Nº TERRITORIO</th><th>FECHA</th><th>CONDUCTOR</th><th>HORA</th></tr></thead>
+        <tbody id="preview-body"></tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn-secondary" onclick="goBackToConfig()" style="flex:1;">← Editar</button>
+      <button class="btn-save"      onclick="guardarImagen()"  style="flex:1;">Guardar imagen</button>
+      <button id="btn-enviar-wa" onclick="enviarWhatsapp()"
+        style="flex:1;padding:11px;background:var(--k-bg-1a2e0a, #1a2e0a);color:var(--k-tx-97c459, #97C459);border:0.5px solid var(--k-bd-3b6d11, #3B6D11);border-radius:12px;cursor:pointer;font-size:13px;font-weight:500;">
+        📲 Enviar al grupo
+      </button>
+    </div>
+    <button class="btn-registrar-prog" id="btn-reg-prog" onclick="registrarEnProgreso()">Registrar territorios como en progreso</button>
+    <div class="reg-prog-status" id="reg-prog-status"></div>
+  </div>
+
+  <!-- ── MAPA POPUP ── -->
+  <div id="mapa-popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:300;flex-direction:column;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;">
+    <div style="width:100%;max-width:900px;height:82vh;max-height:700px;background:var(--k-bg-1e1e1e, #1e1e1e);border-radius:16px;border:0.5px solid var(--k-bd-444444, #444);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,0.7);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--k-bg-2a2a2a, #2a2a2a);border-bottom:0.5px solid var(--k-bd-444444, #444);flex-shrink:0;">
+        <div style="font-size:15px;font-weight:500;color:var(--k-tx-eeeeee, #eee);" id="mapa-popup-title">Mapa</div>
+        <button onclick="closeMapaPopup()" style="background:var(--k-bg-1e1e1e, #1e1e1e);border:0.5px solid var(--k-bd-555555, #555);color:var(--text-secondary, #aaa);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+      <iframe id="mapa-iframe" src="" style="flex:1;border:none;width:100%;"></iframe>
+    </div>
+  </div>
+
+</div><!-- /.app -->
+
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="../shared/ui-utils.js?v=3.5"></script>
+<script type="module" src="/territorios/app.js"></script>
+</body>
+</html>

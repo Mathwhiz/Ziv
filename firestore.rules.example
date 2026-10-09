@@ -1,0 +1,261 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /*
+      Modelo (2026-10-09)
+
+      Público (sin sesión): la lista de congregaciones (doc principal, sin secretos), el mapa
+      público (mapa_*) y el programa de las reuniones (vm_*, asig_*, asignaciones,
+      semanasEspeciales — lo mismo que ya muestran los visores públicos).
+
+      Todo lo demás de una congregación es solo para sus miembros APROBADOS (usuario con perfil,
+      esa congregacionId y algún rol que no sea pendiente/anonimo), y cada colección se escribe
+      solo con el rol que la usa en la app. Un invitado anónimo no tiene perfil: ve lo público
+      y nada más.
+
+      Ojo: en Firestore las reglas se suman (alcanza con que UNA permita). No agregar comodines
+      {document=**} con permisos amplios: abren también las colecciones privadas.
+    */
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function hasProfile() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/usuarios/$(request.auth.uid));
+    }
+
+    function me() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function myRoles() {
+      return hasProfile() && me().appRoles is list ? me().appRoles : [];
+    }
+
+    function hasRole(role) {
+      return role in myRoles();
+    }
+
+    function isAdminGeneral() {
+      return hasRole('admin_general');
+    }
+
+    // Miembro aprobado de la congregación c (admin_general entra a todas)
+    function isMember(c) {
+      return isAdminGeneral() || (
+        hasProfile() &&
+        me().congregacionId == c &&
+        myRoles().removeAll(['pendiente', 'anonimo']).size() > 0
+      );
+    }
+
+    // Miembro de c con alguno de esos roles (admin_general siempre)
+    function hasCongreRole(c, roles) {
+      return isAdminGeneral() || (
+        hasProfile() &&
+        me().congregacionId == c &&
+        myRoles().hasAny(roles)
+      );
+    }
+
+    // Grupos de roles, alineados con puedeVerComoEncargado() de cada módulo
+    function rolesTerr()  { return ['admin_congre', 'encargado_grupo']; }
+    function rolesAsig()  { return ['admin_congre', 'encargado_asignaciones', 'encargado_vm']; }
+    function rolesVm()    { return ['admin_congre', 'encargado_vm']; }
+    function rolesConf()  { return ['admin_congre', 'encargado_conferencias']; }
+    function rolesStaff() {
+      return ['admin_congre', 'encargado_asignaciones', 'encargado_vm', 'encargado_grupo', 'encargado_conferencias'];
+    }
+    // Quien entra a Conferencias (acceso_conferencias)
+    function rolesConfLectura() {
+      return ['admin_congre', 'encargado_conferencias', 'anciano', 'siervo_ministerial'];
+    }
+    // Quien puede ver la lista de publicadores: encargados + quien entra a Conferencias
+    function rolesPublicadores() {
+      return rolesStaff().concat(['anciano', 'siervo_ministerial']);
+    }
+
+    // Un usuario solo puede crearse a sí mismo SIN acceso: 'pendiente' (Google) o 'anonimo'.
+    // El acceso lo da admin.html.
+    function isSafeSelfRoleCreate() {
+      return request.resource.data.appRoles is list &&
+        request.resource.data.appRoles.size() == 1 &&
+        request.resource.data.appRoles[0] in ['pendiente', 'anonimo'] &&
+        request.resource.data.appRol == request.resource.data.appRoles[0] &&
+        (
+          (request.resource.data.appRol == 'anonimo' &&
+            request.resource.data.matchEstado == 'anonimo' &&
+            request.resource.data.isAnonymous == true) ||
+          (request.resource.data.appRol == 'pendiente' &&
+            request.resource.data.matchEstado in ['ok', 'pendiente', 'sin_match'] &&
+            request.resource.data.isAnonymous == false)
+        );
+    }
+
+    function isValidManagedRoleUpdate() {
+      return request.resource.data.appRoles is list &&
+        request.resource.data.appRoles.size() > 0 &&
+        request.resource.data.appRol == request.resource.data.appRoles[0] &&
+        // solo un admin_general puede dar (o conservar) admin_general
+        (isAdminGeneral() || !('admin_general' in request.resource.data.appRoles));
+    }
+
+    function sameCongreAdmin(userData) {
+      return hasRole('admin_congre') &&
+        userData.congregacionId == me().congregacionId;
+    }
+
+    function onlyKeys(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    match /config/superadmin {
+      allow read: if isAdminGeneral();
+      allow write: if false;
+    }
+
+    match /config/{docId} {
+      allow read, write: if false;
+    }
+
+    match /usuarios/{uid} {
+      allow read: if isSelf(uid) || isAdminGeneral() || sameCongreAdmin(resource.data);
+
+      allow create: if isSelf(uid) &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.keys().hasAll([
+          'uid', 'email', 'displayName', 'photoURL', 'birthDate', 'sexo',
+          'matchedPublisherId', 'congregacionId', 'appRol', 'appRoles',
+          'matchEstado', 'isAnonymous', 'primerLogin', 'createdAt'
+        ]) &&
+        request.resource.data.keys().hasOnly([
+          'uid', 'email', 'displayName', 'photoURL', 'birthDate', 'sexo',
+          'matchedPublisherId', 'congregacionId', 'appRol', 'appRoles', 'grupoEncargado',
+          'matchEstado', 'isAnonymous', 'primerLogin', 'createdAt'
+        ]) &&
+        isSafeSelfRoleCreate();
+
+      // affectedKeys(), no changedKeys(): changedKeys() no ve las claves nuevas.
+      allow update: if
+        (
+          isSelf(uid) &&
+          onlyKeys([
+            'displayName', 'photoURL', 'birthDate', 'sexo', 'primerLogin',
+            'terminosAceptados', 'terminosVersion', 'terminosFecha', 'metaMensualHoras'
+          ])
+        ) ||
+        (
+          // Vinculación invitado → Google (linkWithGoogle): queda 'pendiente' hasta que un admin apruebe.
+          isSelf(uid) &&
+          resource.data.isAnonymous == true &&
+          request.resource.data.isAnonymous == false &&
+          request.resource.data.appRol == 'pendiente' &&
+          request.resource.data.appRoles is list &&
+          request.resource.data.appRoles.size() == 1 &&
+          request.resource.data.appRoles[0] == 'pendiente' &&
+          request.resource.data.matchEstado in ['ok', 'pendiente', 'sin_match'] &&
+          onlyKeys([
+            'uid', 'email', 'displayName', 'photoURL', 'birthDate', 'sexo',
+            'matchedPublisherId', 'congregacionId', 'appRol', 'appRoles',
+            'matchEstado', 'isAnonymous', 'primerLogin', 'createdAt'
+          ])
+        ) ||
+        (
+          (isAdminGeneral() || sameCongreAdmin(resource.data)) &&
+          onlyKeys(['appRol', 'appRoles', 'grupoEncargado', 'matchEstado', 'matchedPublisherId']) &&
+          isValidManagedRoleUpdate()
+        );
+
+      allow delete: if false;
+
+      match /predicacion/{mes} {
+        allow read, write: if isSelf(uid);
+        match /dias/{dia} {
+          allow read, write: if isSelf(uid);
+        }
+      }
+      match /revisitas/{id} {
+        allow read, write: if isSelf(uid);
+      }
+      match /estudios/{id} {
+        allow read, write: if isSelf(uid);
+      }
+    }
+
+    match /congregaciones/{c} {
+      // Lista pública de congregaciones (index.html). El doc no guarda secretos:
+      // las URLs y claves viven en config_privada.
+      allow read: if true;
+      allow create, delete: if isAdminGeneral();
+      allow update: if isAdminGeneral() ||
+        (hasCongreRole(c, rolesVm()) && onlyKeys(['tieneAuxiliar', 'presidenteEsOradorFinal']));
+
+      // ── Público: mapa y programa de las reuniones ──────────────────────
+      match /mapa_config/{id}      { allow read: if true; allow write: if hasCongreRole(c, ['admin_congre']); }
+      match /mapa_grupos/{id}      { allow read: if true; allow write: if hasCongreRole(c, ['admin_congre']); }
+      match /mapa_territorios/{id} { allow read: if true; allow write: if hasCongreRole(c, ['admin_congre']); }
+
+      match /vm_config/{id}        { allow read: if true; allow write: if hasCongreRole(c, rolesVm()); }
+      match /vm_programa/{id}      { allow read: if true; allow write: if hasCongreRole(c, rolesVm()); }
+      match /vm_publicadores/{id}  { allow read: if true; allow write: if hasCongreRole(c, rolesVm()); }
+      match /vm_especiales/{id}    { allow read: if true; allow write: if hasCongreRole(c, rolesVm()); }
+
+      match /asig_config/{id}      { allow read: if true; allow write: if hasCongreRole(c, rolesAsig()); }
+      match /asig_programa/{id}    { allow read: if true; allow write: if hasCongreRole(c, rolesAsig()); }
+      match /asig_especiales/{id}  { allow read: if true; allow write: if hasCongreRole(c, rolesAsig()); }
+      // Misma información que asig_programa / asig_especiales (la vista pública de Asignaciones las lee)
+      match /asignaciones/{id}      { allow read: if true; allow write: if hasCongreRole(c, rolesAsig()); }
+      match /semanasEspeciales/{id} { allow read: if true; allow write: if hasCongreRole(c, rolesAsig()); }
+
+      // ── Miembros aprobados ─────────────────────────────────────────────
+      match /territorios/{id=**}   { allow read: if isMember(c); allow write: if hasCongreRole(c, rolesTerr()); }
+      match /salidas/{id}          { allow read: if isMember(c); allow write: if hasCongreRole(c, rolesTerr()); }
+      match /grupos/{id}           { allow read: if isMember(c); allow write: if hasCongreRole(c, ['admin_congre']); }
+
+      // Datos personales: encargados y quien entra a Conferencias; cada uno puede leer su propia ficha
+      match /publicadores/{pubId} {
+        allow get: if hasCongreRole(c, rolesPublicadores()) ||
+          (isMember(c) && me().matchedPublisherId == pubId);
+        allow list: if hasCongreRole(c, rolesPublicadores());
+        allow create, delete: if hasCongreRole(c, rolesAsig());
+        allow update: if hasCongreRole(c, rolesAsig()) ||
+          (hasCongreRole(c, rolesConf()) && onlyKeys(['discursos']));
+      }
+
+      match /vidaministerio/{id}   { allow read, write: if hasCongreRole(c, rolesVm()); }
+      match /vmMeses/{id}          { allow read, write: if hasCongreRole(c, rolesVm()); }
+
+      match /conferencias/{id}           { allow read: if hasCongreRole(c, rolesConfLectura()); allow write: if hasCongreRole(c, rolesConf()); }
+      match /congregacionesCircuito/{id} { allow read: if hasCongreRole(c, rolesConfLectura()); allow write: if hasCongreRole(c, rolesConf()); }
+
+      // Chat: cada mensaje lleva ownerUid; lo edita o borra su autor (o un admin)
+      match /chatNotas/{canal}/mensajes/{id} {
+        allow read: if hasCongreRole(c, rolesStaff());
+        allow create: if hasCongreRole(c, rolesStaff()) &&
+          request.resource.data.ownerUid == request.auth.uid;
+        allow update, delete: if hasCongreRole(c, rolesStaff()) &&
+          (resource.data.get('ownerUid', null) == request.auth.uid || hasCongreRole(c, ['admin_congre']));
+      }
+
+      // URLs de Apps Script / planillas: solo encargados; solo un admin las cambia
+      match /config_privada/{id} {
+        allow read: if hasCongreRole(c, rolesStaff());
+        allow write: if hasCongreRole(c, ['admin_congre']);
+      }
+
+      // Auditoría: cualquiera crea entradas (también sin sesión); nadie las edita ni borra.
+      match /actividad/{id} {
+        allow read: if hasCongreRole(c, ['admin_congre']);
+        allow create: if true;
+        allow update, delete: if false;
+      }
+    }
+  }
+}
