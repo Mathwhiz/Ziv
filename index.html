@@ -352,6 +352,25 @@
       color: var(--accent, #7F77DD);
       cursor: pointer;
     }
+    /* Resumen personal arriba de los módulos (solo cuenta aprobada y vinculada a su ficha) */
+    .resumen-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+    .res-it {
+      display: flex; gap: 12px; align-items: center; text-decoration: none; color: inherit;
+      background: var(--bg-card, #232628); border: 1px solid var(--border-primary, #2e3033);
+      border-left: 3px solid var(--rc); border-radius: 12px; padding: 11px 12px;
+    }
+    .res-it:hover { background: var(--bg-hover, #272a2e); }
+    .res-it.pronto { background: color-mix(in srgb, var(--rc) 12%, var(--bg-card, #232628)); }
+    .res-ic {
+      width: 34px; height: 34px; border-radius: 10px; flex: none; display: grid; place-items: center; font-size: 17px;
+      background: color-mix(in srgb, var(--rc) 18%, transparent);
+    }
+    .res-tx { min-width: 0; }
+    .res-t { display: block; font-size: 14px; font-weight: 600; color: var(--text-primary, #e8e8e8); }
+    .res-s { display: block; font-size: 12.5px; color: var(--text-secondary, #aaa); margin-top: 1px; }
+    .res-cuando { margin-left: auto; padding-left: 8px; text-align: right; font-size: 11px; font-weight: 800; color: var(--rc); white-space: nowrap; }
+    body.light-mode .res-cuando { color: color-mix(in srgb, var(--rc) 70%, #1d1e22); }
+    .res-vacio { font-size: 13px; color: var(--text-muted, #777); padding: 12px; text-align: center; border: 1px dashed var(--border-primary, #2e3033); border-radius: 12px; margin-bottom: 18px; }
     .section-label {
       font-size: 11px;
       font-weight: 700;
@@ -1509,6 +1528,10 @@
           <p>Un encargado de la congregación tiene que habilitarla. Cuando lo haga, vas a ver acá lo que te corresponde — no hace falta que hagas nada.</p>
           <button type="button" onclick="window.ZivTutorial?.pendiente()">Ver el tutorial de nuevo</button>
         </div>
+        <div id="menu-resumen" style="display:none">
+          <p class="section-label">Tus próximos días</p>
+          <div id="menu-resumen-list"></div>
+        </div>
         <p class="section-label">Módulos disponibles</p>
         <div class="module-grid">
       <a id="menu-card-terr" class="cs-nav-card cs-nav-card-terr" href="territorios/index.html" style="display:none;">
@@ -1679,7 +1702,7 @@
     import { db } from './shared/firebase.js';
     import './shared/auth.js';
     import { TERMINOS_VERSION } from './shared/auth-config.js';
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { collection, getDocs, doc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
     function necesitaCompletarPerfil(user) {
       if (!user || user.isAnonymous) return false;
@@ -2191,6 +2214,118 @@
       const aviso = document.getElementById('menu-pendiente');
       if (aviso) aviso.style.display = pendiente ? '' : 'none';
       programarTutorial(user, pendiente);
+      cargarResumen(user, pendiente);
+    }
+
+    // ── Resumen personal («Tus próximos días») ──
+    // Solo para una cuenta aprobada y vinculada a su ficha (matchedPublisherId). Cada fuente se pide aparte y lo
+    // que falle (reglas, sin datos) simplemente no aparece. Lee: asig_programa y vm_programa (públicos),
+    // su propia ficha (grupo), salidas del grupo, conferencias (solo si tiene ese módulo) y edificios.
+    let resumenCargado = false;
+    const RES_ASIG = {
+      LECTOR: 'Lector', SONIDO_1: 'Sonido', SONIDO_2: 'Sonido', PLATAFORMA: 'Plataforma',
+      MICROFONISTAS_1: 'Micrófonos', MICROFONISTAS_2: 'Micrófonos', ACOMODADOR_AUDITORIO: 'Acomodador (auditorio)',
+      ACOMODADOR_ENTRADA: 'Acomodador (entrada)', PRESIDENTE: 'Presidente', REVISTAS: 'Revistas', PUBLICACIONES: 'Publicaciones',
+    };
+    const RES_VM = { presidente: 'Presidente', oracionApertura: 'Oración de apertura', oracionCierre: 'Oración final',
+      joyas: 'Perlas escondidas', lecturaBiblica: 'Lectura de la Biblia', conductor: 'Conductor del estudio', lector: 'Lector del estudio' };
+    const resNorm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    const resIso = d => window.fmtDateLocal(d);
+    const resFecha = iso => { const d = new Date(iso + 'T12:00:00'); return ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1); };
+    const resTitulo = t => String(t || '').replace(/^\s*\d+\.\s*/, '').replace(/\s*\(\d+\s*mins?\.?\)\s*$/i, '').trim();
+
+    // Recorre una semana de VM y devuelve las partes donde aparece pubId (titular, ayudante o sala auxiliar)
+    function partesVm(v, pubId, camino = [], titulo = null, out = []) {
+      if (Array.isArray(v)) { v.forEach(x => partesVm(x, pubId, camino, titulo, out)); return out; }
+      if (!v || typeof v !== 'object') return out;
+      const t = v.titulo ? resTitulo(v.titulo) : titulo;
+      for (const [k, x] of Object.entries(v)) {
+        if (x === pubId) {
+          const base = t || RES_VM[k] || RES_VM[camino[camino.length - 1]] || 'Parte';
+          const extra = [k === 'ayudante' && !camino.includes('lecturaBiblica') ? 'ayudante' : '', camino.includes('salaAux') || (k === 'ayudante' && camino.includes('lecturaBiblica')) ? 'sala auxiliar' : ''].filter(Boolean).join(' · ');
+          out.push(extra ? `${base} (${extra})` : base);
+        } else if (x && typeof x === 'object') partesVm(x, pubId, [...camino, k], t, out);
+      }
+      return out;
+    }
+
+    async function cargarResumen(user, pendiente) {
+      const caja = document.getElementById('menu-resumen');
+      const pubId = user?.matchedPublisherId;
+      if (resumenCargado || !caja || !user || user.isAnonymous || pendiente || !pubId) return;
+      resumenCargado = true;
+      const cid = sessionStorage.getItem('congreId') || localStorage.getItem('ziv_congre_id');
+      if (!cid) return;
+      const col = n => collection(db, 'congregaciones', cid, n);
+      const hoy = new Date(), hoyIso = resIso(hoy);
+      const en = dias => { const d = new Date(); d.setDate(d.getDate() + dias); return resIso(d); };
+      const lunes = new Date(); lunes.setDate(lunes.getDate() - ((lunes.getDay() + 6) % 7));
+      const lunesIso = resIso(lunes);
+      const items = [];
+      const tarea = p => p.catch(e => console.warn('[resumen]', e?.code || e));
+
+      const nombreP = getDoc(doc(col('vm_publicadores'), pubId)).then(s => s.exists() ? s.data().nombre : null);
+      const fichaP = getDoc(doc(col('publicadores'), pubId)).then(s => s.exists() ? s.data() : null);
+
+      await Promise.all([
+        // Asignaciones de los próximos 7 días (por nombre, como figura en el programa)
+        tarea(nombreP.then(async nombre => {
+          if (!nombre) return;
+          const snap = await getDocs(query(col('asig_programa'), where('fecha', '>=', hoyIso), where('fecha', '<=', en(7))));
+          snap.forEach(d => {
+            const r = d.data();
+            const roles = [...new Set(Object.entries(r.roles || {}).filter(([, n]) => resNorm(n) === resNorm(nombre)).map(([k]) => RES_ASIG[k] || k))];
+            if (roles.length) items.push({ fecha: r.fecha, c: '#7F77DD', ic: '🎤', t: roles.join(' · '), s: 'Asignación · ' + (r.diaSemana || ''), href: 'asignaciones/index.html' });
+          });
+        })),
+        // Vida y Ministerio: próximos 30 días
+        tarea(getDocs(query(col('vm_programa'), where('fecha', '>=', lunesIso), where('fecha', '<=', en(30)))).then(snap => {
+          snap.forEach(d => {
+            const s = d.data();
+            const reunion = new Date(s.fecha + 'T12:00:00'); reunion.setDate(reunion.getDate() + 2);   // miércoles
+            const f = resIso(reunion);
+            if (f < hoyIso) return;
+            partesVm(s, pubId).forEach(p => items.push({ fecha: f, c: '#EF9F27', ic: '📖', t: p, s: 'Vida y Ministerio', href: 'vida-ministerio/index.html' }));
+          });
+        })),
+        // Salidas del grupo esta semana
+        tarea(fichaP.then(async ficha => {
+          if (!ficha?.grupoId) return;
+          const snap = await getDocs(query(col('salidas'), where('grupoId', '==', String(ficha.grupoId))));
+          snap.forEach(d => (d.data().salidas || []).forEach(s => {
+            if (!s.fecha || s.fecha < hoyIso || s.fecha > en(6 - ((hoy.getDay() + 6) % 7))) return;
+            const tel = s.tipo === 'tel';
+            const lugar = tel ? 'Telefónica' : (s.terr && s.terr !== '—' ? 'Territorio ' + s.terr : 'Salida');
+            const hora = s.hora ? s.hora.replace('.', ':') + ' · ' : '';
+            const enc = !tel && s.enc && s.enc !== '—' ? ' · ' + s.enc : '';
+            items.push({ fecha: s.fecha, c: '#1D9E75', ic: '🗺️', t: hora + lugar, s: 'Salida del grupo' + enc, href: 'predicacion/index.html' });
+          }));
+        })),
+        // Discursos públicos que da afuera (próximo mes) — solo quien tiene el módulo
+        window.hasPermission?.('acceso_conferencias') ? tarea(getDocs(query(col('conferencias'), where('pubId', '==', pubId))).then(snap => {
+          snap.forEach(d => {
+            const c = d.data();
+            if (c.tipo !== 'salida' || !c.fecha || c.fecha < hoyIso || c.fecha > en(31)) return;
+            items.push({ fecha: c.fecha, c: '#0DB6CC', ic: '🗣️', t: 'Discurso' + (c.discursoNumero ? ' N.º ' + c.discursoNumero : '') + (c.congregacionNombre ? ' en ' + c.congregacionNombre : ''), s: c.discursoTitulo || 'Conferencia', href: 'conferencias/index.html' });
+          });
+        })) : null,
+        // Edificios a su cargo
+        tarea(getDocs(query(col('edificios'), where('asignado.pubId', '==', pubId))).then(snap => {
+          snap.forEach(d => items.push({ fecha: null, c: '#A3B84C', ic: '🏢', t: d.data().direccion || 'Edificio', s: 'Edificio a tu cargo', href: 'edificios/index.html' }));
+        })),
+      ].filter(Boolean));
+
+      items.sort((a, b) => (a.fecha || '9999').localeCompare(b.fecha || '9999'));
+      const lista = document.getElementById('menu-resumen-list');
+      lista.innerHTML = items.length ? '<div class="resumen-list">' + items.map(x => {
+        const pronto = x.fecha && x.fecha <= en(2);
+        const cuando = !x.fecha ? '' : x.fecha === hoyIso ? 'Hoy' : x.fecha === en(1) ? 'Mañana' : resFecha(x.fecha);
+        return `<a class="res-it${pronto ? ' pronto' : ''}" href="${x.href}" style="--rc:${x.c}">
+          <span class="res-ic" aria-hidden="true">${x.ic}</span>
+          <span class="res-tx"><span class="res-t">${window.esc(x.t)}</span><span class="res-s">${window.esc(x.s)}</span></span>
+          <span class="res-cuando">${cuando}</span></a>`;
+      }).join('') + '</div>' : '<div class="res-vacio">Sin novedades en los próximos días</div>';
+      caja.style.display = '';
     }
 
     // Tutorial (shared/tutorial.js): una vez por carga, después de que el menú terminó de aparecer.
