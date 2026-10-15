@@ -38,6 +38,8 @@ export const PERMISOS = {
     'acceso_hermanos',
     'acceso_predicacion',
     'acceso_telefonica',
+    'acceso_edificios',
+    'administrar_edificios',
     'acceso_conferencias',
     'editar_conferencias',
     'editar_publicadores',
@@ -53,6 +55,8 @@ export const PERMISOS = {
     'acceso_hermanos',
     'acceso_predicacion',
     'acceso_telefonica',
+    'acceso_edificios',
+    'administrar_edificios',
     'acceso_conferencias',
     'editar_conferencias',
     'editar_publicadores',
@@ -64,6 +68,7 @@ export const PERMISOS = {
     'acceso_hermanos',
     'acceso_predicacion',
     'acceso_telefonica',
+    'acceso_edificios',
   ],
 
   encargado_vm: [
@@ -71,12 +76,15 @@ export const PERMISOS = {
     'acceso_hermanos',
     'acceso_predicacion',
     'acceso_telefonica',
+    'acceso_edificios',
   ],
 
   encargado_grupo: [
     'acceso_territorios',
     'acceso_predicacion',
     'acceso_telefonica',
+    'acceso_edificios',
+    'administrar_edificios',
   ],
 
   encargado_conferencias: [
@@ -84,6 +92,7 @@ export const PERMISOS = {
     'editar_conferencias',
     'acceso_predicacion',
     'acceso_telefonica',
+    'acceso_edificios',
   ],
 
   // acceso_conferencias: solo anciano/siervo_ministerial entre los roles de
@@ -95,6 +104,7 @@ export const PERMISOS = {
     'acceso_conferencias',
     'acceso_predicacion',
     'acceso_telefonica',
+    'acceso_edificios',
   ],
 
   siervo_ministerial: [
@@ -103,6 +113,7 @@ export const PERMISOS = {
     'acceso_conferencias',
     'acceso_predicacion',
     'acceso_telefonica',
+    'acceso_edificios',
   ],
 
   precursor_regular: [
@@ -110,6 +121,7 @@ export const PERMISOS = {
     'acceso_vm',
     'acceso_predicacion',
     'acceso_telefonica',
+    'acceso_edificios',
   ],
 
   precursor_auxiliar: [
@@ -117,6 +129,7 @@ export const PERMISOS = {
     'acceso_vm',
     'acceso_predicacion',
     'acceso_telefonica',
+    'acceso_edificios',
   ],
 
   publicador: [
@@ -124,6 +137,7 @@ export const PERMISOS = {
     'acceso_vm',
     'acceso_predicacion',
     'acceso_telefonica',
+    'acceso_edificios',
   ],
 
   pendiente: [

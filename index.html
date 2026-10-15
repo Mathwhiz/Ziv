@@ -874,6 +874,22 @@
       background: #d8ebe3;
       box-shadow: 0 8px 26px rgba(22,120,89,0.16), 0 0 0 1px rgba(29,158,117,0.5);
     }
+    .cs-nav-icon-edif {
+      --nav-c: #A3B84C;
+      --nav-c-dim: rgba(163,184,76,0.2);
+      background: rgba(163,184,76,0.13);
+      border: 1px solid rgba(163,184,76,0.22);
+    }
+    .cs-nav-card-edif:hover {
+      border-color: rgba(163,184,76,0.55);
+      background: var(--k-bg-1b200e, #1b200e);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(163,184,76,0.55), 0 4px 20px rgba(163,184,76,0.12);
+    }
+    body.light-mode .cs-nav-card-edif:hover {
+      border-color: rgba(120,138,46,0.52);
+      background: #e3e8cf;
+      box-shadow: 0 8px 26px rgba(110,128,40,0.16), 0 0 0 1px rgba(120,138,46,0.5);
+    }
     .cs-nav-icon-admin {
       background: rgba(127,119,221,0.13);
       border: 1px solid rgba(127,119,221,0.22);
@@ -1523,6 +1539,19 @@
         </div>
       </a>
 
+      <a id="menu-card-edif" class="cs-nav-card cs-nav-card-edif" href="edificios/" style="display:none;">
+        <div class="cs-nav-icon cs-nav-icon-edif">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A3B84C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="3" width="14" height="18" rx="1.5"/>
+            <path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1M11 21v-3h2v3"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-nav-title">Edificios</div>
+          <div class="cs-nav-sub">Predicación por portero</div>
+        </div>
+      </a>
+
       <a id="menu-card-conf" class="cs-nav-card cs-nav-card-conf" href="conferencias/index.html" style="display:none;">
         <div class="cs-nav-icon cs-nav-icon-conf">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -2097,6 +2126,8 @@
       if (cardHerm)  cardHerm.style.display  = window.hasPermission?.('acceso_hermanos')     ? '' : 'none';
       if (cardConf)  cardConf.style.display  = window.hasPermission?.('acceso_conferencias') ? '' : 'none';
       if (cardTel)   cardTel.style.display   = window.hasPermission?.('acceso_telefonica')   ? '' : 'none';
+      const cardEdif = document.getElementById('menu-card-edif');
+      if (cardEdif)  cardEdif.style.display  = window.hasPermission?.('acceso_edificios')    ? '' : 'none';
 
       // Hermana registrada: ocultar módulos no relevantes, redirigir VM al visor público
       const esHermana = user && !user.isAnonymous && user.sexo === 'M';

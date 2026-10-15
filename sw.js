@@ -1,6 +1,6 @@
 // Subir este número en cada deploy importante: el service worker nuevo se instala solo y
 // las pestañas abiertas avisan (ver 'Actualización de la app' en shared/ui-utils.js).
-const CACHE = 'ziv-v10';
+const CACHE = 'ziv-v11';
 
 // Archivos estáticos que se pre-cachean al instalar
 const SHELL = [
@@ -20,6 +20,7 @@ const SHELL = [
   '/vida-ministerio/programa.js',
   '/predicacion/index.html',
   '/conferencias/index.html',
+  '/edificios/index.html',
 ];
 
 // Instalar: pre-cachear la app shell

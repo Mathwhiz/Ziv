@@ -219,6 +219,35 @@ service cloud.firestore {
       match /salidas/{id}          { allow read: if isMember(c); allow write: if hasCongreRole(c, rolesTerr()); }
       match /grupos/{id}           { allow read: if isMember(c); allow write: if hasCongreRole(c, ['admin_congre']); }
 
+      // Edificios (predicación por portero): los usa cualquier miembro aprobado. Agregar o borrar
+      // edificios es de los encargados de territorios. Un miembro solo toca el estado del portero,
+      // la ubicación y la asignación — y la asignación solo para tomarlo él o soltar la suya.
+      match /edificios/{id} {
+        allow read: if isMember(c);
+        allow create, delete: if hasCongreRole(c, rolesTerr());
+        allow update: if hasCongreRole(c, rolesTerr()) || (
+          isMember(c) &&
+          onlyKeys(['timbres', 'forma', 'vuelta', 'asignado', 'historial', 'punto', 'precision',
+                    'actualizadoEn', 'actualizadoPor']) &&
+          (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['asignado']) ||
+            (resource.data.get('asignado', null) == null &&
+              request.resource.data.asignado.uid == request.auth.uid) ||
+            (resource.data.get('asignado', null) != null &&
+              resource.data.asignado.get('uid', null) == request.auth.uid &&
+              request.resource.data.asignado == null)
+          )
+        );
+
+        // Registro de cada timbre marcado (quién y cuándo). Solo se agrega: nadie lo edita.
+        match /visitas/{v} {
+          allow read: if isMember(c);
+          allow create: if isMember(c) && request.resource.data.uid == request.auth.uid;
+          allow update: if false;
+          allow delete: if hasCongreRole(c, rolesTerr());
+        }
+      }
+
       // Datos personales: encargados y quien entra a Conferencias; cada uno puede leer su propia ficha
       match /publicadores/{pubId} {
         allow get: if hasCongreRole(c, rolesPublicadores()) ||

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Edificios — Ziv</title>
+  <link rel="icon" href="/assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a1c1f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ziv">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="../shared/styles-base.css?v=1.4">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css?v=1.0">
+</head>
+<body>
+
+<a class="btn-home" href="../index.html#menu" aria-label="Volver al menú" title="Inicio">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+</a>
+
+<div id="map"></div>
+
+<div class="topbar">
+  <div class="top-row">
+    <div class="titulo"><small class="js-congre">—</small>Edificios</div>
+    <input id="buscar" class="buscar" type="search" placeholder="Buscar dirección…" autocomplete="off" aria-label="Buscar dirección">
+    <button class="icon-btn" id="btn-menu" aria-label="Más opciones">
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+    </button>
+  </div>
+  <div class="chips" id="chips"></div>
+</div>
+
+<div class="banner-mover" id="banner-mover">
+  <span id="banner-txt"></span>
+  <button class="sec" id="banner-cancelar">Cancelar</button>
+  <button id="banner-ok">Listo</button>
+</div>
+
+<div class="bottombar">
+  <div class="resumen" id="resumen"></div>
+  <button class="pill-btn" id="btn-lista">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+    <span>Lista</span>
+  </button>
+</div>
+
+<div class="lista" id="lista"></div>
+
+<div class="cargando" id="cargando"><div class="spin"></div><div id="cargando-txt">Cargando edificios…</div></div>
+
+<div class="velo" id="velo"></div>
+<div class="hoja" id="hoja" role="dialog" aria-modal="true"></div>
+
+<div class="portero" id="portero"></div>
+<div class="herramientas" id="herramientas" hidden></div>
+
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../shared/ui-utils.js?v=3.6"></script>
+<script type="module" src="app.js?v=1.0"></script>
+</body>
+</html>

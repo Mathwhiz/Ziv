@@ -1851,6 +1851,7 @@ const ACT_MODULOS = {
   'hermanos':        { label: 'Administrador',   icon: '👥',  color: '#1D9E75' },
   'conferencias':    { label: 'Conferencias',    icon: '🎤',  color: '#D85A30' },
   'predicacion':     { label: 'Predicación',     icon: '📣',  color: '#97C459' },
+  'edificios':       { label: 'Edificios',       icon: '🏢',  color: '#A3B84C' },
 };
 const ACT_ACCIONES = {
   apertura: 'Abrió', guardado: 'Guardó', edicion: 'Editó',

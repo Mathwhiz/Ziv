@@ -282,7 +282,8 @@ body { zoom: var(--ziv-z, 1); min-height: calc(100vh / var(--ziv-z, 1)) !importa
 ───────────────────────────────────────── */
 window.ZIV_ESCALAS = [0.9, 1, 1.1, 1.2, 1.35, 1.5, 1.75, 2];
 // admin.html tiene un picker con Leaflet, que se lleva mal con el zoom: ahí no se escala
-window.ZIV_SIN_ESCALA = /\/admin\.html$/.test(location.pathname);
+// Sin escala: las páginas con mapa Leaflet (el zoom del body le corre los toques)
+window.ZIV_SIN_ESCALA = /\/admin\.html$|\/edificios\//.test(location.pathname);
 // Sin zoom automático: en PC el espacio se aprovecha con el layout (columnas / varios meses), no agrandando todo.
 window.zivEscalaPorDefecto = function() { return 1; };
 window.zivEscalaActual = function() {
