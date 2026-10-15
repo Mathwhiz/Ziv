@@ -52,8 +52,14 @@ service cloud.firestore {
       return isAdminGeneral() || (
         hasProfile() &&
         me().congregacionId == c &&
-        myRoles().removeAll(['pendiente', 'anonimo']).size() > 0
+        myRoles().removeAll(['pendiente', 'anonimo', 'bot_planillas']).size() > 0
       );
+    }
+
+    // Usuario robot que pasa las planillas de asignaciones y conferencias a la app.
+    // No es miembro (no lee territorios, edificios, etc.) y no borra nada: ver cada match.
+    function isBot(c) {
+      return hasCongreRole(c, ['bot_planillas']);
     }
 
     // Miembro de c con alguno de esos roles (admin_general siempre)
@@ -150,7 +156,7 @@ service cloud.firestore {
           isSelf(uid) &&
           onlyKeys([
             'displayName', 'photoURL', 'birthDate', 'sexo', 'primerLogin',
-            'terminosAceptados', 'terminosVersion', 'terminosFecha', 'metaMensualHoras'
+            'terminosAceptados', 'terminosVersion', 'terminosFecha', 'metaMensualHoras', 'tutorialVisto'
           ])
         ) ||
         (
@@ -210,10 +216,12 @@ service cloud.firestore {
       match /vm_especiales/{id}    { allow read: if true; allow write: if hasCongreRole(c, rolesVm()); }
 
       match /asig_config/{id}      { allow read: if true; allow write: if hasCongreRole(c, rolesAsig()); }
-      match /asig_programa/{id}    { allow read: if true; allow write: if hasCongreRole(c, rolesAsig()); }
+      match /asig_programa/{id}    { allow read: if true; allow write: if hasCongreRole(c, rolesAsig());
+                                     allow create, update: if isBot(c); }
       match /asig_especiales/{id}  { allow read: if true; allow write: if hasCongreRole(c, rolesAsig()); }
       // Misma información que asig_programa / asig_especiales (la vista pública de Asignaciones las lee)
-      match /asignaciones/{id}      { allow read: if true; allow write: if hasCongreRole(c, rolesAsig()); }
+      match /asignaciones/{id}      { allow read: if true; allow write: if hasCongreRole(c, rolesAsig());
+                                      allow create, update: if isBot(c); }
       match /semanasEspeciales/{id} { allow read: if true; allow write: if hasCongreRole(c, rolesAsig()); }
 
       // ── Miembros aprobados ─────────────────────────────────────────────
@@ -251,19 +259,21 @@ service cloud.firestore {
 
       // Datos personales: encargados y quien entra a Conferencias; cada uno puede leer su propia ficha
       match /publicadores/{pubId} {
-        allow get: if hasCongreRole(c, rolesPublicadores()) ||
+        allow get: if hasCongreRole(c, rolesPublicadores()) || isBot(c) ||
           (isMember(c) && me().matchedPublisherId == pubId);
-        allow list: if hasCongreRole(c, rolesPublicadores());
+        allow list: if hasCongreRole(c, rolesPublicadores()) || isBot(c);
         allow create, delete: if hasCongreRole(c, rolesAsig());
         allow update: if hasCongreRole(c, rolesAsig()) ||
-          (hasCongreRole(c, rolesConf()) && onlyKeys(['discursos']));
+          ((hasCongreRole(c, rolesConf()) || isBot(c)) && onlyKeys(['discursos']));
       }
 
       match /vidaministerio/{id}   { allow read, write: if hasCongreRole(c, rolesVm()); }
       match /vmMeses/{id}          { allow read, write: if hasCongreRole(c, rolesVm()); }
 
-      match /conferencias/{id}           { allow read: if hasCongreRole(c, rolesConfLectura()); allow write: if hasCongreRole(c, rolesConf()); }
-      match /congregacionesCircuito/{id} { allow read: if hasCongreRole(c, rolesConfLectura()); allow write: if hasCongreRole(c, rolesConf()); }
+      match /conferencias/{id}           { allow read: if hasCongreRole(c, rolesConfLectura()); allow write: if hasCongreRole(c, rolesConf());
+                                           allow read, create, update: if isBot(c); }
+      match /congregacionesCircuito/{id} { allow read: if hasCongreRole(c, rolesConfLectura()); allow write: if hasCongreRole(c, rolesConf());
+                                           allow read, create: if isBot(c); }
 
       // Chat: cada mensaje lleva ownerUid; lo edita o borra su autor (o un admin)
       match /chatNotas/{canal}/mensajes/{id} {
