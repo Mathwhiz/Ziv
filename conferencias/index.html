@@ -14,10 +14,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="../shared/styles-base.css?v=1.4">
+  <link rel="stylesheet" href="../shared/styles-base.css?v=1.5">
   <link rel="stylesheet" href="styles.css?v=1.5">
 </head>
-<body>
+<body class="ziv-booting">
+<div class="ziv-boot loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
+
 
 <div class="app">
 
@@ -186,8 +188,8 @@
 <div id="conf-print-view"></div>
 
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="../shared/ui-utils.js?v=3.5"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="../shared/ui-utils.js?v=3.8"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

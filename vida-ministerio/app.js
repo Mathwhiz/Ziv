@@ -535,6 +535,7 @@ function showView(id) {
   const el = document.getElementById(id);
   if (el) el.classList.add('active');
   document.getElementById('btn-home').classList.toggle('visible', id !== 'view-cover');
+  window.scrollTo(0, 0);   // cada pantalla arranca arriba (si no, quedaba a la altura de la anterior)
 }
 
 window.goToCover = function() {
@@ -556,14 +557,20 @@ window.goToPin = function() {
 
 window.goToVerPrograma = async function() {
   if (!vmInitReady) return;
-  uiLoading.show('Cargando…');
-  await ensureVmLookupsLoaded();
-  uiLoading.hide();
   pubFecha = lunesDeHoy();
+  mostrarProgramaPublicoCargando();
   showView('view-programa-pub');
+  await ensureVmLookupsLoaded();
   scheduleVmMirrorSync();
   await cargarProgramaPublico();
 };
+
+// Título + cargador en la vista pública, para mostrarla antes de tener los datos
+function mostrarProgramaPublicoCargando() {
+  document.getElementById('pub-semana-titulo').textContent = 'Semana del ' + fmtDisplay(pubFecha);
+  document.getElementById('pub-contenido').innerHTML =
+    '<div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>';
+}
 
 window.navSemanaPublico = async function(dir) {
   const base = parseFechaIso(pubFecha);
@@ -606,10 +613,15 @@ window.cerrarSesionVM = function() {
   goToCover();
 };
 
+// Volver a Semanas no vuelve a bajar todo el historial: se pinta lo que ya está en memoria
+// (guardar / generar / borrar mantienen semanasLista al día) y se refresca en segundo plano
+// si la última lectura tiene más de un minuto (por si otro encargado cambió algo).
+let _semanasLeidasEn = 0;
+let _scrollSemanas = 0;
+
 window.goToSemanas = async function() {
+  const desdeSemana = document.getElementById('view-semana').classList.contains('active');
   await _confirmarSiModificada();
-  uiLoading.show('Cargando…');
-  await ensureVmLookupsLoaded();
   document.getElementById('semanas-congre-sub').textContent = congreNombre || '—';
   const btnCfg = document.getElementById('btn-config-vm');
   if (btnCfg) btnCfg.style.display = modoEncargado ? '' : 'none';
@@ -619,7 +631,15 @@ window.goToSemanas = async function() {
   const btnSheetSem = document.getElementById('btn-sheet-semana');
   if (btnSheetSem) btnSheetSem.style.display = (modoEncargado && vmScriptUrl) ? '' : 'none';
   showView('view-semanas');
-  uiLoading.hide();
+  if (_semanasLeidasEn) {
+    renderSemanas(semanasLista);
+    if (desdeSemana) window.scrollTo(0, _scrollSemanas);   // vuelve a la semana de la que venía
+    if (Date.now() - _semanasLeidasEn > 60000) cargarSemanas({ silencioso: true });
+    return;
+  }
+  document.getElementById('semanas-list').innerHTML =
+    '<div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>';
+  await ensureVmLookupsLoaded();
   scheduleVmMirrorSync();
   await cargarSemanas();
 };
@@ -652,6 +672,14 @@ window.guardarConfig = async function() {
 };
 
 window.goToSemana = async function(fecha) {
+  if (document.getElementById('view-semanas').classList.contains('active')) _scrollSemanas = window.scrollY;
+  // La lista ya trae la semana completa (misma colección): se abre al instante, sin volver a leerla.
+  // Copia: editar sin guardar no tiene que tocar la lista (guardarSemana la reemplaza al guardar).
+  const enLista = (!semanaData || semanaData.fecha !== fecha) && semanasLista.find(s => s.fecha === fecha);
+  if (enLista) {
+    semanaData = clonarSemana(enLista);
+    _asigSnapshot = _fotoAsignaciones(semanaData);
+  }
   // Si ya está cargada esa semana, no recargamos
   if (!semanaData || semanaData.fecha !== fecha) {
     uiLoading.show('Cargando…');
@@ -743,9 +771,9 @@ async function cargarPublicadores(syncMirror = true) {
   }
 }
 
-async function cargarSemanas() {
+async function cargarSemanas({ silencioso = false } = {}) {
   const list = document.getElementById('semanas-list');
-  list.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>';
+  if (!silencioso) list.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>';
   try {
     const q = query(
       collection(db, 'congregaciones', congreId, 'vidaministerio'),
@@ -761,6 +789,7 @@ async function cargarSemanas() {
       }
     });
     semanasLista = semanas;
+    _semanasLeidasEn = Date.now();
 
     // Precargar encargados de sala aux de todos los meses visibles
     if (modoEncargado && tieneAuxiliar && semanas.length) {
@@ -774,9 +803,14 @@ async function cargarSemanas() {
       }));
     }
 
-    renderSemanas(semanas);
+    // En segundo plano solo se repinta si el encargado sigue en la lista (y sin moverle el scroll)
+    if (!silencioso || document.getElementById('view-semanas').classList.contains('active')) {
+      const y = window.scrollY;
+      renderSemanas(semanas);
+      if (silencioso) window.scrollTo(0, y);
+    }
   } catch(e) {
-    list.innerHTML = `<div class="error-wrap">Error al cargar: ${e.message}</div>`;
+    if (!silencioso) list.innerHTML = `<div class="error-wrap">Error al cargar: ${e.message}</div>`;
   }
 }
 
@@ -785,7 +819,9 @@ async function cargarProgramaPublico() {
   pubFecha = fecha; // siempre normalizar
   const el = document.getElementById('pub-contenido');
   document.getElementById('pub-semana-titulo').textContent = 'Semana del ' + fmtDisplay(fecha);
-  el.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>';
+  // Si ya hay un cargador (lo puso goToVerPrograma / init) se deja: reemplazarlo reinicia su animación
+  if (!el.querySelector(':scope > .loading-wrap'))
+    el.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>';
   try {
     const snap = await getDoc(usaEspejoPublico()
       ? doc(vmProgramaCol(), fecha)
@@ -1531,8 +1567,23 @@ async function _confirmarSiModificada() {
     type: 'warn',
   });
   if (resp) await window.guardarSemana();
+  else {
+    // Descartar de verdad: si no, al volver a abrir la misma semana aparecían los cambios descartados
+    const orig = semanaData && semanasLista.find(s => s.fecha === semanaData.fecha);
+    if (orig) semanaData = clonarSemana(orig);
+  }
   _semanaModificada = false;
   return true;
+}
+
+// Copia profunda de una semana para editarla aparte de semanasLista. structuredClone no sirve:
+// convierte los Timestamp de Firestore en objetos comunes y setDoc los guardaría como mapas.
+function clonarSemana(v) {
+  if (Array.isArray(v)) return v.map(clonarSemana);
+  if (v && Object.getPrototypeOf(v) === Object.prototype) {
+    return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, clonarSemana(x)]));
+  }
+  return v;
 }
 
 // ─────────────────────────────────────────
@@ -1695,8 +1746,8 @@ window.guardarSemana = async function() {
     await setDoc(doc(db, 'congregaciones', congreId, 'vm_programa', semanaData.fecha), toPublicVmSemana(semanaData));
     // Reflejar el guardado en semanasLista para que las stats (carga/colas) queden frescas
     const _idxSL = semanasLista.findIndex(s => s.fecha === semanaData.fecha);
-    if (_idxSL >= 0) semanasLista[_idxSL] = semanaData;
-    else { semanasLista.push(semanaData); semanasLista.sort((a, b) => b.fecha.localeCompare(a.fecha)); }
+    if (_idxSL >= 0) semanasLista[_idxSL] = clonarSemana(semanaData);
+    else { semanasLista.push(clonarSemana(semanaData)); semanasLista.sort((a, b) => b.fecha.localeCompare(a.fecha)); }
     _invalidarVmStats();
     _resetModificada();
     uiLoading.hide();
@@ -3361,17 +3412,19 @@ window.exportarSemanaActualASheets = function() {
   congreNombre = savedNombre;
   logActividad(congreId, 'vida-ministerio', 'apertura');
   document.getElementById('cover-congre').textContent = congreNombre || '—';
-  showView('view-cover');
 
   // Sin rol de encargado, el cover queda con un solo botón útil ("Ver programa") —
-  // se saltea directo en vez de mostrar una pantalla de un solo botón. Arrancamos
-  // esa carga EN PARALELO con el fetch de config de abajo (no depende de ella)
-  // para no encadenar rondas de red una detrás de la otra.
+  // se va directo ahí: la vista entra ya con su cargador (sin mostrar la portada
+  // y saltar después) y se completa cuando llegan los datos. Esa carga va EN PARALELO
+  // con el fetch de config de abajo (no depende de ella).
   const esEncargadoVM = puedeVerComoEncargado();
   let verProgramaPrefetch = null;
   if (!esEncargadoVM) {
-    uiLoading.show('Cargando…');
     verProgramaPrefetch = ensureVmLookupsLoaded();
+    pubFecha = lunesDeHoy();
+    mostrarProgramaPublicoCargando();
+    showView('view-programa-pub');
+    window.zivBootListo();
   }
 
   try {
@@ -3390,17 +3443,21 @@ window.exportarSemanaActualASheets = function() {
     vmInitReady = true;
     const btnEnc = document.getElementById('btn-encargado-vm');
     if (btnEnc) btnEnc.style.display = esEncargadoVM ? '' : 'none';
-    if (!esEncargadoVM) {
+    if (esEncargadoVM) {
+      // Recién ahora: antes, "Encargado" no respondía (goToPin espera vmInitReady)
+      showView('view-cover');
+      window.zivBootListo();
+    } else {
       await verProgramaPrefetch;
-      uiLoading.hide();
-      pubFecha = lunesDeHoy();
-      showView('view-programa-pub');
       scheduleVmMirrorSync();
       await cargarProgramaPublico();
     }
   } catch(e) {
     console.error('Error al inicializar:', e);
-    if (!esEncargadoVM) uiLoading.hide();
+    if (esEncargadoVM) showView('view-cover');
+    else document.getElementById('pub-contenido').innerHTML =
+      `<div class="error-wrap">Error al cargar: ${esc(e.message)}</div>`;
+    window.zivBootListo();
   }
 })();
 
@@ -3447,10 +3504,13 @@ function _lhPubCol() {
 }
 
 window.goToListaHermanos = async function() {
-  uiLoading.show('Cargando…');
-  await ensureVmLookupsLoaded();
-  uiLoading.hide();
   document.getElementById('lista-hermanos-sub').textContent = congreNombre || '—';
+  if (!vmPublicadoresLoaded) {
+    showView('view-lista-hermanos');
+    document.getElementById('lh-list').innerHTML =
+      '<div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>';
+  }
+  await ensureVmLookupsLoaded();
   document.getElementById('lh-search').value = '';
   document.getElementById('lh-rol').value = '';
   // VM solo edita roles de la Escuela (VM_*). Los roles de Asignaciones y
@@ -3464,13 +3524,15 @@ window.goToListaHermanos = async function() {
 //   CARGA DE HERMANOS — Mejora B
 // ─────────────────────────────────────────
 window.goToCarga = async function() {
-  uiLoading.show('Cargando…');
+  document.getElementById('carga-congre-sub').textContent = congreNombre || '—';
+  showView('view-carga');
+  if (!vmPublicadoresLoaded || !semanasLista.length) {
+    document.getElementById('carga-list').innerHTML =
+      '<div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>';
+  }
   await ensureVmLookupsLoaded();
   if (!semanasLista.length) await cargarSemanas();
-  uiLoading.hide();
-  document.getElementById('carga-congre-sub').textContent = congreNombre || '—';
   renderCarga();
-  showView('view-carga');
 };
 
 function renderCarga() {

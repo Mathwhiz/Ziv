@@ -874,7 +874,7 @@ document.getElementById('btn-menu').addEventListener('click', () => {
 function errorCarga(msg) {
   const c = document.getElementById('cargando');
   c.style.display = 'flex';
-  c.querySelector('.spin').style.display = 'none';
+  c.querySelector('.spinner').style.display = 'none';
   document.getElementById('cargando-txt').textContent = msg;
 }
 

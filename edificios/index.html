@@ -12,9 +12,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="../shared/styles-base.css?v=1.4">
+  <link rel="stylesheet" href="../shared/styles-base.css?v=1.5">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=1.1">
+  <link rel="stylesheet" href="styles.css?v=1.2">
 </head>
 <body>
 
@@ -57,7 +57,7 @@
 
 <div class="lista" id="lista"></div>
 
-<div class="cargando" id="cargando"><div class="spin"></div><div id="cargando-txt">Cargando edificios…</div></div>
+<div class="cargando" id="cargando"><div class="spinner"></div><div id="cargando-txt">Cargando edificios…</div></div>
 
 <div class="velo" id="velo"></div>
 <div class="hoja" id="hoja" role="dialog" aria-modal="true"></div>
@@ -67,7 +67,7 @@
 
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="../shared/ui-utils.js?v=3.7"></script>
-<script type="module" src="app.js?v=1.1"></script>
+<script src="../shared/ui-utils.js?v=3.8"></script>
+<script type="module" src="app.js?v=1.2"></script>
 </body>
 </html>

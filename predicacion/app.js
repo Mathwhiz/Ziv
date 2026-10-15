@@ -84,6 +84,8 @@ function listMesesEntre(desde, hasta) {
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+  window.zivBootListo();   // la primera vista que se elige termina el arranque
 }
 
 function toast(msg, type = 'success') {

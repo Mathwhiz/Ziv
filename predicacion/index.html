@@ -14,10 +14,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="../shared/styles-base.css?v=1.4">
+  <link rel="stylesheet" href="../shared/styles-base.css?v=1.5">
   <link rel="stylesheet" href="styles.css?v=2.5">
 </head>
-<body>
+<body class="ziv-booting">
+<div class="ziv-boot loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
+
 
 <!-- ── view-noauth ── -->
 <div id="view-noauth" class="view">
@@ -290,7 +292,7 @@
   <iframe id="mapa-frame" src="" style="flex:1; border:none; width:100%;"></iframe>
 </div>
 
-<script src="../shared/ui-utils.js?v=3.5"></script>
+<script src="../shared/ui-utils.js?v=3.8"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

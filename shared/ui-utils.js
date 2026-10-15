@@ -717,7 +717,8 @@ window.uiToggleTheme = function() {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   z-index: 9500;
-  animation: uiFadeIn 0.2s ease;
+  /* bloquea toques al instante pero se ve recién a los 150 ms: un guardado rápido no parpadea */
+  animation: uiFadeIn 0.2s ease 0.15s both;
   gap: 18px;
 }
 .ui-loading-overlay.hiding {
@@ -740,8 +741,8 @@ window.uiToggleTheme = function() {
 .ui-loading-spinner::after {
   inset: 0;
   border: 3px solid transparent;
-  border-top-color: #7F77DD;
-  border-right-color: #5B8DDE;
+  border-top-color: var(--spinner-color, #7F77DD);
+  border-right-color: var(--spinner-color, #5B8DDE);
   animation: uiSpin 0.7s linear infinite;
 }
 @keyframes uiSpin { to { transform: rotate(360deg); } }
@@ -922,10 +923,12 @@ document.addEventListener('DOMContentLoaded', insertLogos);
    LOADING OVERLAY
 ───────────────────────────────────────── */
 let _loadingEl = null;
+let _loadingDesde = 0;
 
 window.uiLoading = {
   show(text = 'Cargando...') {
-    if (_loadingEl) return;
+    if (_loadingEl) { this.setText(text); return; }   // "Generando semana 2 de 4…": se actualiza
+    _loadingDesde = performance.now();
     _loadingEl = document.createElement('div');
     _loadingEl.className = 'ui-loading-overlay';
     _loadingEl.innerHTML = `
@@ -939,12 +942,31 @@ window.uiLoading = {
   },
   hide() {
     if (!_loadingEl) return;
+    // Todavía no se veía (ver el delay del CSS): se saca sin animación, si no destella al salir
+    if (performance.now() - _loadingDesde < 150) { _loadingEl.remove(); _loadingEl = null; return; }
     _loadingEl.classList.add('hiding');
     setTimeout(() => {
       if (_loadingEl) { _loadingEl.remove(); _loadingEl = null; }
     }, 260);
   }
 };
+
+/* ─────────────────────────────────────────
+   ARRANQUE DEL MÓDULO
+   Cada módulo arranca con <body class="ziv-booting"> y un .ziv-boot (cargador de pantalla
+   completa, ver styles-base.css). Cuando ya decidió qué vista mostrar llama a zivBootListo().
+───────────────────────────────────────── */
+window.zivBootListo = function() {
+  document.body.classList.remove('ziv-booting');
+  document.querySelectorAll('.ziv-boot').forEach(el => el.remove());
+};
+// Si algo falla antes de zivBootListo() (red caída, error en el módulo) no queda girando para siempre
+setTimeout(() => {
+  const boot = document.body && document.body.classList.contains('ziv-booting') && document.querySelector('.ziv-boot');
+  if (!boot || boot.querySelector('.ziv-boot-lento')) return;
+  boot.insertAdjacentHTML('beforeend',
+    '<button type="button" class="ziv-boot-lento" onclick="location.reload()">Tarda más de lo normal · Reintentar</button>');
+}, 10000);
 
 /* ─────────────────────────────────────────
    TOAST

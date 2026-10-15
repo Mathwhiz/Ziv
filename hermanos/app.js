@@ -135,6 +135,7 @@ window.showView = function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   const el = document.getElementById(id);
   if (el) el.classList.add('active');
+  window.scrollTo(0, 0);   // cada pantalla arranca arriba (si no, quedaba a la altura de la anterior)
   document.getElementById('btn-home').classList.add('visible');
   showChatFab();
 }
@@ -198,7 +199,7 @@ function puedeVerComoEncargado() {
     buildConductorUI([]); // fallback: muestra grupos 1-4
   } finally {
     logActividad(CONGRE_ID, 'hermanos', 'apertura');
-    document.getElementById('view-cargando').style.display = 'none';
+    window.zivBootListo();   // cargador neutral hasta saber el permiso (ver .ziv-boot en styles-base.css)
     if (puedeVerComoEncargado()) {
       hideSinPermiso();
       showView('view-menu');

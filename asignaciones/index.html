@@ -25,10 +25,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Asignaciones — Ziv</title>
-<link rel="stylesheet" href="../shared/styles-base.css?v=1.4">
+<link rel="stylesheet" href="../shared/styles-base.css?v=1.5">
 <link rel="stylesheet" href="/asignaciones/styles.css?v=3.6">
 </head>
-<body>
+<body class="ziv-booting">
+<div class="ziv-boot loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
+
 
 <div class="offline-banner" id="offline-banner">
   Sin conexión a internet — algunas funciones no están disponibles
@@ -308,8 +310,8 @@
 </div><!-- /.app -->
 
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="../shared/ui-utils.js?v=3.5"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="../shared/ui-utils.js?v=3.8"></script>
 <script type="module" src="/asignaciones/app.js"></script>
 </body>
 </html>

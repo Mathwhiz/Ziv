@@ -19,6 +19,10 @@ const congreSubEl = document.getElementById('congre-sub');
 if (congreSubEl) congreSubEl.textContent = CONGRE_NOMBRE;
 const cardCongreEl = document.getElementById('card-congre-nombre');
 if (cardCongreEl) cardCongreEl.textContent = CONGRE_NOMBRE;
+// El rol ya se conoce (authGuard): la portada se muestra completa, sin que el botón aparezca después
+const btnEncInicial = document.getElementById('btn-encargado-asig');
+if (btnEncInicial) btnEncInicial.style.display = puedeVerComoEncargado() ? '' : 'none';
+window.zivBootListo();
 
 function congreRef()  { return doc(db, 'congregaciones', CONGRE_ID); }
 function asigCol()    { return collection(db, 'congregaciones', CONGRE_ID, 'asignaciones'); }
@@ -225,6 +229,7 @@ const VISTAS_ENCARGADO = ["view-editar","view-automatico","view-imagen"];
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
   show(id);
+  window.scrollTo(0, 0);   // cada pantalla arranca arriba (si no, quedaba a la altura de la anterior)
   const btn = document.getElementById('btn-home');
   if (btn) {
     btn.classList.toggle("visible", id !== "view-cover");
@@ -341,7 +346,16 @@ function getLabelSemana(rows) {
  * Retorna array de rows con el mismo formato que usaba el Apps Script:
  * [{ fecha: 'DD/MM/YY', dia, LECTOR, SONIDO_1, ... }]
  */
-async function getProgramacion() {
+// Pedidos simultáneos (la carga inicial y "Ver semana" tocado enseguida) comparten la misma lectura.
+// var sin valor inicial: cargarConfig() (más arriba) llama a getProgramacion antes de llegar a esta
+// línea; con let fallaba, y con "= null" se pisaba la lectura que ya estaba en curso.
+var _programacionEnCurso;
+function getProgramacion() {
+  if (!_programacionEnCurso) _programacionEnCurso = leerProgramacion().finally(() => { _programacionEnCurso = null; });
+  return _programacionEnCurso;
+}
+
+async function leerProgramacion() {
   const snap = await getDocs(query(asigCol(), orderBy('fecha')));
   const seenFechas = new Set();
   const rows = [];
@@ -1279,13 +1293,6 @@ window.guardarEnPlanilla = guardarEnPlanilla;
 window.goToGenerarImagen = goToGenerarImagen;
 window.cambiarSemanaImagen = cambiarSemanaImagen;
 window.guardarImagen = guardarImagen;
-window.goToGestionar = goToGestionar;
-window.filtrarLista = filtrarLista;
-window.abrirNuevoHermano = abrirNuevoHermano;
-window.abrirEditarHermano = abrirEditarHermano;
-window.cerrarModalHermano = cerrarModalHermano;
-window.guardarHermano = guardarHermano;
-window.confirmarEliminar = confirmarEliminar;   
 window.showView = showView;
 window.cargarEspeciales = cargarEspeciales; 
 window.renderTablaImagen = renderTablaImagen;

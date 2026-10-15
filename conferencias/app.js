@@ -727,6 +727,7 @@ async function init() {
 
   // Render con loading mientras carga
   renderMes();
+  window.zivBootListo();   // ya se sabe qué pestañas van (las hermanas no ven Oradores/Circuito)
 
   await cargarDatos();
   logActividad(CONGRE_ID, 'conferencias', 'apertura');

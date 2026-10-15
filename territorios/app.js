@@ -160,6 +160,7 @@ const DIA_COLORS = {
 function show(id) {
   document.getElementById(id).style.display = '';
   if (!id.startsWith('view-')) return;
+  window.scrollTo(0, 0);   // cada pantalla arranca arriba (si no, quedaba a la altura de la anterior)
   const homeBtn = document.getElementById('btn-home');
   const mapaBtn = document.getElementById('btn-mapa-float');
   if (homeBtn) {
@@ -275,6 +276,7 @@ async function ultimoHistDe(id) {
  * Si la escritura falla, igual devuelve el valor calculado.
  */
 async function sincronizarUltimoHist(id) {
+  invalidarGrupos();
   const ult = await ultimoHistDe(id);
   try { await updateDoc(doc(terrCol(), String(id)), { ultimoHist: ult }); } catch (e) { console.warn('ultimoHist no guardado', id, e); }
   return ult;
@@ -284,12 +286,34 @@ async function sincronizarUltimoHist(id) {
  * Carga todos los territorios de un grupo y su último historial.
  * Retorna objeto: { [terrId]: { lastFin, lastIni, enProgreso, tipo } }
  */
+// Caché corta por grupo: entrar a Planificar, Registrar o Ver mi grupo leía de nuevo todos los
+// territorios del grupo (docs pesados: traen los polígonos) y fetchConfig repetía la misma consulta.
+// Se invalida con cada escritura de este módulo (historial, notas, estado) y vence al minuto por
+// si otro encargado cambió algo. Cada llamada devuelve copias: nadie le cambia los datos a la caché.
+const _grupoCache = new Map();   // grupo → { t, promesa: { result, cfg } }
+function invalidarGrupos() { _grupoCache.clear(); }
+
+function lecturaGrupo(grupo) {
+  const k = String(grupo);
+  const c = _grupoCache.get(k);
+  if (c && Date.now() - c.t < 60000) return c.promesa;
+  const promesa = leerGrupo(k);
+  _grupoCache.set(k, { t: Date.now(), promesa });
+  promesa.catch(() => _grupoCache.delete(k));
+  return promesa;
+}
+
 async function fetchGrupo(grupo) {
-  const grupoStr = String(grupo);
+  const { result } = await lecturaGrupo(grupo);
+  return Object.fromEntries(Object.entries(result).map(([id, t]) => [id, { ...t }]));
+}
+
+async function leerGrupo(grupoStr) {
   const q = query(terrCol(), where('grupoId', '==', grupoStr));
   const snap = await getDocs(q);
 
   const result = {};
+  const cfg = {};
   await Promise.all(snap.docs.map(async terrDoc => {
     const terr = terrDoc.data();
     const id   = String(terr.id);
@@ -307,9 +331,10 @@ async function fetchGrupo(grupo) {
     }
 
     result[id] = { lastFin, lastIni, enProgreso, lastConductor, tipo: terr.tipo || 'normal', ciudad: terr.ciudad || null, nombre: terr.nombre || null, notas: terr.notas || null };
+    if (terr.tipo && terr.tipo !== 'normal') cfg[id] = terr.tipo;
   }));
 
-  return result;
+  return { result, cfg };
 }
 
 /**
@@ -317,15 +342,8 @@ async function fetchGrupo(grupo) {
  * Retorna objeto: { [terrId]: 'no_predica' | 'peligroso' | 'normal' }
  */
 async function fetchConfig(grupo) {
-  const grupoStr = String(grupo);
-  const q = query(terrCol(), where('grupoId', '==', grupoStr));
-  const snap = await getDocs(q);
-  const cfg = {};
-  snap.forEach(d => {
-    const t = d.data();
-    if (t.tipo && t.tipo !== 'normal') cfg[String(t.id)] = t.tipo;
-  });
-  return cfg;
+  const { cfg } = await lecturaGrupo(grupo);   // misma lectura que fetchGrupo
+  return { ...cfg };
 }
 
 // ─────────────────────────────────────────
@@ -469,7 +487,11 @@ async function cargarGrupos() {
     renderGrupoButtons();
     if (!teniaGrupoGuardado) await resolverGrupoPropio();
   } catch(e) {
+    window.zivBootListo();
     await uiAlert('Error al cargar la configuración de grupos: ' + e.message, 'Error');
+  } finally {
+    // La portada aparece con los botones de grupo ya armados (antes se veía vacía y se completaba)
+    window.zivBootListo();
   }
 }
 
@@ -619,8 +641,9 @@ async function goToStep1() {
   updateWeekInfo();
   hide('terr-error');
 
-  if (window.uiLoading) uiLoading.show('Cargando territorios...');
-  else show('terr-loading');
+  // Cargador dentro de la pantalla (como Registrar / Ver mi grupo), no overlay de pantalla completa
+  document.getElementById('salidas-container').innerHTML = '';
+  show('terr-loading');
 
   try {
     territoriosData = {};
@@ -639,10 +662,10 @@ async function goToStep1() {
     territoriosData = raw;
     configData = await fetchConfig(selectedGrupo);
 
-    if (window.uiLoading) uiLoading.hide(); else hide('terr-loading');
+    hide('terr-loading');
     renderSalidas();
   } catch(err) {
-    if (window.uiLoading) uiLoading.hide(); else hide('terr-loading');
+    hide('terr-loading');
     const errEl = document.getElementById('terr-error');
     errEl.innerHTML = `<div class="error-wrap">Error al cargar: ${err.message}. <button class="btn-secondary" style="font-size:12px;padding:4px 10px;margin-left:8px;" onclick="goToStep1()">Reintentar</button></div>`;
     show('terr-error');
@@ -1892,6 +1915,7 @@ async function saveNota() {
   if (!modalTerr) return;
   const notas = document.getElementById('modal-notas').value.trim();
   await updateDoc(doc(terrCol(), String(modalTerr)), { notas: notas || null });
+  invalidarGrupos();
   uiToast('Nota guardada', 'success');
 }
 
@@ -1903,6 +1927,7 @@ async function setTerritoryEstado(estado) {
   renderInfoGrid();
   // Actualizar el campo `tipo` en el documento del territorio en Firestore
   await updateDoc(doc(terrCol(), String(n)), { tipo: estado });
+  invalidarGrupos();
 }
 
 // ─────────────────────────────────────────

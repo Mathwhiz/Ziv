@@ -1,6 +1,7 @@
 /* Edificios — mapa de edificios + portero. Pantalla completa: la barra reservada de la app
    (--ziv-bar-h, chip del usuario + casita) queda arriba y todo lo demás empieza debajo. */
 :root {
+  --spinner-color: #A3B84C;   /* color de la tarjeta del menú */
   --e-sin: #8a8f98;      /* sin predicar */
   --e-neutro: #6b7a8c;   /* lo que ve el publicador común: sin estado */
   --e-parcial: #a98bd6;  /* empezado y no terminado (soltado, o "en proceso" viejo del Excel) */
@@ -124,8 +125,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   position: fixed; inset: 0; top: var(--ed-top); z-index: 270; display: flex; align-items: center; justify-content: center;
   flex-direction: column; gap: 12px; background: var(--bg-primary); color: var(--text-secondary); font-size: 14px; text-align: center; padding: 20px;
 }
-.cargando .spin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--border-light); border-top-color: var(--text-primary); animation: ed-giro .8s linear infinite; }
-@keyframes ed-giro { to { transform: rotate(360deg); } }
+#cargando-txt { font-size: 14px; color: var(--k-tx-888888, #888); }   /* mismo cargador que el resto (.spinner de styles-base) */
 
 /* ── hojas (bottom sheets) ── */
 .velo { position: fixed; inset: 0; z-index: 970; background: rgba(0,0,0,.45); opacity: 0; pointer-events: none; transition: opacity .25s; }
