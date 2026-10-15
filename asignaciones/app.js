@@ -600,12 +600,34 @@ function renderPrograma(alInicio = false) {
 
   // Si la tabla no entra entera, arranca en la semana actual (lo que viene importa más que lo que pasó),
   // dejando ver la última reunión de la semana anterior; el resto queda a un scroll hacia arriba.
+  cont.querySelector('.prog').addEventListener('click', marcarCruz);
   const sc = cont.querySelector('.prog-scroll'), actual = document.getElementById('prog-actual');
   if (!sc) return;
   if (!alInicio) sc.scrollTop = scrollPrevio;
   else if (actual && sc.scrollHeight > sc.clientHeight) {
     const anterior = actual.previousElementSibling?.lastElementChild;
     sc.scrollTop = actual.offsetTop - sc.querySelector('thead').offsetHeight - (anterior?.offsetHeight || 0);
+  }
+}
+
+// Tocar una celda ilumina su fila y su columna a la vez (como seguir con el dedo en la planilla).
+// Tocar la fecha marca solo la fila; el título de una columna, solo la columna; tocar lo mismo otra vez, borra.
+function marcarCruz(e) {
+  const cel = e.target.closest('td, th');
+  const tabla = e.currentTarget;
+  if (!cel || cel.closest('.prog-sem-hdr')) return;
+  const tr = cel.parentElement;
+  const enTitulos = !!cel.closest('thead');
+  const completa = f => f.children.length === PROG_COLS.length + 1;   // las filas canceladas usan colspan
+  const idx = completa(tr) ? [...tr.children].indexOf(cel) : 0;
+  const yaMarcada = cel.classList.contains('cruz-centro') || (enTitulos && cel.classList.contains('cruz-col'))
+    || (idx === 0 && !enTitulos && tr.classList.contains('cruz-fila') && !tabla.querySelector('.cruz-col'));
+  tabla.querySelectorAll('.cruz-fila, .cruz-col, .cruz-centro').forEach(x => x.classList.remove('cruz-fila', 'cruz-col', 'cruz-centro'));
+  if (yaMarcada) return;
+  if (!enTitulos) tr.classList.add('cruz-fila');
+  if (idx > 0) {
+    tabla.querySelectorAll('tr').forEach(f => { if (completa(f)) f.children[idx].classList.add('cruz-col'); });
+    if (!enTitulos) cel.classList.add('cruz-centro');
   }
 }
 

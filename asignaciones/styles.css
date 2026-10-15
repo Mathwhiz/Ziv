@@ -1057,3 +1057,13 @@ body.light-mode .edit-card .edit-rol-select { background: var(--bg-input) !impor
   .prog td, .prog thead th, .prog th.prog-fecha { padding-left: 8px; padding-right: 8px; }
   .prog td { white-space: normal; }
 }
+
+/* Cruz al tocar una celda: fila + columna iluminadas, la celda del cruce con borde.
+   Fondos opacos (color-mix con --bg-card) porque la columna de fecha es fija y tapa lo que pasa debajo. */
+.prog td, .prog th.prog-fecha, .prog thead th { cursor: pointer; transition: background 0.12s; }
+.prog tbody tr.cruz-fila > td, .prog tbody tr.cruz-fila > th.prog-fecha,
+.prog tbody td.cruz-col { background: color-mix(in srgb, #7F77DD 30%, var(--bg-card)); color: var(--text-primary); }
+.prog thead th.cruz-col { background: color-mix(in srgb, #7F77DD 45%, var(--bg-secondary)); color: var(--text-primary); }
+.prog tbody tr > td.cruz-centro { background: color-mix(in srgb, #7F77DD 48%, var(--bg-card)); box-shadow: inset 0 0 0 2px #7F77DD; font-weight: 600; }
+.prog tbody tr.cruz-fila .prog-dm, .prog tbody tr.cruz-fila .prog-dia { color: var(--text-primary); opacity: 1; }
+.prog tbody tr.cruz-fila .prog-dia { color: var(--dc); }
