@@ -976,12 +976,21 @@ body.light-mode .edit-card .edit-rol-select { background: var(--bg-input) !impor
 /* ── PORTADA: el programa como la planilla ──
    Encabezado y columna de fecha fijos (como "inmovilizar" en Excel): en celular la tabla se
    desplaza de costado sin perder de qué reunión es cada fila. */
-.prog-hdr { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 2px 0 12px; }
-.prog-titulo { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; color: var(--text-primary); line-height: 1.1; }
-.prog-sub { font-size: 13px; font-weight: 600; color: var(--k-tx-7f77dd, #7F77DD); margin-top: 2px; }
+/* Encabezado igual al de Conferencias: volver a la izquierda, título + congregación, acción a la derecha */
+.prog-hdr { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+.prog-volver {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary); text-decoration: none;
+  background: var(--bg-card); border: 0.5px solid var(--border-input); transition: background 0.15s;
+}
+.prog-volver:hover { background: var(--bg-hover); color: var(--text-primary); }
+.prog-hdr-tx { flex: 1; min-width: 0; }
+.prog-titulo { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.prog-sub { font-size: 12px; font-weight: 500; color: var(--k-tx-7f77dd, #7F77DD); }
 .prog-enc-btn {
   display: inline-flex; align-items: center; gap: 6px; flex: none; cursor: pointer;
-  padding: 8px 12px; border-radius: 10px; font: inherit; font-size: 13px; font-weight: 600;
+  height: 36px; padding: 0 12px; border-radius: 10px; font: inherit; font-size: 13px; font-weight: 600;
   border: 1px solid color-mix(in srgb, #7F77DD 45%, transparent);
   background: color-mix(in srgb, #7F77DD 12%, transparent); color: var(--k-tx-7f77dd, #A9A3F0);
 }
@@ -989,13 +998,13 @@ body.light-mode .edit-card .edit-rol-select { background: var(--bg-input) !impor
 
 .prog-scroll {
   overflow: auto; border: 1px solid var(--border-primary); border-radius: 12px; background: var(--bg-card);
-  max-height: calc(100vh / var(--ziv-z, 1) - var(--ziv-bar-h, 0px) - 200px); min-height: 280px;
+  max-height: calc(100vh / var(--ziv-z, 1) - var(--ziv-bar-h, 0px) - 170px); min-height: 280px;
 }
 .prog { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13px; }
 .prog thead th {
   position: sticky; top: 0; z-index: 2; background: var(--bg-secondary); white-space: nowrap; text-align: left;
-  padding: 9px 10px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
-  color: var(--text-muted); border-bottom: 1px solid var(--border-primary);
+  padding: 10px 10px; font-size: 12.5px; font-weight: 600; color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
 }
 .prog th.prog-fecha {
   position: sticky; left: 0; z-index: 1; background: var(--bg-card); text-align: left; min-width: 66px;
@@ -1024,8 +1033,8 @@ body.light-mode .edit-card .edit-rol-select { background: var(--bg-input) !impor
 .prog-aviso { font-size: 11.5px; font-weight: 600; color: var(--tc); }
 
 /* Semanas pasadas: más apagadas (con color, no opacity: la columna fija necesita fondo opaco) */
-.prog-semana.pasada td, .prog-semana.pasada .prog-dm { color: var(--text-muted); }
-.prog-semana.pasada .prog-dia { color: var(--text-muted); }
+.prog-semana.pasada td, .prog-semana.pasada .prog-dm, .prog-semana.pasada .prog-dia { color: var(--text-secondary); }
+.prog-semana.pasada .prog-dia, .prog-semana.pasada .prog-nada { opacity: 0.7; }
 
 /* Semana actual: fondo teñido + borde izquierdo del color del módulo */
 .prog-semana.actual .prog-sem-hdr th { background: color-mix(in srgb, #7F77DD 24%, var(--bg-card)); color: var(--text-primary); }
@@ -1035,13 +1044,14 @@ body.light-mode .edit-card .edit-rol-select { background: var(--bg-input) !impor
 .prog-cancel td { color: var(--text-muted); font-style: italic; }
 .prog-vacio { color: var(--text-muted); font-size: 12.5px; }
 .prog-mas {
-  display: block; margin: 6px auto; padding: 6px 12px; border: 0; border-radius: 8px; background: none;
-  font: inherit; font-size: 13px; color: var(--text-secondary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 8px 0;
+  padding: 8px 12px; border-radius: 10px; border: 0.5px solid var(--border-input); background: var(--bg-card);
+  font: inherit; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer;
 }
 .prog-mas:hover { background: var(--bg-hover); color: var(--text-primary); }
+.prog-mas svg { flex: none; }
 .prog-leyenda { margin: 8px 2px 0; font-size: 12px; color: var(--text-muted); }
 .prog-leyenda .prog-nom { display: inline-block; margin-left: 0; }
-.prog-volver { display: block; text-align: center; margin-top: 14px; }
 /* En PC tiene que entrar entera, sin desplazar de costado: menos relleno y los nombres largos pueden partirse */
 @media (min-width: 1000px) {
   .prog td, .prog thead th, .prog th.prog-fecha { padding-left: 8px; padding-right: 8px; }

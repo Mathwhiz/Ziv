@@ -588,7 +588,7 @@ function renderPrograma(alInicio = false) {
   const scrollPrevio = cont.querySelector('.prog-scroll')?.scrollTop || 0;
   const tieneMio = cuerpo.includes('prog-nom mio');
   cont.innerHTML = `
-    <button class="prog-mas" onclick="ampliarPrograma(-1)">↑ Semanas anteriores</button>
+    <button class="prog-mas" onclick="ampliarPrograma(-1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 15l6-6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Ver semanas anteriores</button>
     <div class="prog-scroll">
       <table class="prog">
         <thead><tr><th class="prog-fecha">Fecha</th>${PROG_COLS.map(c => `<th>${c.label}</th>`).join('')}</tr></thead>
@@ -596,7 +596,7 @@ function renderPrograma(alInicio = false) {
       </table>
     </div>
     ${tieneMio ? '<div class="prog-leyenda"><span class="prog-nom mio">Así</span> se marcan tus asignaciones</div>' : ''}
-    ${hayMas ? '<button class="prog-mas" onclick="ampliarPrograma(1)">↓ Más adelante</button>' : ''}`;
+    ${hayMas ? '<button class="prog-mas" onclick="ampliarPrograma(1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Ver más adelante</button>' : ''}`;
 
   // Si la tabla no entra entera, arranca en la semana actual (lo que viene importa más que lo que pasó),
   // dejando ver la última reunión de la semana anterior; el resto queda a un scroll hacia arriba.
