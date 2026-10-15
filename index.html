@@ -163,9 +163,46 @@
       font-size: 16px; font-weight: 700; letter-spacing: -0.5px;
     }
 
+    /* Encabezado de «Elegir congregación»: logo con el mismo brillo que la bienvenida */
+    .cg-head { margin: 8px 0 22px; }
+    .cg-logo { position: relative; width: 68px; height: 68px; isolation: isolate; animation: hero-in .6s cubic-bezier(.22,1,.36,1) both; }
+    .cg-logo img { display: block; width: 100%; height: 100%; }
+    .cg-logo::before {
+      content: '';
+      position: absolute;
+      inset: -90px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(242,184,75,.13), rgba(127,119,221,.09) 45%, transparent 70%);
+      z-index: -1;
+      pointer-events: none;
+    }
+    body.light-mode .cg-logo::before { background: radial-gradient(circle, rgba(242,184,75,.26), rgba(127,119,221,.11) 45%, transparent 70%); }
+    .cg-title {
+      margin: 4px 0 0;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      line-height: 1;
+      color: var(--text-primary, #e8e8e8);
+      animation: hero-in .6s .08s cubic-bezier(.22,1,.36,1) both;
+    }
+    .cg-sub { font-size: 15px; color: var(--text-secondary, #aaa); animation: hero-in .6s .16s cubic-bezier(.22,1,.36,1) both; }
+    .congre-card { animation: hero-in .55s cubic-bezier(.22,1,.36,1) backwards; }  /* backwards: que no pise el transform del hover */
     .congre-info { flex: 1; min-width: 0; }
     .congre-nombre { font-size: 22px; font-weight: 600; color: var(--text-primary, #e8e8e8); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .congre-id { font-size: 13px; color: var(--text-muted, #666); }
+    .congre-id { font-size: 13px; color: var(--text-muted, #666); display: flex; align-items: center; gap: 4px; min-height: 1em; }
+    .congre-id svg { width: 12px; height: 12px; flex-shrink: 0; }
+    .congre-ultima {
+      margin-left: 6px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--cg-c);
+      background: color-mix(in srgb, var(--cg-c) 14%, transparent);
+    }
+    body.light-mode .congre-ultima { color: color-mix(in srgb, var(--cg-c) 70%, #1d1e22); }
+    .congre-card.es-ultima { border-color: color-mix(in srgb, var(--cg-c) 45%, var(--border-primary, #2e3033)); }
     .congre-arrow { color: #444; font-size: 1.3rem; flex-shrink: 0; }
 
     .loading { color: var(--text-muted, #555); font-size: 0.9rem; text-align: center; padding: 40px 0; }
@@ -368,7 +405,49 @@
       align-items: center;
       text-align: center;
     }
-    .auth-congre-block { margin-bottom: 10px; }
+    /* Logo de Ziv + inicial de la congregación elegida, con el brillo de la bienvenida */
+    .auth-logos { position: relative; display: flex; align-items: center; gap: 10px; margin-bottom: 18px; isolation: isolate; animation: hero-in .6s cubic-bezier(.22,1,.36,1) both; }
+    .auth-logos::before {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 300px; height: 300px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(242,184,75,.12), rgba(127,119,221,.09) 45%, transparent 70%);
+      z-index: -1;
+      pointer-events: none;
+    }
+    body.light-mode .auth-logos::before { background: radial-gradient(circle, rgba(242,184,75,.24), rgba(127,119,221,.11) 45%, transparent 70%); }
+    .auth-logos img { display: block; width: 56px; height: 56px; }
+    .auth-mas { color: var(--text-muted, #666); font-size: 18px; }
+    .auth-congre-ini {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      display: grid; place-items: center;
+      font-size: 19px; font-weight: 800;
+      color: var(--cg-c, #7F77DD);
+      background: color-mix(in srgb, var(--cg-c, #7F77DD) 16%, transparent);
+      border: 1px solid color-mix(in srgb, var(--cg-c, #7F77DD) 32%, transparent);
+    }
+    .auth-lista {
+      list-style: none;
+      width: 100%;
+      margin: 0 0 28px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: left;
+      animation: hero-in .6s .24s cubic-bezier(.22,1,.36,1) both;
+    }
+    .auth-lista li { display: flex; align-items: center; gap: 12px; font-size: 14.5px; color: var(--text-primary, #e8e8e8); }
+    .auth-lista-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; }
+    .auth-lista-ic svg { color: var(--ic); }
+    body.light-mode .auth-lista-ic svg { color: color-mix(in srgb, var(--ic) 72%, #1d1e22); }
+    .auth-lista li:nth-child(1) .auth-lista-ic { background: rgba(91,141,222,.14); }
+    .auth-lista li:nth-child(2) .auth-lista-ic { background: rgba(224,82,119,.14); }
+    .auth-lista li:nth-child(3) .auth-lista-ic { background: rgba(239,159,39,.14); }
     .auth-back-btn {
       position: absolute;
       top: 14px;
@@ -414,7 +493,8 @@
       font-weight: 700;
       letter-spacing: -.03em;
       color: var(--text-primary, #e8e8e8);
-      margin-bottom: 10px;
+      margin: 0 0 8px;
+      animation: hero-in .6s .08s cubic-bezier(.22,1,.36,1) both;
     }
     .auth-title {
       font-size: 1.5rem;
@@ -425,11 +505,12 @@
       text-align: center;
     }
     .auth-sub {
-      font-size: 14px;
+      font-size: 14.5px;
       color: var(--text-secondary, #aaa);
       line-height: 1.55;
       text-align: center;
-      margin-bottom: 32px;
+      margin: 0 0 24px;
+      animation: hero-in .6s .16s cubic-bezier(.22,1,.36,1) both;
     }
     .btn-google {
       width: 100%;
@@ -901,6 +982,10 @@
       box-shadow: var(--shadow-hover, 0 8px 28px rgba(0,0,0,.24));
     }
     .cs-nav-card:active { transform: scale(0.98); box-shadow: none; }
+    /* Íconos de módulo: trazo grueso + una pieza rellena, color del módulo en --ic */
+    .cs-nav-icon svg { color: var(--ic); }
+    body.light-mode .cs-nav-icon svg { color: color-mix(in srgb, var(--ic) 72%, #1d1e22); }
+    body.light-mode .slide-icon { color: color-mix(in srgb, var(--slide-accent) 72%, #1d1e22); }
     .cs-nav-icon-map {
       --nav-c: #C94A3D;
       --nav-c-dim: rgba(201,74,61,0.2);
@@ -1209,7 +1294,7 @@
               <div class="slide-card" style="--slide-accent:#5B8DDE;">
                 <div class="slide-header">
                   <div class="slide-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 8a3 3 0 013-3h11a3 3 0 013 3v2h-17z" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M3.5 10h17"/><path d="M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/></svg>
                   </div>
                   <div>
                     <div class="slide-feature-title">Asignaciones</div>
@@ -1227,7 +1312,7 @@
               <div class="slide-card" style="--slide-accent:#EF9F27;">
                 <div class="slide-header">
                   <div class="slide-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7c-1.5-2-4-3-9-3v14c5 0 7.5 1 9 3" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M12 7c-1.5-2-4-3-9-3v14c5 0 7.5 1 9 3 1.5-2 4-3 9-3V4c-5 0-7.5 1-9 3z"/><path d="M12 7v14"/></svg>
                   </div>
                   <div>
                     <div class="slide-feature-title">Vida y Ministerio</div>
@@ -1245,7 +1330,7 @@
               <div class="slide-card" style="--slide-accent:#E05277;">
                 <div class="slide-header">
                   <div class="slide-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7.5" width="18" height="12.5" rx="3"/><path d="M8.5 7.5V6a2 2 0 012-2h3a2 2 0 012 2v1.5"/><path d="M3 12.5h18v2H3z" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M3 12.5h18"/><path d="M12 11.5v3"/></svg>
                   </div>
                   <div>
                     <div class="slide-feature-title">Predicación</div>
@@ -1264,7 +1349,7 @@
               <div class="slide-card" style="--slide-accent:#5DB85D;">
                 <div class="slide-header">
                   <div class="slide-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 8V9m0 0L9 7"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2" fill="currentColor" fill-opacity=".28" stroke="none"/><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><rect x="13" y="13" width="7.5" height="7.5" rx="2"/></svg>
                   </div>
                   <div>
                     <div class="slide-feature-title">Territorios</div>
@@ -1287,7 +1372,7 @@
               <div class="slide-card" style="--slide-accent:#A3B84C;">
                 <div class="slide-header">
                   <div class="slide-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1M11 21v-3h2v3"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><rect x="8" y="6" width="3" height="2.6" rx=".8" fill="currentColor" stroke="none"/><path d="M13.5 7.3h2.5M8.5 11.3H11M13.5 11.3H16M8.5 15.3H11M13.5 15.3H16"/><path d="M10.5 21.5v-3h3v3"/></svg>
                   </div>
                   <div>
                     <div class="slide-feature-title">Edificios</div>
@@ -1334,10 +1419,10 @@
       </svg>
     </button>
     <div class="wrap">
-      <div class="logo">
-        <div class="cs-logo-placeholder"></div>
-        <div class="cs-logo-title">Ziv</div>
-        <div class="cs-logo-sub">Seleccioná tu congregación</div>
+      <div class="logo cg-head">
+        <span class="cg-logo" aria-hidden="true"><img src="/assets/favicon.svg" alt="" width="68" height="68"></span>
+        <h1 class="cg-title" aria-label="Ziv">Z<span class="app-name-i">ı<svg viewBox="-1 -1 2 2" aria-hidden="true"><path d="M0-1Q.16-.16 1 0Q.16 .16 0 1Q-.16 .16-1 0Q-.16-.16 0-1Z"/></svg></span>v</h1>
+        <div class="cs-logo-sub cg-sub">Elegí tu congregación</div>
       </div>
       <div id="congre-list">
         <div class="loading">Cargando congregaciones…</div>
@@ -1364,19 +1449,18 @@
     </button>
 
     <div class="auth-screen">
-      <div class="auth-icon-wrap">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent, #7F77DD)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          <polyline points="9 12 11 14 15 10"/>
-        </svg>
+      <div class="auth-logos" aria-hidden="true">
+        <img src="/assets/favicon.svg" alt="" width="56" height="56">
+        <span class="auth-mas">+</span>
+        <span class="auth-congre-ini" id="auth-congre-ini"></span>
       </div>
-
-      <div class="auth-congre-block">
-          <div class="auth-congre-label">Congregación seleccionada</div>
-          <div class="auth-congre-name" id="auth-congre-name">—</div>
-        </div>
-        <div class="auth-title">Iniciá sesión para continuar</div>
-        <div class="auth-sub">Usamos tu cuenta de Google para identificarte dentro de la congregación</div>
+      <h1 class="auth-congre-name" id="auth-congre-name">—</h1>
+      <p class="auth-sub">Entrá con tu cuenta de Google para ver lo tuyo.</p>
+      <ul class="auth-lista">
+        <li><span class="auth-lista-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#5B8DDE" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 8a3 3 0 013-3h11a3 3 0 013 3v2h-17z" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M3.5 10h17"/><path d="M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/></svg></span>Tus asignaciones de la reunión</li>
+        <li><span class="auth-lista-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#E05277" aria-hidden="true"><rect x="3" y="7.5" width="18" height="12.5" rx="3"/><path d="M8.5 7.5V6a2 2 0 012-2h3a2 2 0 012 2v1.5"/><path d="M3 12.5h18v2H3z" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M3 12.5h18"/><path d="M12 11.5v3"/></svg></span>Tu registro de predicación</li>
+        <li><span class="auth-lista-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#EF9F27" aria-hidden="true"><path d="M12 7c-1.5-2-4-3-9-3v14c5 0 7.5 1 9 3" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M12 7c-1.5-2-4-3-9-3v14c5 0 7.5 1 9 3 1.5-2 4-3 9-3V4c-5 0-7.5 1-9 3z"/><path d="M12 7v14"/></svg></span>El programa de cada semana</li>
+      </ul>
 
         <button class="btn-google" id="btn-google" onclick="handleGoogleSignIn()">
           <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -1388,9 +1472,8 @@
           Continuar con Google
         </button>
 
-        <button class="btn-skip" id="btn-skip" onclick="handleSkip()">Omitir por ahora</button>
-        <div class="auth-note">Solo para uso interno de la congregación</div>
-      </div>
+        <button class="btn-skip" id="btn-skip" onclick="handleSkip()">Entrar como invitado</button>
+        <div class="auth-note">La primera vez, un encargado de la congregación aprueba tu cuenta.</div>
 
       <a class="cs-back-btn" href="#" onclick="volverACongres();return false;">← Cambiar congregación</a>
     </div>
@@ -1430,10 +1513,7 @@
         <div class="module-grid">
       <a id="menu-card-terr" class="cs-nav-card cs-nav-card-terr" href="territorios/index.html" style="display:none;">
         <div class="cs-nav-icon cs-nav-icon-terr">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 8V9m0 0L9 7"
-              stroke="#5DB85D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#5DB85D" aria-hidden="true"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2" fill="currentColor" fill-opacity=".28" stroke="none"/><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><rect x="13" y="13" width="7.5" height="7.5" rx="2"/></svg>
         </div>
         <div>
           <div class="cs-nav-title">Territorios</div>
@@ -1443,10 +1523,7 @@
 
       <a class="cs-nav-card cs-nav-card-map" href="#" onclick="openPublicMap(event)">
         <div class="cs-nav-icon cs-nav-icon-map">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M3 6.5l6-2.5 6 2.5 6-2.5v13l-6 2.5-6-2.5-6 2.5v-13z" stroke="#C94A3D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9 4v13.5M15 6.5V20" stroke="#C94A3D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#C94A3D" aria-hidden="true"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/><circle cx="18.5" cy="6" r="3.2" fill="currentColor" stroke="var(--bg-card, #232628)" stroke-width="1.6"/></svg>
         </div>
         <div>
           <div class="cs-nav-title">Ver mapa</div>
@@ -1456,10 +1533,7 @@
 
       <a id="menu-card-asign" class="cs-nav-card cs-nav-card-asign" href="asignaciones/index.html" style="display:none;">
         <div class="cs-nav-icon cs-nav-icon-asign">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
-              stroke="#5B8DDE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#5B8DDE" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 8a3 3 0 013-3h11a3 3 0 013 3v2h-17z" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M3.5 10h17"/><path d="M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/></svg>
         </div>
         <div>
           <div class="cs-nav-title">Asignaciones</div>
@@ -1469,11 +1543,7 @@
 
       <a id="menu-card-herm" class="cs-nav-card cs-nav-card-herm" href="hermanos/index.html" style="display:none;">
         <div class="cs-nav-icon cs-nav-icon-herm">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#D85A30" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="9" cy="7" r="4" stroke="#D85A30" stroke-width="1.8"/>
-            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#D85A30" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#D85A30" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10.5" r="2.4" fill="currentColor" fill-opacity=".28"/><path d="M5.8 16.2c.6-1.6 1.8-2.4 3.2-2.4s2.6.8 3.2 2.4"/><path d="M14.5 9.5h3.5M14.5 13h3.5"/></svg>
         </div>
         <div>
           <div class="cs-nav-title">Administrador</div>
@@ -1483,10 +1553,7 @@
 
       <a id="menu-card-vm" class="cs-nav-card cs-nav-card-vm" href="vida-ministerio/index.html" style="display:none;">
         <div class="cs-nav-icon cs-nav-icon-vm">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" stroke="#EF9F27" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" stroke="#EF9F27" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#EF9F27" aria-hidden="true"><path d="M12 7c-1.5-2-4-3-9-3v14c5 0 7.5 1 9 3" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M12 7c-1.5-2-4-3-9-3v14c5 0 7.5 1 9 3 1.5-2 4-3 9-3V4c-5 0-7.5 1-9 3z"/><path d="M12 7v14"/></svg>
         </div>
         <div>
           <div class="cs-nav-title">Vida y Ministerio</div>
@@ -1496,10 +1563,7 @@
 
       <a class="cs-nav-card cs-nav-card-pred" href="predicacion/index.html">
         <div class="cs-nav-icon cs-nav-icon-pred">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="#E05277" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9 22V12h6v10" stroke="#E05277" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#E05277" aria-hidden="true"><rect x="3" y="7.5" width="18" height="12.5" rx="3"/><path d="M8.5 7.5V6a2 2 0 012-2h3a2 2 0 012 2v1.5"/><path d="M3 12.5h18v2H3z" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M3 12.5h18"/><path d="M12 11.5v3"/></svg>
         </div>
         <div>
           <div class="cs-nav-title">Predicación</div>
@@ -1509,10 +1573,7 @@
 
       <a id="menu-card-tel" class="cs-nav-card cs-nav-card-tel" href="telefonica/" style="display:none;">
         <div class="cs-nav-icon cs-nav-icon-tel">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"
-              stroke="#1D9E75" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#1D9E75" aria-hidden="true"><path d="M21 16.4v2.8a2 2 0 01-2.2 2A18.6 18.6 0 012.8 5.2 2 2 0 014.8 3h2.8a2 2 0 012 1.6c.13.9.36 1.8.7 2.6a2 2 0 01-.45 2.1L8.7 10.4a15 15 0 004.9 4.9l1.1-1.15a2 2 0 012.1-.45c.85.33 1.7.56 2.6.7a2 2 0 011.6 2z" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M21 16.4v2.8a2 2 0 01-2.2 2A18.6 18.6 0 012.8 5.2 2 2 0 014.8 3h2.8a2 2 0 012 1.6c.13.9.36 1.8.7 2.6a2 2 0 01-.45 2.1L8.7 10.4a15 15 0 004.9 4.9l1.1-1.15a2 2 0 012.1-.45c.85.33 1.7.56 2.6.7a2 2 0 011.6 2z"/></svg>
         </div>
         <div>
           <div class="cs-nav-title">Telefónica</div>
@@ -1522,10 +1583,7 @@
 
       <a id="menu-card-edif" class="cs-nav-card cs-nav-card-edif" href="edificios/" style="display:none;">
         <div class="cs-nav-icon cs-nav-icon-edif">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A3B84C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="3" width="14" height="18" rx="1.5"/>
-            <path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1M11 21v-3h2v3"/>
-          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#A3B84C" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><rect x="8" y="6" width="3" height="2.6" rx=".8" fill="currentColor" stroke="none"/><path d="M13.5 7.3h2.5M8.5 11.3H11M13.5 11.3H16M8.5 15.3H11M13.5 15.3H16"/><path d="M10.5 21.5v-3h3v3"/></svg>
         </div>
         <div>
           <div class="cs-nav-title">Edificios</div>
@@ -1535,11 +1593,7 @@
 
       <a id="menu-card-conf" class="cs-nav-card cs-nav-card-conf" href="conferencias/index.html" style="display:none;">
         <div class="cs-nav-icon cs-nav-icon-conf">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#0DB6CC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="9" cy="7" r="4" stroke="#0DB6CC" stroke-width="1.8"/>
-            <path d="M23 11l-4 4-2-2" stroke="#0DB6CC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#0DB6CC" aria-hidden="true"><circle cx="12" cy="5.5" r="2.6"/><path d="M7.5 12.5a4.5 4.5 0 019 0"/><path d="M5 12.5h14l-2 8.5H7z" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M5 12.5h14l-2 8.5H7z"/></svg>
         </div>
         <div>
           <div class="cs-nav-title">Conferencias</div>
@@ -1549,9 +1603,7 @@
 
       <a id="menu-card-admin" class="cs-nav-card cs-nav-card-admin" href="/admin.html" style="display:none">
         <div class="cs-nav-icon cs-nav-icon-admin">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#7F77DD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#7F77DD" aria-hidden="true"><path d="M12 21.5s7.5-3.6 7.5-9.4V5.3L12 2.5 4.5 5.3v6.8c0 5.8 7.5 9.4 7.5 9.4z" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M12 21.5s7.5-3.6 7.5-9.4V5.3L12 2.5 4.5 5.3v6.8c0 5.8 7.5 9.4 7.5 9.4z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg>
         </div>
         <div>
           <div class="cs-nav-title">Super Admin</div>
@@ -1621,7 +1673,7 @@
     }
     syncInstallButtons();
   </script>
-  <script src="shared/ui-utils.js?v=3.6"></script>
+  <script src="shared/ui-utils.js?v=3.7"></script>
   <script src="shared/tutorial.js?v=2"></script>
   <script type="module">
     import { db } from './shared/firebase.js';
@@ -1869,6 +1921,11 @@
 
     function mostrarViewAuth(nombre) {
       document.getElementById('auth-congre-name').textContent = nombre;
+      const ini = document.getElementById('auth-congre-ini');
+      if (ini) {
+        ini.textContent = iniciales(nombre);
+        ini.style.setProperty('--cg-c', sessionStorage.getItem('congreColor') || '#7F77DD');
+      }
       const congre = document.getElementById('view-congres');
       const congreVisible = congre && congre.style.display !== 'none';
       if (congreVisible) {
@@ -1963,6 +2020,8 @@
       sessionStorage.removeItem('congreNombre');
       sessionStorage.removeItem('congreColor');
       document.body.classList.remove('en-menu');
+      // Si se entró directo al menú (congregación guardada), la lista nunca se pidió
+      if (!document.querySelector('#congre-list .congre-card')) cargarCongres();
       const auth = document.getElementById('view-auth');
       if (auth && auth.style.display !== 'none') {
         startAuthCongreTransition();
@@ -1994,7 +2053,7 @@
       }
       if (skipBtn) {
         skipBtn.disabled = busy;
-        skipBtn.textContent = busy ? 'Conectando…' : 'Omitir por ahora';
+        skipBtn.textContent = busy ? 'Conectando…' : 'Entrar como invitado';
       }
     }
 
@@ -2173,6 +2232,9 @@
           return;
         }
         list.innerHTML = '';
+        const ultimaId = localStorage.getItem('ziv_congre_id');
+        const PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+        let orden = 0;
         snap.forEach(doc => {
           const data    = doc.data();
           const id      = doc.id;
@@ -2183,15 +2245,17 @@
             : colorPara(id);
 
           const card = document.createElement('button');
-          card.className = 'congre-card';
+          card.className = 'congre-card' + (id === ultimaId ? ' es-ultima' : '');
+          card.style.animationDelay = `${0.22 + orden++ * 0.05}s`;
+          card.style.setProperty('--cg-c', c.color);
           card.style.setProperty('--c-border-hover', hexToRgba(c.color, 0.55));
           card.style.setProperty('--c-bg-hover',     hexToRgba(c.color, 0.09));
           card.style.setProperty('--c-glow',         hexToRgba(c.color, 0.18));
           card.innerHTML = `
             <div class="congre-icon" style="background:${c.bg};border:1px solid ${c.border};color:${c.color};">${inicial}</div>
             <div class="congre-info">
-              <div class="congre-nombre">${nombre}</div>
-              <div class="congre-id">${id}</div>
+              <div class="congre-nombre">${esc(nombre)}</div>
+              <div class="congre-id">${data.ciudadPrincipal ? PIN + esc(data.ciudadPrincipal) : ''}${id === ultimaId ? '<span class="congre-ultima">la última</span>' : ''}</div>
             </div>
             <div class="congre-arrow">›</div>
           `;
