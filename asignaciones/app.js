@@ -111,6 +111,8 @@ function privateModuleConfigRef() {
       cargarEspeciales(esEncargadoAsig),
     ]);
     todasLasFilas = rowsActuales;
+    renderPrograma(true);   // la portada es el programa: se muestra apenas llegan los datos
+    cargarMiNombre();
     if (snap.exists()) {
       const data = snap.data();
       const privateData = privateSnap?.exists?.() ? privateSnap.data() : {};
@@ -135,6 +137,7 @@ function privateModuleConfigRef() {
     const btnEnc = document.getElementById('btn-encargado-asig');
     if (btnEnc) btnEnc.style.display = puedeVerComoEncargado() ? '' : 'none';
   } catch(e) {
+    errorPrograma(e);
     await uiAlert('Error al cargar la configuración: ' + e.message, 'Error');
   }
 })();
@@ -148,9 +151,7 @@ let todasLasFilas = [];
 let autoResult    = [];
 let esEncargado   = false;
 let semanaOffsetEdit = 0;
-let semanaOffsetVer   = 0;
 let semanaOffsetImagen = 0;
-let suggIndex     = -1;
 let semanasEspeciales = {}; // { 'YYYY-MM-DD' (lunes) → { tipo, fechaEvento } }
 
 async function syncAsigPublicConfig(nombreCongre) {
@@ -233,7 +234,7 @@ function showView(id) {
   const btn = document.getElementById('btn-home');
   if (btn) {
     btn.classList.toggle("visible", id !== "view-cover");
-    btn.onclick = (VISTAS_ENCARGADO.includes(id) || (id === "view-semana" && esEncargado)) ? goToEncargado : goToCover;
+    btn.onclick = VISTAS_ENCARGADO.includes(id) ? goToEncargado : goToCover;
   }
 }
 
@@ -326,16 +327,6 @@ function getFilasDeSemana(rows, offset) {
     .sort((a, b) => fechaToNum(a.fecha) - fechaToNum(b.fecha));
 }
 
-function getLabelSemana(rows) {
-  if (!rows || rows.length === 0) return '—';
-  const fechas = rows.map(r => parseFecha(r.fecha)).filter(Boolean).sort((a,b) => a-b);
-  if (!fechas.length) return '—';
-  const lunes = new Date(fechas[0]);
-  const dl = lunes.getDay();
-  lunes.setDate(lunes.getDate() - (dl === 0 ? 6 : dl - 1));
-  const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
-  return `${fmtFecha(lunes)} al ${fmtFecha(domingo)}`;
-}
 
 // ─────────────────────────────────────────
 //   FETCH DESDE FIRESTORE
@@ -410,8 +401,8 @@ async function saveProgramacion(data) {
       await addDoc(asigCol(), { fecha: isoFecha, diaSemana: row.dia, roles });
     }
   }
-  todasLasFilas = []; // invalidar cache
   const rowsActualizadas = await getProgramacion();
+  todasLasFilas = rowsActualizadas;   // la portada muestra lo recién guardado
   await replaceAsigPublicPrograma(rowsActualizadas);
 }
 
@@ -460,7 +451,11 @@ function puedeVerComoEncargado() {
 }
 
 /* ─── Navegación ─── */
-function goToCover() { showView('view-cover'); }
+function goToCover() {
+  showView('view-cover');
+  if (todasLasFilas.length) renderPrograma(true);
+  else getProgramacion().then(rows => { todasLasFilas = rows; renderPrograma(true); }).catch(errorPrograma);
+}
 function goToPin() {
   if (!puedeVerComoEncargado()) return;
   esEncargado = true;
@@ -480,63 +475,149 @@ async function cerrarSesionEncargado() {
 }
 function goToEncargado() { showView('view-encargado'); cargarEspeciales(); }
 
-async function goToVerSemana() {
-  semanaOffsetVer = 0;
-  showView('view-semana');
-  await cargarVerSemana();
+/* ─── Portada: el programa como en la planilla ───
+   Filas = reuniones, columnas = responsabilidades. Un par de semanas atrás (atenuadas), la actual
+   resaltada y las que vienen (las futuras sin cargar no se muestran). Si la persona está vinculada a
+   un publicador, sus asignaciones se marcan (reemplaza a la vieja vista «Mi asignación»). */
+const PROG_COLS = [
+  { label: 'Lector',          roles: ['LECTOR'] },
+  { label: 'Sonido',          roles: ['SONIDO_1', 'SONIDO_2'] },
+  { label: 'Plataforma',      roles: ['PLATAFORMA'] },
+  { label: 'Micrófonos',      roles: ['MICROFONISTAS_1', 'MICROFONISTAS_2'] },
+  { label: 'Acom. auditorio', roles: ['ACOMODADOR_AUDITORIO'] },
+  { label: 'Acom. entrada',   roles: ['ACOMODADOR_ENTRADA'] },
+  { label: 'Presidente',      roles: ['PRESIDENTE'] },
+  { label: 'Revistas',        roles: ['REVISTAS'] },
+  { label: 'Publicaciones',   roles: ['PUBLICACIONES'] },
+];
+const DIA_CORTO = { 'Lunes': 'Lun', 'Martes': 'Mar', 'Miércoles': 'Mié', 'Jueves': 'Jue', 'Viernes': 'Vie', 'Sábado': 'Sáb', 'Domingo': 'Dom' };
+let progDesde = -2, progHasta = 5;   // semanas respecto de la actual (se amplían con los botones)
+let miNombre = null;                 // nombre del publicador vinculado, tal como figura en el programa
+
+function errorPrograma(e) {
+  document.getElementById('prog-cont').innerHTML =
+    `<div class="error-wrap">Error al cargar: ${esc(e.message)}. <button class="btn-secondary" style="font-size:12px;padding:4px 10px;margin-left:8px;" onclick="goToCover()">Reintentar</button></div>`;
 }
 
-function updateSemanaVerInfo() {
-  const lunes = getLunesDeOffset(semanaOffsetVer);
-  const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
-  setText('semana-label', `Semana del ${fmtFecha(lunes)} al ${fmtFecha(domingo)}`);
+function esMiNombre(nombre) {
+  const n = norm(nombre || '');
+  if (!n) return false;
+  if (miNombre) return n === norm(miNombre);
+  // Sin vínculo: todas las palabras del nombre del programa tienen que estar en el de la cuenta
+  const dn = norm(window.currentUser?.displayName || '').split(/\s+/).filter(Boolean);
+  const partes = n.split(/\s+/).filter(Boolean);
+  return dn.length > 0 && partes.length >= 2 && partes.every(p => dn.includes(p));
 }
 
-async function cambiarSemanaVer(dir) {
-  semanaOffsetVer += dir;
-  await cargarVerSemana();
-}
-
-async function cargarVerSemana() {
-  updateSemanaVerInfo();
-  show('semana-loading'); hide('semana-content'); hide('semana-error');
+async function cargarMiNombre() {
+  const id = window.currentUser?.matchedPublisherId;
+  if (!id) return;
   try {
-    if (todasLasFilas.length === 0) {
-      todasLasFilas = await getProgramacion();
+    const snap = await getDoc(doc(db, 'congregaciones', CONGRE_ID, 'vm_publicadores', id));
+    if (snap.exists() && snap.data().nombre) { miNombre = snap.data().nombre; renderPrograma(); }
+  } catch (e) { /* sin el espejo, queda la comparación por el nombre de la cuenta */ }
+}
+
+// alInicio: al entrar a la portada la tabla se ubica en la semana actual; si no, conserva el scroll
+function renderPrograma(alInicio = false) {
+  const cont = document.getElementById('prog-cont');
+  if (!cont || !todasLasFilas.length) return;
+  const hoyNum = fechaToNum(fmtFecha(new Date()));
+  const ncol = PROG_COLS.length + 1;
+  let proximaMarcada = false;
+  let ultimaConDatos = 0;   // última semana futura con algo cargado (para "Más adelante")
+  for (let off = 1; off <= progHasta + 26; off++) {
+    if (getFilasDeSemana(todasLasFilas, off).length || getEspecialDeOffset(off)) ultimaConDatos = off;
+  }
+
+  let cuerpo = '';
+  for (let off = progDesde; off <= Math.min(progHasta, ultimaConDatos); off++) {
+    const filas = getFilasDeSemana(todasLasFilas, off);
+    const esp = getEspecialDeOffset(off);
+    if (off > 0 && !filas.length && !esp) continue;
+    const lunes = getLunesDeOffset(off);
+    const dom = new Date(lunes); dom.setDate(lunes.getDate() + 6);
+    const canceladas = meetingsCanceladas(esp);
+    const esSuper = esp?.tipo === 'superintendente';
+    const clase = off === 0 ? 'actual' : (off < 0 ? 'pasada' : '');
+
+    let aviso = '';
+    if (esp) {
+      const { color } = TIPO_COLORS[esp.tipo] || { color: '#eee' };
+      let msg = TIPO_LABELS[esp.tipo] || esp.tipo;
+      if (canceladas.length === 2) msg += ' — no hay reuniones';
+      else if (canceladas[0])      msg += ` — sin reunión de ${canceladas[0].toLowerCase()}`;
+      if (esSuper)                 msg += ' — entre semana el martes, sábado sin lector';
+      aviso = `<span class="prog-aviso" style="--tc:${color}">${esc(msg)}</span>`;
     }
-    const filas = getFilasDeSemana(todasLasFilas, semanaOffsetVer);
-    hide('semana-loading');
-    renderSemana(filas, 'semana-reuniones', getEspecialDeOffset(semanaOffsetVer));
-    show('semana-content');
-  } catch(err) {
-    hide('semana-loading');
-    const errEl = document.getElementById('semana-error');
-    if (errEl) errEl.innerHTML = `<div class="error-wrap">Error: ${err.message}. <button class="btn-secondary" style="font-size:12px;padding:4px 10px;margin-left:8px;" onclick="cargarVerSemana()">Reintentar</button></div>`;
-    show('semana-error');
+    cuerpo += `<tbody class="prog-semana ${clase}"${off === 0 ? ' id="prog-actual"' : ''}>
+      <tr class="prog-sem-hdr"><th colspan="${ncol}"><span class="prog-sem-tx">Semana del ${fmtFecha(lunes).slice(0, 5)} al ${fmtFecha(dom).slice(0, 5)}${off === 0 ? '<span class="prog-chip">Esta semana</span>' : ''}${aviso}</span></th></tr>`;
+
+    if (!filas.length && canceladas.length < 2) {
+      cuerpo += `<tr><td class="prog-vacio" colspan="${ncol}">Sin programación cargada</td></tr>`;
+    }
+    filas.forEach(row => {
+      const dia = row.dia || getNombreDia(row.fecha);
+      const diaVisto = (esSuper && dia === 'Miércoles') ? 'Martes' : dia;
+      const num = fechaToNum(row.fecha);
+      let marca = '';
+      if (num === hoyNum) { marca = '<span class="prog-hoy">Hoy</span>'; proximaMarcada = true; }
+      else if (!proximaMarcada && num > hoyNum) { marca = '<span class="prog-hoy">Próxima</span>'; proximaMarcada = true; }
+      const fecha = `<th class="prog-fecha" style="--dc:${DIA_COLORS[diaVisto] || '#aaa'}"><span class="prog-dia">${DIA_CORTO[diaVisto] || esc(diaVisto)}</span><span class="prog-dm">${esc((row.fecha || '').slice(0, 5))}</span>${marca}</th>`;
+      if (canceladas.includes(dia)) {
+        cuerpo += `<tr class="prog-cancel${marca ? ' prog-prox' : ''}">${fecha}<td colspan="${ncol - 1}">${esc(TIPO_LABELS[esp.tipo] || 'Evento especial')}</td></tr>`;
+        return;
+      }
+      const celdas = PROG_COLS.map(col => {
+        const nombres = col.roles
+          .filter(r => !(esSuper && r === 'LECTOR' && dia === 'Sábado'))
+          .map(r => row[r]).filter(Boolean);
+        if (!nombres.length) return '<td><span class="prog-nada">—</span></td>';
+        return '<td>' + nombres.map(n => `<span class="prog-nom${esMiNombre(n) ? ' mio' : ''}">${esc(n)}</span>`).join('') + '</td>';
+      }).join('');
+      cuerpo += `<tr${marca ? ' class="prog-prox"' : ''}>${fecha}${celdas}</tr>`;
+    });
+    cuerpo += '</tbody>';
+  }
+
+  if (!cuerpo) {
+    cont.innerHTML = '<div class="empty-state">No hay programación cargada.</div>';
+    return;
+  }
+  const hayMas = ultimaConDatos > progHasta;
+  const scrollPrevio = cont.querySelector('.prog-scroll')?.scrollTop || 0;
+  const tieneMio = cuerpo.includes('prog-nom mio');
+  cont.innerHTML = `
+    <button class="prog-mas" onclick="ampliarPrograma(-1)">↑ Semanas anteriores</button>
+    <div class="prog-scroll">
+      <table class="prog">
+        <thead><tr><th class="prog-fecha">Fecha</th>${PROG_COLS.map(c => `<th>${c.label}</th>`).join('')}</tr></thead>
+        ${cuerpo}
+      </table>
+    </div>
+    ${tieneMio ? '<div class="prog-leyenda"><span class="prog-nom mio">Así</span> se marcan tus asignaciones</div>' : ''}
+    ${hayMas ? '<button class="prog-mas" onclick="ampliarPrograma(1)">↓ Más adelante</button>' : ''}`;
+
+  // Si la tabla no entra entera, arranca en la semana actual (lo que viene importa más que lo que pasó),
+  // dejando ver la última reunión de la semana anterior; el resto queda a un scroll hacia arriba.
+  const sc = cont.querySelector('.prog-scroll'), actual = document.getElementById('prog-actual');
+  if (!sc) return;
+  if (!alInicio) sc.scrollTop = scrollPrevio;
+  else if (actual && sc.scrollHeight > sc.clientHeight) {
+    const anterior = actual.previousElementSibling?.lastElementChild;
+    sc.scrollTop = actual.offsetTop - sc.querySelector('thead').offsetHeight - (anterior?.offsetHeight || 0);
   }
 }
 
-async function goToBuscarHermano() {
-  showView('view-buscar');
-  const inp = document.getElementById('search-input');
-  if (inp) inp.value = '';
-  hide('search-suggestions'); hide('buscar-result'); hide('buscar-empty'); hide('buscar-loading');
-  const promises = [];
-  // Quien no es encargado no puede leer publicadores (reglas de Firestore): los nombres
-  // para buscar salen del propio programa, que es donde aparecen sus asignaciones.
-  const encargado = puedeVerComoEncargado();
-  if (encargado && Object.keys(hermanos).length === 0)
-    promises.push(getHermanos().then(d => { hermanos = d; }).catch(()=>{}));
-  if (todasLasFilas.length === 0)
-    promises.push(getProgramacion().then(d => { todasLasFilas = d; }).catch(()=>{}));
-  await Promise.all(promises);
-  if (!encargado) hermanos = { PROGRAMA: nombresDelPrograma() };
-}
-
-function nombresDelPrograma() {
-  const set = new Set();
-  todasLasFilas.forEach(row => ROLES.forEach(r => { if (row[r]) set.add(row[r]); }));
-  return [...set];
+function ampliarPrograma(dir) {
+  const sc = document.querySelector('.prog-scroll');
+  const altoAntes = sc ? sc.scrollHeight : 0;
+  const arribaAntes = sc ? sc.scrollTop : 0;
+  if (dir < 0) progDesde -= 4; else progHasta += 4;
+  renderPrograma();
+  // Al sumar semanas arriba, que no salte lo que se estaba mirando
+  const sc2 = document.querySelector('.prog-scroll');
+  if (dir < 0 && sc2) sc2.scrollTop = arribaAntes + sc2.scrollHeight - altoAntes;
 }
 
 async function goToEditar() {
@@ -627,206 +708,6 @@ async function cargarImagen() {
     renderTablaImagen(filas);
     show('imagen-content');
   } catch(err) { hide('imagen-loading'); }
-}
-
-/* ─── Render semana ─── */
-function renderSemana(rows, containerId, especial) {
-  const c = document.getElementById(containerId);
-  if (!c) return;
-  c.innerHTML = '';
-
-  const canceladas = meetingsCanceladas(especial);
-  const esSuper    = especial?.tipo === 'superintendente';
-
-  if (especial) {
-    const { color, bg } = TIPO_COLORS[especial.tipo] || { color: '#eee', bg: '#1e1e1e' };
-    let msg = TIPO_LABELS[especial.tipo] || especial.tipo;
-    if (canceladas.length === 2)  msg += ' — no hay reuniones esta semana';
-    else if (canceladas[0])       msg += ` — sin reunión de ${canceladas[0].toLowerCase()}`;
-    if (esSuper)                  msg += ' — reunión de entre semana el MARTES · sábado sin lector';
-    const banner = document.createElement('div');
-    banner.className = 'especial-banner';
-    banner.style.cssText = `border-left-color:${color};background:${bg};`;
-    banner.innerHTML = `<span style="color:${color};">⚠ ${msg}</span>`;
-    c.appendChild(banner);
-  }
-
-  if (!rows || rows.length === 0) {
-    if (canceladas.length < 2)
-      c.innerHTML += '<div class="empty-state"><p>No hay programación cargada para esta semana.</p></div>';
-    return;
-  }
-
-  rows.forEach(row => {
-    const dia      = row.dia || getNombreDia(row.fecha);
-    const diaColor = DIA_COLORS[dia] || '#eee';
-    const diaBg    = DIA_BG[dia]    || '#1e1e1e';
-
-    if (canceladas.includes(dia)) {
-      const label = TIPO_LABELS[especial.tipo] || 'Evento especial';
-      const card = document.createElement('div');
-      card.className = 'reunion-card cancel';
-      card.style.setProperty('--dc', diaColor);
-      card.style.setProperty('--db', diaBg);
-      card.innerHTML = `
-        <div class="reunion-header" style="background:${diaBg};border-left:3px solid ${diaColor};">
-          <span class="reunion-dia" style="color:${diaColor};">${dia}</span>
-          <span class="reunion-fecha">${row.fecha || ''}</span>
-        </div>
-        <div class="roles-list reunion-cancelada">${label}</div>`;
-      c.appendChild(card);
-      return;
-    }
-
-    const displayDia = (esSuper && dia === 'Miércoles') ? 'Martes' : dia;
-    const rolesHTML = ROLES.map(r => {
-      if (esSuper && r === 'LECTOR' && dia === 'Sábado') return '';
-      const val = row[r] || '';
-      if (!val) return '';
-      return `<div class="rol-row"><span class="rol-label">${ROLES_LABELS[r]}</span><span class="rol-valor">${val}</span></div>`;
-    }).filter(Boolean).join('');
-
-    const card = document.createElement('div');
-    card.className = 'reunion-card';
-    card.style.setProperty('--dc', diaColor);
-    card.style.setProperty('--db', diaBg);
-    card.innerHTML = `
-      <div class="reunion-header" style="background:${diaBg};border-left:3px solid ${diaColor};">
-        <span class="reunion-dia" style="color:${diaColor};">${displayDia}</span>
-        <span class="reunion-fecha">${row.fecha || ''}</span>
-      </div>
-      <div class="roles-list">${rolesHTML || '<div style="color:var(--text-muted, #666);font-size:13px;padding:8px 0;">Sin datos</div>'}</div>`;
-    c.appendChild(card);
-  });
-}
-
-/* ─── Buscar hermano ─── */
-function getAllHermanos() {
-  const set = new Set();
-  Object.values(hermanos).forEach(lista => {
-    if (Array.isArray(lista)) lista.forEach(h => { if (h) set.add(h); });
-  });
-  return [...set].sort();
-}
-
-function mostrarSugerencias(lista) {
-  const sugg = document.getElementById('search-suggestions');
-  if (!sugg) return;
-  if (lista.length === 0) { hide('search-suggestions'); return; }
-  suggIndex = -1;
-  sugg.innerHTML = lista.slice(0,10).map((h,i) =>
-    `<button class="sugg-item" id="sugg-${i}" onclick="buscarHermano('${h.replace(/'/g, "\\'")}')">${h}</button>`
-  ).join('');
-  show('search-suggestions');
-}
-
-function filtrarHermanos() {
-  const q = document.getElementById('search-input')?.value.trim() || '';
-  hide('buscar-result'); hide('buscar-empty');
-  const todos = getAllHermanos();
-  if (q.length === 0) { mostrarSugerencias(todos.slice(0,10)); return; }
-  if (q.length < 2)   { hide('search-suggestions'); return; }
-  mostrarSugerencias(todos.filter(h => norm(h).includes(norm(q))));
-}
-
-function inputFocus() {
-  const q = document.getElementById('search-input')?.value.trim() || '';
-  if (q.length < 2) mostrarSugerencias(getAllHermanos().slice(0,10));
-  else filtrarHermanos();
-}
-
-function inputKeydown(e) {
-  const sugg = document.getElementById('search-suggestions');
-  const items = sugg ? [...sugg.querySelectorAll('.sugg-item')] : [];
-  if (!items.length) return;
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    suggIndex = Math.min(suggIndex + 1, items.length - 1);
-    items.forEach((el,i) => el.classList.toggle('sugg-active', i === suggIndex));
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    suggIndex = Math.max(suggIndex - 1, 0);
-    items.forEach((el,i) => el.classList.toggle('sugg-active', i === suggIndex));
-  } else if (e.key === 'Enter') {
-    e.preventDefault();
-    if (suggIndex >= 0 && items[suggIndex]) items[suggIndex].click();
-    else if (items[0]) items[0].click();
-  } else if (e.key === 'Escape') {
-    hide('search-suggestions');
-  }
-}
-
-async function buscarHermano(nombre) {
-  hide('search-suggestions');
-  const inp = document.getElementById('search-input');
-  if (inp) inp.value = nombre;
-  hide('buscar-empty'); hide('buscar-result');
-  show('buscar-loading');
-  try {
-    if (todasLasFilas.length === 0) {
-      todasLasFilas = await getProgramacion();
-    }
-    hide('buscar-loading');
-
-    const hoy = new Date(); hoy.setHours(0,0,0,0);
-    const desde = new Date(hoy); desde.setDate(hoy.getDate() - 7);
-    const filasProximas = todasLasFilas
-      .filter(r => { const d = parseFecha(r.fecha); return d && d >= desde; })
-      .sort((a,b) => parseFecha(a.fecha) - parseFecha(b.fecha));
-
-    const semanas = {}, ordenSemanas = [];
-    filasProximas.forEach(row => {
-      const d = parseFecha(row.fecha);
-      if (!d) return;
-      const dl = d.getDay();
-      const lunes = new Date(d); lunes.setDate(d.getDate() - (dl === 0 ? 6 : dl - 1));
-      const key = fmtFecha(lunes);
-      if (!semanas[key]) { semanas[key] = []; ordenSemanas.push(key); }
-      semanas[key].push(row);
-    });
-
-    const res = document.getElementById('buscar-result');
-    let html = `<div class="buscar-nombre">${nombre}</div>`;
-    let tieneAlgo = false;
-
-    ordenSemanas.slice(0,8).forEach(semKey => {
-      const filas = semanas[semKey].sort((a,b) => parseFecha(a.fecha) - parseFecha(b.fecha));
-      const label = getLabelSemana(filas);
-      html += `<div class="semana-bloque"><div class="semana-bloque-title">Semana del ${label}</div>`;
-
-      filas.forEach(row => {
-        const dia = row.dia || getNombreDia(row.fecha);
-        const diaColor = DIA_COLORS[dia] || '#eee';
-        const diaBg    = DIA_BG[dia] || '#1e1e1e';
-        let rolEncontrado = null;
-        ROLES.forEach(r => {
-          if (norm(row[r] || '') === norm(nombre)) rolEncontrado = ROLES_LABELS[r];
-        });
-        if (rolEncontrado) {
-          tieneAlgo = true;
-          html += `<div class="asig-card asig-tiene" style="--dc:${diaColor};--db:${diaBg};">
-            <span class="asig-dia">${dia}</span>
-            <span class="asig-fecha">${row.fecha}</span>
-            <span class="asig-rol">${rolEncontrado}</span>
-          </div>`;
-        } else {
-          html += `<div class="asig-card asig-libre">
-            <span class="asig-dia">${dia}</span>
-            <span class="asig-fecha">${row.fecha}</span>
-            <span class="asig-rol asig-rol-libre">Sin asignación</span>
-          </div>`;
-        }
-      });
-      html += `</div>`;
-    });
-
-    if (ordenSemanas.length === 0) { show('buscar-empty'); return; }
-    res.innerHTML = html;
-    show('buscar-result');
-  } catch(e) {
-    hide('buscar-loading');
-    show('buscar-empty');
-  }
 }
 
 /* ─── Editar programación ─── */
@@ -1272,15 +1153,10 @@ window.eliminarEspecial = async function(lunes) {
 
 window.guardarImagen = guardarImagen;
 window.goToCover = goToCover;
+window.ampliarPrograma = ampliarPrograma;
 window.goToPin = goToPin;
 window.cerrarSesionEncargado = cerrarSesionEncargado;
 window.goToEncargado = goToEncargado;
-window.goToVerSemana = goToVerSemana;
-window.cambiarSemanaVer = cambiarSemanaVer;
-window.goToBuscarHermano = goToBuscarHermano;
-window.inputFocus = inputFocus;
-window.inputKeydown = inputKeydown;
-window.buscarHermano = buscarHermano;
 window.goToEditar = goToEditar;
 window.cambiarSemanaEdit = cambiarSemanaEdit;
 window.guardarEdicion = guardarEdicion;
@@ -1296,4 +1172,3 @@ window.guardarImagen = guardarImagen;
 window.showView = showView;
 window.cargarEspeciales = cargarEspeciales; 
 window.renderTablaImagen = renderTablaImagen;
-window.filtrarHermanos = filtrarHermanos;

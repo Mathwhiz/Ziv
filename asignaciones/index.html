@@ -26,7 +26,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Asignaciones — Ziv</title>
 <link rel="stylesheet" href="../shared/styles-base.css?v=1.5">
-<link rel="stylesheet" href="/asignaciones/styles.css?v=3.6">
+<link rel="stylesheet" href="/asignaciones/styles.css?v=3.7">
 </head>
 <body class="ziv-booting">
 <div class="ziv-boot loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
@@ -45,100 +45,25 @@
 
 <div class="app">
 
-<!-- ── COVER ── -->
+<!-- ── PORTADA: programa como la planilla ── -->
   <div id="view-cover" class="view">
-    <div class="cs-module-cover">
-
-      <!-- Ícono del módulo -->
-      <div class="cs-module-icon-anim" style="--module-color:#7F77DD;--module-color-dim:rgba(127,119,221,0.35);">
-        <div class="cs-module-icon-wrap" style="background:rgba(127,119,221,0.18);">
-          <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#7F77DD" stroke-width="1.5" stroke-linecap="round"/>
-            <circle cx="9" cy="7" r="4" stroke="#7F77DD" stroke-width="1.5"/>
-            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#7F77DD" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
+    <div class="prog-hdr">
+      <div class="prog-hdr-tx">
+        <div class="prog-titulo">Asignaciones</div>
+        <div class="prog-sub" id="congre-sub">—</div>
       </div>
-
-      <div class="cs-module-title">Asignaciones</div>
-      <div class="cs-module-sub" id="congre-sub" style="color:var(--k-tx-7f77dd, #7F77DD);">—</div>
-      <div class="cs-module-label">¿Qué querés hacer?</div>
-
-      <button class="cs-module-card" onclick="goToVerSemana()" style="--card-hover-border:#1D9E75;--card-hover-bg:#1e2922;">
-        <div class="cs-module-card-icon" style="background:var(--k-bg-0d2318, #0d2318);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="#1D9E75" stroke-width="1.8"/>
-            <circle cx="12" cy="12" r="3" stroke="#1D9E75" stroke-width="1.8"/>
-          </svg>
-        </div>
-        <div>
-          <div class="cs-module-card-title">Ver semana actual</div>
-          <div class="cs-module-card-sub">Programación de esta semana</div>
-        </div>
+      <button id="btn-encargado-asig" class="prog-enc-btn" onclick="goToPin()" style="display:none;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="2"/>
+          <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Encargado
       </button>
-
-      <button class="cs-module-card" onclick="goToBuscarHermano()" style="--card-hover-border:#378ADD;--card-hover-bg:#1e2430;">
-        <div class="cs-module-card-icon" style="background:var(--k-bg-0d1a2e, #0d1a2e);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <circle cx="11" cy="11" r="8" stroke="#378ADD" stroke-width="1.8"/>
-            <path d="m21 21-4.35-4.35" stroke="#378ADD" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div>
-          <div class="cs-module-card-title">Mi asignación</div>
-          <div class="cs-module-card-sub">Buscar mi nombre esta semana</div>
-        </div>
-      </button>
-
-      <button id="btn-encargado-asig" class="cs-module-card" onclick="goToPin()" style="display:none;--card-hover-border:#7F77DD;--card-hover-bg:#1e1e2e;">
-        <div class="cs-module-card-icon" style="background:var(--k-bg-171730, #171730);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="11" width="18" height="11" rx="2" stroke="#7F77DD" stroke-width="1.8"/>
-            <path d="M7 11V7a5 5 0 0110 0v4" stroke="#7F77DD" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div>
-          <div class="cs-module-card-title">Acceso encargado</div>
-          <div class="cs-module-card-sub">Editar y generar programación</div>
-        </div>
-      </button>
-
-      <a href="../index.html#menu" class="cs-back-btn">← Volver al módulo</a>
-
     </div>
-  </div>
-
-  <!-- ── VER SEMANA ── -->
-  <div id="view-semana" class="view" style="display:none;">
-    <p class="section-title">Programación</p>
-    <div class="semana-nav-header">
-      <button onclick="cambiarSemanaVer(-1)" class="semana-nav-btn">←</button>
-      <span id="semana-label" class="semana-nav-label"></span>
-      <button onclick="cambiarSemanaVer(1)" class="semana-nav-btn">→</button>
+    <div id="prog-cont">
+      <div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
     </div>
-    <div id="semana-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando programación...</div></div>
-    <div id="semana-error" style="display:none;"></div>
-    <div id="semana-content" style="display:none;"><div id="semana-reuniones"></div></div>
-    <button class="btn-secondary" style="width:100%;margin-top:8px;" onclick="goToCover()">← Volver</button>
-  </div>
-
-  <!-- ── BUSCAR HERMANO ── -->
-  <div id="view-buscar" class="view view-buscar-layout" style="display:none;">
-    <p class="section-title">Buscá tu nombre</p>
-    <div class="buscar-wrap">
-      <div class="search-box">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="#888" stroke-width="1.8"/><path d="m21 21-4.35-4.35" stroke="#888" stroke-width="1.8" stroke-linecap="round"/></svg>
-        <input type="text" id="search-input" placeholder="Ej: Pérez Juan..." oninput="filtrarHermanos()" onfocus="inputFocus()" onkeydown="inputKeydown(event)" autocomplete="off">
-      </div>
-      <div id="search-suggestions" class="search-suggestions" style="display:none;"></div>
-      <div id="buscar-loading" class="loading-wrap" style="display:none;"><div class="spinner"></div><div class="loading-txt">Buscando...</div></div>
-      <div id="buscar-result" style="display:none;"></div>
-      <div id="buscar-empty" class="buscar-empty" style="display:none;">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="#444" stroke-width="1.5"/><path d="m21 21-4.35-4.35" stroke="#444" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <p>No hay asignaciones para este nombre esta semana</p>
-      </div>
-    </div>
-    <button class="btn-secondary" style="width:100%;margin-top:16px;" onclick="goToCover()">← Volver</button>
+    <a href="../index.html#menu" class="cs-back-btn prog-volver">← Volver al menú</a>
   </div>
 
   <!-- ── MENÚ ENCARGADO ── -->
