@@ -2,6 +2,7 @@
    (--ziv-bar-h, chip del usuario + casita) queda arriba y todo lo demás empieza debajo. */
 :root {
   --e-sin: #8a8f98;      /* sin predicar */
+  --e-neutro: #6b7a8c;   /* lo que ve el publicador común: sin estado */
   --e-parcial: #a98bd6;  /* empezado y no terminado (soltado, o "en proceso" viejo del Excel) */
   --e-proc: #378ADD;     /* lo tiene alguien */
   --e-ok: #1D9E75;       /* terminado hace ≤ 6 meses */
@@ -13,6 +14,8 @@ html, body { margin: 0; height: 100%; }
 /* --ed-top en body (no en :root): --ziv-bar-h lo define body.ziv-barra, y en :root valdría 0 */
 body { --ed-top: var(--ziv-bar-h, 0px); font-family: system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; }
 button { font: inherit; color: inherit; cursor: pointer; }
+/* Capas: todo lo de la pantalla del mapa (barra, lista, botones: 240–270) queda DEBAJO del chip del usuario
+   (#ziv-session, z 300) para que su menú se vea; el portero y las hojas (950+) lo tapan a propósito. */
 #map { position: fixed; inset: 0; top: var(--ed-top); z-index: 0; background: var(--bg-primary); }
 
 .btn-home {
@@ -24,7 +27,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* ── barra de búsqueda y filtros ── */
 .topbar {
-  position: fixed; top: var(--ed-top); left: 0; right: 0; z-index: 500;
+  position: fixed; top: var(--ed-top); left: 0; right: 0; z-index: 250;
   padding: 10px 12px 8px;
   background: linear-gradient(var(--bg-primary) 70%, transparent);
   display: flex; flex-direction: column; gap: 8px; pointer-events: none;
@@ -83,7 +86,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* ── resumen abajo ── */
 .bottombar {
-  position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 500;
+  position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 250;
   display: flex; gap: 8px; align-items: center; justify-content: space-between; pointer-events: none;
 }
 .bottombar > * { pointer-events: auto; }
@@ -92,13 +95,24 @@ button { font: inherit; color: inherit; cursor: pointer; }
   padding: 8px 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.35;
 }
 .resumen b { color: var(--text-primary); }
+.bottombar { align-items: flex-end; }
+.der-col { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.zoom-btns {
+  display: flex; flex-direction: column; border-radius: 14px; overflow: hidden;
+  border: 1px solid var(--border-light); background: var(--bg-card);
+}
+.zoom-btns button { width: 44px; height: 44px; border: 0; background: none; display: flex; align-items: center; justify-content: center; }
+.zoom-btns button + button { border-top: 1px solid var(--border-light); }
+.zoom-btns button:disabled { opacity: .35; cursor: default; }
+.zoom-btns svg { width: 20px; height: 20px; }
+.zoom-btns[hidden] { display: none; }
 .pill-btn {
   height: 44px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--border-light);
   background: var(--bg-card); font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px;
 }
 .pill-btn svg { width: 18px; height: 18px; }
 .banner-mover {
-  position: fixed; left: 12px; right: 12px; top: calc(var(--ed-top) + 104px); z-index: 600;
+  position: fixed; left: 12px; right: 12px; top: calc(var(--ed-top) + 104px); z-index: 260;
   background: #EF9F27; color: #1a1c1f; border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 600;
   display: none; align-items: center; gap: 10px; max-width: 560px;
 }
@@ -107,7 +121,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .banner-mover button.sec { margin-left: 0; background: transparent; color: #1a1c1f; text-decoration: underline; }
 
 .cargando {
-  position: fixed; inset: 0; top: var(--ed-top); z-index: 700; display: flex; align-items: center; justify-content: center;
+  position: fixed; inset: 0; top: var(--ed-top); z-index: 270; display: flex; align-items: center; justify-content: center;
   flex-direction: column; gap: 12px; background: var(--bg-primary); color: var(--text-secondary); font-size: 14px; text-align: center; padding: 20px;
 }
 .cargando .spin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--border-light); border-top-color: var(--text-primary); animation: ed-giro .8s linear infinite; }
@@ -146,6 +160,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .btn.chico { height: 40px; font-size: 14px; font-weight: 600; }
 .btn:disabled { opacity: .5; cursor: default; }
 .btn svg { width: 18px; height: 18px; }
+.resp { margin-top: 14px; padding: 12px; border-radius: 13px; border: 1px solid var(--border-light); }
+.resp-txt { font-size: 13.5px; color: var(--text-secondary); line-height: 1.45; }
+.resp-txt b { color: var(--text-primary); }
 .hist { margin-top: 16px; }
 .hist h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
 .hist-item { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--border-primary); }
@@ -154,7 +171,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .hist-item .nota { color: var(--text-muted); }
 
 /* ── lista ── */
-.lista { position: fixed; inset: 0; top: var(--ed-top); z-index: 450; background: var(--bg-primary); overflow-y: auto; display: none; padding: 110px 12px 90px; box-sizing: border-box; }
+.lista { position: fixed; inset: 0; top: var(--ed-top); z-index: 240; background: var(--bg-primary); overflow-y: auto; display: none; padding: 110px 12px 90px; box-sizing: border-box; }
 .lista.on { display: block; }
 .lista-in { max-width: 720px; margin: 0 auto; }
 .lista-sec { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin: 16px 4px 8px; }
@@ -188,6 +205,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .rejilla i { width: 4px; height: 18px; border-radius: 2px; background: #1b1d20; box-shadow: inset 0 1px 2px rgba(0,0,0,.6); }
 .pisos { display: grid; gap: 7px; }
 .piso { display: grid; grid-template-columns: 34px repeat(var(--cols), minmax(0, 1fr)); gap: 7px; align-items: center; }
+.piso.sin-lbl { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); max-width: calc(var(--cols) * 120px); margin: 0 auto; width: 100%; }
 .piso-lbl { font-size: 12px; font-weight: 800; color: #b9bec6; text-align: center; }
 .timbre {
   height: 50px; border-radius: 11px; border: 1px solid #1d1f22; position: relative; padding: 0 2px;
@@ -227,7 +245,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .stepper button { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--border-light); background: var(--bg-secondary); font-size: 22px; font-weight: 700; }
 .stepper output { min-width: 40px; text-align: center; font-size: 20px; font-weight: 700; }
 .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.seg button { height: 42px; border-radius: 11px; border: 1px solid var(--border-light); background: var(--bg-secondary); font-weight: 600; }
+.seg.tres { grid-template-columns: repeat(3, 1fr); }
+.seg button { min-height: 42px; padding: 6px 8px; line-height: 1.25; border-radius: 11px; border: 1px solid var(--border-light); background: var(--bg-secondary); font-weight: 600; }
 .seg button.on { background: var(--text-primary); color: var(--bg-primary); }
 .ayuda { font-size: 14px; color: var(--text-secondary); margin: 0 0 16px; line-height: 1.45; }
 

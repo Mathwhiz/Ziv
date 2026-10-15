@@ -558,9 +558,10 @@ window.uiToggleTheme = function() {
   max-height: 280px; overflow-y: auto;
   padding: 0 6px 10px;
 }
-.cp-list::-webkit-scrollbar { width: 3px; }
+.cp-list::-webkit-scrollbar { width: 9px; }
 .cp-list::-webkit-scrollbar-track { background: transparent; }
-.cp-list::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 2px; }
+.cp-list::-webkit-scrollbar-thumb { background: #55595f; border-radius: 5px; border: 2px solid transparent; background-clip: padding-box; }
+.cp-list::-webkit-scrollbar-thumb:hover { background-color: #6c7179; }
 .cp-item {
   display: flex; align-items: center; gap: 10px;
   padding: 9px 10px; border-radius: 10px; cursor: pointer;
@@ -629,9 +630,10 @@ window.uiToggleTheme = function() {
   max-height: min(55vh, 420px); overflow-y: auto;
   padding: 0 6px 10px;
 }
-.tp-list::-webkit-scrollbar { width: 3px; }
+.tp-list::-webkit-scrollbar { width: 9px; }
 .tp-list::-webkit-scrollbar-track { background: transparent; }
-.tp-list::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 2px; }
+.tp-list::-webkit-scrollbar-thumb { background: #55595f; border-radius: 5px; border: 2px solid transparent; background-clip: padding-box; }
+.tp-list::-webkit-scrollbar-thumb:hover { background-color: #6c7179; }
 .tp-section-title {
   font-size: 11px; font-weight: 700; color: var(--text-dim);
   text-transform: uppercase; letter-spacing: 0.05em;

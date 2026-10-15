@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../shared/styles-base.css?v=1.4">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=1.0">
+  <link rel="stylesheet" href="styles.css?v=1.1">
 </head>
 <body>
 
@@ -43,10 +43,16 @@
 
 <div class="bottombar">
   <div class="resumen" id="resumen"></div>
-  <button class="pill-btn" id="btn-lista">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-    <span>Lista</span>
-  </button>
+  <div class="der-col">
+    <div class="zoom-btns" id="zoom-btns">
+      <button id="zoom-mas" aria-label="Acercar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button id="zoom-menos" aria-label="Alejar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+    </div>
+    <button class="pill-btn" id="btn-lista">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      <span>Lista</span>
+    </button>
+  </div>
 </div>
 
 <div class="lista" id="lista"></div>
@@ -61,7 +67,7 @@
 
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="../shared/ui-utils.js?v=3.6"></script>
-<script type="module" src="app.js?v=1.0"></script>
+<script src="../shared/ui-utils.js?v=3.7"></script>
+<script type="module" src="app.js?v=1.1"></script>
 </body>
 </html>

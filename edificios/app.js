@@ -15,6 +15,7 @@ const CONGRE_NOMBRE = sessionStorage.getItem('congreNombre') || CONGRE_ID;
 const YO            = window.currentUser || {};
 const YO_UID        = YO.uid;
 const YO_NOMBRE     = YO.displayName || 'Sin nombre';
+const YO_PUB        = YO.matchedPublisherId || null;   // el responsable se guarda por publicador
 const PUEDE_ADMIN   = !!window.hasPermission?.('administrar_edificios');
 
 document.querySelectorAll('.js-congre').forEach(el => el.textContent = CONGRE_NOMBRE);
@@ -78,11 +79,17 @@ function haceTxt(d) {
 }
 function grupoLbl(e) { return e.grupoId ? (grupos[e.grupoId]?.label || 'Grupo ' + e.grupoId) : 'sin grupo'; }
 
+const esMio = e => !!(e.asignado && YO_PUB && e.asignado.pubId === YO_PUB);
+// Quien gestiona un edificio (encargados, o su responsable) arma el portero, empieza vuelta, mueve el pin
+// y ve el estado y el historial. El publicador común solo marca timbres: no ve cuándo se terminó.
+const gestiona = e => PUEDE_ADMIN || esMio(e);
+const estadoVisto = e => gestiona(e) ? estado(e) : { k: 'neutro', label: '', c: 'var(--e-neutro)' };
+
 // Estado del edificio, según quién lo tiene y la última entrada del historial.
 function estado(e) {
   if (e.asignado) {
-    const mio = e.asignado.uid === YO_UID;
-    return { k: 'proc', label: mio ? 'Lo tenés vos' : `Lo tiene ${e.asignado.nombre}`, c: 'var(--e-proc)', mio };
+    const mio = esMio(e);
+    return { k: 'proc', label: mio ? 'A tu cargo' : `A cargo de ${e.asignado.nombre}`, c: 'var(--e-proc)', mio };
   }
   const h = e.historial || [];
   const u = h[h.length - 1];
@@ -99,14 +106,36 @@ function estado(e) {
 // ─────────────────────────────────────────
 //   PORTERO: claves y progreso
 // ─────────────────────────────────────────
-function claves(f) {
+// Dos formas de portero:
+//  - 'numerado' { total, columnas }: botones 1, 2, 3… como en la mayoría de los porteros (clave "n-5")
+//  - 'pisos' { pisos, deptos, pb, nom }: "1A", "2B"… (clave "piso-depto": "3-B", "PB-A").
+//    Los portero guardados antes de existir `tipo` son de este tipo.
+const tipoForma = f => f.tipo === 'numerado' ? 'numerado' : 'pisos';
+
+// Filas tal como se dibujan (de arriba hacia abajo), con la clave y la etiqueta de cada timbre.
+function grilla(f) {
+  if (tipoForma(f) === 'numerado') {
+    const cols = f.columnas || 2, filas = [];
+    for (let i = 1; i <= f.total; i += cols) {
+      filas.push({ lbl: null, celdas: Array.from({ length: Math.min(cols, f.total - i + 1) }, (_, j) => ({ k: `n-${i + j}`, lbl: String(i + j) })) });
+    }
+    return { filas, cols };
+  }
+  const deptos = Array.from({ length: f.deptos }, (_, i) => f.nom === 'numeros' ? String(i + 1) : String.fromCharCode(65 + i));
   const pisos = [];
   for (let p = f.pisos; p >= 1; p--) pisos.push(String(p));
   if (f.pb) pisos.push('PB');
-  const deptos = Array.from({ length: f.deptos }, (_, i) => f.nom === 'numeros' ? String(i + 1) : String.fromCharCode(65 + i));
-  return { pisos, deptos };
+  return { cols: deptos.length, filas: pisos.map(p => ({ lbl: p, celdas: deptos.map(d => ({ k: `${p}-${d}`, lbl: p === 'PB' ? `PB ${d}` : p + d })) })) };
 }
-const timbreLbl = (piso, d) => piso === 'PB' ? `PB ${d}` : piso + d;
+const celdasDe = f => grilla(f).filas.flatMap(r => r.celdas);
+function nombreTimbre(k) {
+  const [p, d] = k.split('-');
+  return p === 'n' ? `Timbre ${d}` : `${p === 'PB' ? 'PB' : p + '°'} ${d}`;
+}
+function descForma(f) {
+  if (tipoForma(f) === 'numerado') return `${f.total} timbres numerados`;
+  return `${f.pisos} ${f.pisos === 1 ? 'piso' : 'pisos'}${f.pb ? ' + PB' : ''} · ${f.deptos} por piso`;
+}
 const vueltaDe = e => e.vuelta || 1;
 
 // Un timbre cuenta en la vuelta actual; "No quiere" vale para siempre.
@@ -116,14 +145,14 @@ function marcaVigente(e, k) {
 }
 function progreso(e) {
   if (!e.forma) return null;
-  const { pisos, deptos } = claves(e.forma);
+  const celdas = celdasDe(e.forma);
   let hechos = 0, noQuiere = 0;
-  pisos.forEach(p => deptos.forEach(d => {
-    const r = marcaVigente(e, `${p}-${d}`);
+  celdas.forEach(c => {
+    const r = marcaVigente(e, c.k);
     if (r?.res === 'no_quiere') noQuiere++;
     else if (r) hechos++;
-  }));
-  return { total: pisos.length * deptos.length, hechos, noQuiere };
+  });
+  return { total: celdas.length, hechos, noQuiere };
 }
 
 // ─────────────────────────────────────────
@@ -167,15 +196,32 @@ function territorioDe(pt) {
 // ─────────────────────────────────────────
 const map = L.map('map', { zoomControl: false }).setView([-36.635, -64.29], 14);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
-const ajustarLejos = () => map.getContainer().classList.toggle('lejos', map.getZoom() < 16);
+const ajustarLejos = () => {
+  map.getContainer().classList.toggle('lejos', map.getZoom() < 16);
+  document.getElementById('zoom-mas').disabled = map.getZoom() >= map.getMaxZoom();
+  document.getElementById('zoom-menos').disabled = map.getZoom() <= map.getMinZoom();
+};
 map.on('zoomend', ajustarLejos);
 ajustarLejos();
+document.getElementById('zoom-mas').addEventListener('click', () => map.zoomIn());
+document.getElementById('zoom-menos').addEventListener('click', () => map.zoomOut());
+
+// Mismo límite que territorios/mapa.html (applyCityViewport): el área de los territorios con un
+// margen del 22 %, y no se puede alejar más de un nivel de lo que hace falta para verla entera.
+function limitarMapa() {
+  const pts = territorios.flatMap(t => t.poligonos.flat());
+  if (!pts.length) return;
+  const justo = L.latLngBounds(pts);
+  map.setMaxBounds(justo.pad(0.22));
+  map.setMinZoom(Math.max(map.getBoundsZoom(justo, false) - 1, 10));
+  ajustarLejos();
+}
 
 const marcadores = {};
 
 function icono(e) {
-  const st = estado(e);
-  const cls = ['ed-pin', dudoso(e) && 'dudoso', selId === e.id && 'sel', moviendoId === e.id && 'moviendo'].filter(Boolean).join(' ');
+  const st = estadoVisto(e);
+  const cls = ['ed-pin', gestiona(e) && dudoso(e) && 'dudoso', selId === e.id && 'sel', moviendoId === e.id && 'moviendo'].filter(Boolean).join(' ');
   return L.divIcon({ className: '', iconSize: [30, 37], iconAnchor: [15, 37], html: `<div class="${cls}" style="--c:${st.c}">${ICONO}</div>` });
 }
 
@@ -207,14 +253,14 @@ const FILTROS = [
   { k: 'todos', label: 'Todos' },
   { k: 'sin', label: 'Sin predicar', c: 'var(--e-sin)' },
   { k: 'parcial', label: 'Sin terminar', c: 'var(--e-parcial)' },
-  { k: 'proc', label: 'Tomados', c: 'var(--e-proc)' },
+  { k: 'proc', label: 'Con responsable', c: 'var(--e-proc)' },
   { k: 'term', label: 'Terminados', c: 'var(--e-ok)' },
   { k: 'mios', label: 'Míos' },
   { k: 'revisar', label: 'A revisar', c: '#EF9F27' },
 ];
 function pasaFiltro(e, k) {
   if (k === 'todos') return true;
-  if (k === 'mios') return e.asignado?.uid === YO_UID;
+  if (k === 'mios') return esMio(e);
   if (k === 'revisar') return dudoso(e);
   return estado(e).k === k;
 }
@@ -226,7 +272,8 @@ function filtrados() {
 
 function pintarChips() {
   document.getElementById('chips').innerHTML = FILTROS
-    .filter(f => f.k !== 'mios' || edificios.some(e => e.asignado?.uid === YO_UID))
+    .filter(f => PUEDE_ADMIN || f.k === 'todos' || f.k === 'mios')   // los estados son solo para encargados
+    .filter(f => f.k !== 'mios' || edificios.some(esMio))
     .map(f => {
       const n = edificios.filter(e => pasaFiltro(e, f.k)).length;
       return `<button class="chip ${filtro === f.k ? 'on' : ''}" data-f="${f.k}">${f.c ? `<span class="dot" style="--c:${f.c}"></span>` : ''}${f.label} <span class="n">${n}</span></button>`;
@@ -241,7 +288,7 @@ document.getElementById('buscar').addEventListener('input', () => refrescar());
 
 function pintarResumen() {
   const vis = filtrados();
-  const sinPos = vis.filter(e => !pos(e)).length;
+  const sinPos = PUEDE_ADMIN ? vis.filter(e => !pos(e)).length : 0;
   document.getElementById('resumen').innerHTML = `<b>${vis.length}</b> ${vis.length === 1 ? 'edificio' : 'edificios'}`
     + (sinPos ? ` · <span style="color:#EF9F27">${sinPos} sin ubicar</span>` : '');
 }
@@ -251,16 +298,17 @@ document.getElementById('btn-lista').addEventListener('click', () => {
   pintarLista();
 });
 function filaHtml(e) {
-  const st = estado(e);
+  const st = estadoVisto(e);
   const prog = progreso(e);
   return `<button class="fila" data-id="${esc(e.id)}"><span class="sq" style="--c:${st.c}"></span>
-    <span><div class="t">${esc(e.direccion)}</div><div class="s">${esc(st.label)} · ${e.terrId ? `Terr. ${e.terrId}` : 'Sin territorio'}</div></span>
-    <span class="der">${prog ? `${prog.hechos}/${prog.total - prog.noQuiere}<br>timbres` : ''}${!pos(e) ? '<br><span class="falta">sin ubicar</span>' : ''}</span></button>`;
+    <span><div class="t">${esc(e.direccion)}</div><div class="s">${st.label ? esc(st.label) + ' · ' : ''}${e.terrId ? `Terr. ${e.terrId}` : 'Sin territorio'}</div></span>
+    <span class="der">${prog ? `${prog.hechos}/${prog.total - prog.noQuiere}<br>timbres` : ''}${!pos(e) && gestiona(e) ? '<br><span class="falta">sin ubicar</span>' : ''}</span></button>`;
 }
 function pintarLista() {
   const el = document.getElementById('lista');
   el.classList.toggle('on', listaAbierta);
   document.querySelector('#btn-lista span').textContent = listaAbierta ? 'Mapa' : 'Lista';
+  document.getElementById('zoom-btns').hidden = listaAbierta;
   if (!listaAbierta) return;
   const vis = filtrados();
   if (!vis.length) { el.innerHTML = '<div class="vacio">No hay edificios con ese filtro.</div>'; return; }
@@ -325,71 +373,90 @@ function abrirEdificio(id, repintar = false) {
     const prev = selId; selId = id;
     [prev, id].forEach(i => { const x = porId(i); if (x && marcadores[i]) marcadores[i].setIcon(icono(x)); });
   }
-  const st = estado(e);
+  const g = gestiona(e);
+  const st = estadoVisto(e);
   const prog = progreso(e);
   const h = (e.historial || []).slice().reverse();
-  const f = e.forma;
-  const portero = f ? `${f.pisos} ${f.pisos === 1 ? 'piso' : 'pisos'}${f.pb ? ' + PB' : ''} · ${f.deptos} por piso`
-    : (e.pisosOSM ? `Sin cargar (OpenStreetMap: ≈ ${e.pisosOSM} pisos)` : 'Sin cargar');
-  const ajeno = e.asignado && !st.mio;
+  const portero = e.forma ? descForma(e.forma)
+    : (g && e.pisosOSM ? `Sin cargar (OpenStreetMap: ≈ ${e.pisosOSM} pisos)` : 'Sin cargar');
 
-  let botones;
-  if (st.mio) {
-    botones = `<div class="acciones"><button class="btn primario" data-a="portero">${ICONO} Abrir portero</button></div>
-      <div class="acciones dos"><button class="btn verde chico" data-a="terminar">✓ Terminado</button><button class="btn chico" data-a="soltar">Soltar</button></div>`;
-  } else if (ajeno) {
-    botones = `<div class="acciones"><button class="btn primario" data-a="portero">${ICONO} Ver portero</button></div>
-      <div class="aviso neutro">Lo tiene ${esc(e.asignado.nombre)} desde ${fechaTxt(e.asignado.desde)}. Si ya no lo está trabajando, avisale a un encargado para que lo libere.</div>
-      ${PUEDE_ADMIN ? '<div class="acciones"><button class="btn chico" data-a="liberar">Liberar (encargado)</button></div>' : ''}`;
+  // Responsable: lo asigna el encargado de edificios (o un anciano / siervo ministerial), como el
+  // encargado de grupo con los territorios. Lo principal es el portero: cualquiera marca timbres.
+  let resp;
+  if (e.asignado) {
+    resp = `<div class="resp"><div class="resp-txt"><b>Responsable: ${st.mio ? 'vos' : esc(e.asignado.nombre)}</b> desde ${fechaTxt(e.asignado.desde)}.
+      ${PUEDE_ADMIN ? '' : st.mio ? 'Cuando lo termines, avisale al encargado de edificios.' : 'Igual podés marcar timbres.'}</div>
+      ${PUEDE_ADMIN ? `<div class="acciones dos"><button class="btn verde chico" data-a="terminar">✓ Terminado</button><button class="btn chico" data-a="asignar">Cambiar</button></div>
+        <div class="acciones"><button class="btn chico" data-a="quitar">Quitar responsable</button></div>` : ''}</div>`;
   } else {
-    botones = `<div class="acciones"><button class="btn primario" data-a="tomar">Tomar este edificio</button>
-      <button class="btn chico" data-a="portero">Ver portero</button></div>`;
+    resp = `<div class="resp"><div class="resp-txt"><b>Sin responsable.</b> ${PUEDE_ADMIN
+      ? 'Asigná a quién se lo lleva para terminarlo (como en la planilla S-13).'
+      : 'Lo asigna el encargado de edificios.'}</div>
+      ${PUEDE_ADMIN ? '<div class="acciones"><button class="btn chico" data-a="asignar">Asignar responsable</button></div>' : ''}</div>`;
   }
-  const ubic = pos(e)
-    ? '<button class="btn chico" data-a="mover">Corregir ubicación</button>'
-    : '<button class="btn chico" data-a="ubicar">Ubicar en el mapa</button>';
-  const admin = PUEDE_ADMIN
-    ? `<div class="acciones dos"><button class="btn chico" data-a="renombrar">Editar dirección</button><button class="btn chico peligro" data-a="borrar">Borrar</button></div>`
-    : '';
   const enMapa = e.calle && norm(e.calle + (e.numero ? ' ' + e.numero : '')) !== norm(e.direccion)
     ? `<dt>En el mapa</dt><dd>${esc(e.calle)}${e.numero ? ' ' + e.numero : ''}</dd>` : '';
 
   const html = `
     <div class="h-sup">${e.terrId ? `Territorio ${e.terrId} · ${esc(grupoLbl(e))}` : 'Sin territorio'}</div>
     <div class="h-tit">${esc(e.direccion)}</div>
-    <span class="estado-tag" style="--c:${st.c}">${esc(st.label)}</span>
-    ${dudoso(e) ? `<div class="aviso">${PREC_TXT[e.precision] || 'Ubicación a revisar.'} Si sabés dónde está, corregila.</div>` : ''}
+    ${st.label ? `<span class="estado-tag" style="--c:${st.c}">${esc(st.label)}</span>` : ''}
+    ${g && dudoso(e) ? `<div class="aviso">${PREC_TXT[e.precision] || 'Ubicación a revisar.'} Si sabés dónde está, corregila.</div>` : ''}
     <dl class="datos">
-      ${enMapa}
+      ${g ? enMapa : ''}
       <dt>Portero</dt><dd>${portero}</dd>
       ${prog ? `<dt>Vuelta ${vueltaDe(e)}</dt><dd>${prog.hechos} de ${prog.total - prog.noQuiere} timbres${prog.noQuiere ? ` · ${prog.noQuiere} no quieren` : ''}</dd>` : ''}
     </dl>
-    ${botones}
-    <div class="acciones">${ubic}</div>
-    ${admin}
-    <div class="hist"><h4>Historial</h4>
-      ${h.length ? h.map(x => `<div class="hist-item"><span>${esc(x.nombre)}${x.soltado ? ' <span class="nota">· lo soltó</span>' : ''}${x.nota ? ` <span class="nota">· ${esc(x.nota)}</span>` : ''}</span>
+    ${e.forma || g
+      ? `<div class="acciones"><button class="btn primario" data-a="portero">${ICONO} ${e.forma ? 'Abrir portero' : 'Armar el portero'}</button></div>`
+      : '<div class="aviso neutro">El portero todavía no está cargado. Lo carga el responsable del edificio o el encargado de edificios.</div>'}
+    ${resp}
+    ${PUEDE_ADMIN ? '<div class="acciones"><button class="btn chico" data-a="editar">✏️ Editar edificio</button></div>'
+      : g ? `<div class="acciones"><button class="btn chico" data-a="${pos(e) ? 'mover' : 'ubicar'}">📍 ${pos(e) ? 'Mover el pin en el mapa' : 'Ubicarlo en el mapa'}</button></div>` : ''}
+    ${g ? `<div class="hist"><h4>Historial</h4>
+      ${h.length ? h.map(x => `<div class="hist-item"><span>${esc(x.nombre)}${x.soltado ? ' <span class="nota">· sin terminar</span>' : ''}${x.nota ? ` <span class="nota">· ${esc(x.nota)}</span>` : ''}</span>
         <span>${fechaTxt(x.inicio, x.inicioAprox) || '¿?'} → ${x.fin ? fechaTxt(x.fin, x.finAprox) : (e.asignado && x === h[0] ? 'en curso' : '¿?')}</span></div>`).join('')
         : '<div class="hist-item"><span class="nota">Nadie lo trabajó todavía</span></div>'}
-    </div>`;
+    </div>` : ''}`;
 
   abrirHoja(html, ev => {
     const a = ev.target.closest('[data-a]')?.dataset.a; if (!a) return;
-    if (a === 'tomar') tomar(e.id);
+    if (a === 'asignar') asignar(e.id);
     if (a === 'terminar') terminar(e.id);
-    if (a === 'soltar') soltar(e.id);
-    if (a === 'liberar') liberar(e.id);
+    if (a === 'quitar') quitar(e.id);
     if (a === 'portero') { cerrarHoja(); abrirPortero(e.id); }
+    if (a === 'editar') hojaEditar(e.id);
     if (a === 'mover') { cerrarHoja(); empezarMover(e.id); }
     if (a === 'ubicar') { cerrarHoja(); empezarUbicar(e.id); }
-    if (a === 'renombrar') renombrar(e.id);
-    if (a === 'borrar') borrar(e.id);
   });
   hojaEdifId = id;
 }
 
+// Una sola entrada para todo lo que corrige datos del edificio: el pin (cualquiera) y,
+// para encargados, la dirección y borrarlo.
+function hojaEditar(id) {
+  const e = porId(id);
+  const pin = pos(e)
+    ? `<button class="btn chico" data-a="mover">📍 Mover el pin en el mapa</button>`
+    : `<button class="btn chico" data-a="ubicar">📍 Ubicarlo en el mapa</button>`;
+  abrirHoja(`<div class="h-sup">${esc(e.direccion)}</div><div class="h-tit">Editar</div>
+    <p class="ayuda">${pos(e) ? 'Si el pin no está en la puerta del edificio, movelo.' : 'Este edificio todavía no tiene lugar en el mapa.'}
+      ${PUEDE_ADMIN ? ' La dirección es el nombre con el que aparece en la lista.' : ''}</p>
+    <div class="acciones">${pin}
+      ${PUEDE_ADMIN ? `<button class="btn chico" data-a="renombrar">Cambiar la dirección</button>
+        <button class="btn chico peligro" data-a="borrar">Borrar el edificio</button>` : ''}
+      <button class="btn chico" data-a="volver">Volver</button></div>`, ev => {
+    const a = ev.target.closest('[data-a]')?.dataset.a; if (!a) return;
+    if (a === 'mover') { cerrarHoja(); empezarMover(id); }
+    if (a === 'ubicar') { cerrarHoja(); empezarUbicar(id); }
+    if (a === 'renombrar') renombrar(id);
+    if (a === 'borrar') borrar(id);
+    if (a === 'volver') abrirEdificio(id, true);
+  });
+}
+
 // ─────────────────────────────────────────
-//   TOMAR / TERMINAR / SOLTAR (transacciones: dos personas pueden tocar a la vez)
+//   RESPONSABLE: asignar / terminar / quitar (solo PUEDE_ADMIN; transacciones: dos personas pueden tocar a la vez)
 // ─────────────────────────────────────────
 async function conTransaccion(id, fn, okMsg, accion) {
   if (ocupado) return false;
@@ -412,23 +479,45 @@ async function conTransaccion(id, fn, okMsg, accion) {
   }
 }
 
-// Cierra la entrada abierta de quien tiene el edificio (la última sin fin de ese uid).
-function cerrarEntrada(hist, uid, cambios) {
+// Cierra la entrada abierta del responsable actual (la última sin fin que sea de él).
+function cerrarEntrada(hist, asignado, cambios) {
   const h = (hist || []).map(x => ({ ...x }));
+  const esSuya = x => asignado.pubId ? x.pubId === asignado.pubId : x.nombre === asignado.nombre;
   for (let i = h.length - 1; i >= 0; i--) {
-    if (!h[i].fin && h[i].uid === uid) { Object.assign(h[i], cambios); return h; }
+    if (!h[i].fin && esSuya(h[i])) { Object.assign(h[i], cambios); return h; }
   }
   return h;
 }
 
-function tomar(id) {
+// Hermanos para elegir responsable (solo se cargan si PUEDE_ADMIN: las reglas no dejan leer
+// publicadores a cualquiera). { id, nombre }, activos, ordenados.
+let _hermanos = null;
+async function hermanos() {
+  if (_hermanos) return _hermanos;
+  const snap = await getDocs(collection(db, 'congregaciones', CONGRE_ID, 'publicadores'));
+  _hermanos = snap.docs.map(d => ({ id: d.id, nombre: d.data().nombre, activo: d.data().activo }))
+    .filter(p => p.nombre && p.activo !== false)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  return _hermanos;
+}
+
+async function asignar(id) {
+  let lista;
+  try { lista = await hermanos(); }
+  catch (err) { console.error(err); uiToast('No se pudo cargar la lista de hermanos', 'error'); return; }
+  const e = porId(id);
+  const nombre = await uiConductorPicker({ conductores: lista.map(p => p.nombre), value: e.asignado?.nombre || '', label: 'Responsable del edificio' });
+  if (nombre == null || nombre === (e.asignado?.nombre || '')) return;
+  if (nombre === '') return quitar(id);
+  const pub = lista.find(p => p.nombre === nombre);
   conTransaccion(id, d => {
-    if (d.asignado) throw new Error(`Ya lo tomó ${d.asignado.nombre}.`);
+    let hist = d.historial || [];
+    if (d.asignado) hist = cerrarEntrada(hist, d.asignado, { fin: hoy(), soltado: true, nota: `cambio de responsable` });
     return {
-      asignado: { uid: YO_UID, nombre: YO_NOMBRE, desde: hoy() },
-      historial: [...(d.historial || []), { nombre: YO_NOMBRE, uid: YO_UID, inicio: hoy(), fin: null }],
+      asignado: { pubId: pub.id, nombre: pub.nombre, desde: hoy(), asignadoPor: YO_NOMBRE },
+      historial: [...hist, { nombre: pub.nombre, pubId: pub.id, inicio: hoy(), fin: null, asignadoPor: YO_NOMBRE }],
     };
-  }, 'Edificio tomado', 'Tomó edificio');
+  }, `Responsable: ${pub.nombre}`, `Asignó a ${pub.nombre}`);
 }
 
 async function terminar(id) {
@@ -437,26 +526,19 @@ async function terminar(id) {
   const falta = p ? p.total - p.hechos - p.noQuiere : 0;
   if (falta > 0 && !await uiConfirm({ title: '¿Terminarlo igual?', msg: `Faltan ${falta} ${falta === 1 ? 'timbre' : 'timbres'} por tocar en esta vuelta.`, confirmText: 'Terminar', type: 'warn' })) return;
   conTransaccion(id, d => {
-    if (d.asignado?.uid !== YO_UID) throw new Error('Este edificio no lo tenés vos.');
-    return { asignado: null, historial: cerrarEntrada(d.historial, YO_UID, { fin: hoy() }) };
+    if (!d.asignado) throw new Error('Este edificio no tiene responsable.');
+    return { asignado: null, historial: cerrarEntrada(d.historial, d.asignado, { fin: hoy() }) };
   }, 'Marcado como terminado', 'Terminó edificio');
 }
 
-async function soltar(id) {
-  if (!await uiConfirm({ title: 'Soltar edificio', msg: 'Queda libre para que lo tome otro. Lo marcado en el portero se conserva.', confirmText: 'Soltar', type: 'warn' })) return;
-  conTransaccion(id, d => {
-    if (d.asignado?.uid !== YO_UID) throw new Error('Este edificio no lo tenés vos.');
-    return { asignado: null, historial: cerrarEntrada(d.historial, YO_UID, { fin: hoy(), soltado: true }) };
-  }, 'Edificio liberado', 'Soltó edificio');
-}
-
-async function liberar(id) {
+async function quitar(id) {
   const e = porId(id);
-  if (!await uiConfirm({ title: 'Liberar edificio', msg: `Se lo saca a ${e.asignado?.nombre || '—'} y queda libre. Lo marcado en el portero se conserva.`, confirmText: 'Liberar', type: 'warn' })) return;
+  if (!e.asignado) return;
+  if (!await uiConfirm({ title: 'Quitar responsable', msg: `${e.asignado.nombre} deja de ser el responsable sin terminarlo. Lo marcado en el portero se conserva.`, confirmText: 'Quitar', type: 'warn' })) return;
   conTransaccion(id, d => {
     if (!d.asignado) return {};
-    return { asignado: null, historial: cerrarEntrada(d.historial, d.asignado.uid, { fin: hoy(), soltado: true, nota: `liberado por ${YO_NOMBRE}` }) };
-  }, 'Edificio liberado', 'Liberó edificio');
+    return { asignado: null, historial: cerrarEntrada(d.historial, d.asignado, { fin: hoy(), soltado: true }) };
+  }, 'Edificio sin responsable', 'Quitó responsable');
 }
 
 // ─────────────────────────────────────────
@@ -585,6 +667,7 @@ map.on('click', async ev => {
 //   PORTERO
 // ─────────────────────────────────────────
 function abrirPortero(id) {
+  if (!porId(id).forma && !gestiona(porId(id))) { uiToast('El portero todavía no está cargado', 'error'); return; }
   porteroId = id; herramienta = null; formaTmp = null;
   document.getElementById('portero').classList.add('on');
   porId(id).forma ? pintarPortero() : pintarForma();
@@ -600,27 +683,42 @@ function cabecera(e, sub) {
     <div><div class="h-sup">${sub}</div><div class="h-tit">${esc(e.direccion)}</div></div></div>`;
 }
 
+// Una fila del panel: etiqueta del piso (si hay) + los timbres. En los numerados no hay etiqueta.
+function filaPanel(fila, cols, celda) {
+  return `<div class="piso${fila.lbl == null ? ' sin-lbl' : ''}" style="--cols:${cols}">${fila.lbl != null ? `<span class="piso-lbl">${fila.lbl}</span>` : ''}${fila.celdas.map(celda).join('')}</div>`;
+}
+
 // Primera visita: el que va arma la forma del portero y queda para los siguientes.
 function pintarForma() {
   const e = porId(porteroId);
   if (!e) return cerrarPortero();
+  if (!gestiona(e)) return e.forma ? pintarPortero() : cerrarPortero();   // solo encargados y el responsable
   porteroModo = 'forma';
-  formaTmp ||= e.forma ? { ...e.forma } : { pisos: e.pisosOSM || 4, deptos: 4, pb: true, nom: 'letras' };
+  // formaTmp guarda los campos de los dos tipos: cambiar de tipo y volver no pierde lo elegido.
+  formaTmp ||= { tipo: 'numerado', total: 12, columnas: 2, pisos: e.pisosOSM || 4, deptos: 4, pb: true, nom: 'letras',
+    ...(e.forma || {}), ...(e.forma ? { tipo: tipoForma(e.forma) } : {}) };
   const f = formaTmp;
-  const { pisos, deptos } = claves(f);
-  const resto = pisos.length - 4;
+  const num = f.tipo === 'numerado';
+  const { filas, cols } = grilla(f);
+  const resto = filas.length - 4;
+  const stepper = (campo, valor, txt) => `<div class="stepper"><button data-f="${campo}" data-d="-1" aria-label="Menos ${txt}">−</button><output>${valor}</output><button data-f="${campo}" data-d="1" aria-label="Más ${txt}">+</button></div>`;
+  const campos = num
+    ? `<div><label>Cantidad de timbres</label>${stepper('total', f.total, 'timbres')}</div>
+       <div><label>¿En cuántas columnas?</label><div class="seg tres">${[1, 2, 3].map(c => `<button data-cols="${c}" class="${f.columnas === c ? 'on' : ''}">${c}</button>`).join('')}</div></div>`
+    : `<div><label>Pisos (sin contar planta baja)</label>${stepper('pisos', f.pisos, 'pisos')}</div>
+       <div><label>Departamentos por piso</label>${stepper('deptos', f.deptos, 'departamentos')}</div>
+       <div><label>¿Hay departamentos en planta baja?</label><div class="seg"><button data-pb="1" class="${f.pb ? 'on' : ''}">Sí</button><button data-pb="0" class="${f.pb ? '' : 'on'}">No</button></div></div>
+       <div><label>Los departamentos van con</label><div class="seg"><button data-nom="letras" class="${f.nom === 'letras' ? 'on' : ''}">Letras (A, B…)</button><button data-nom="numeros" class="${f.nom === 'numeros' ? 'on' : ''}">Números (1, 2…)</button></div></div>`;
   document.getElementById('herramientas').hidden = true;
   document.getElementById('portero').innerHTML = `<div class="por-wrap">${cabecera(e, e.forma ? 'Editar portero' : 'Primera vez · armá el portero')}
     <p class="ayuda">Copiá cómo es el portero de la puerta. Se carga una sola vez y queda para todos.${e.pisosOSM && !e.forma ? ` Según OpenStreetMap tiene unos ${e.pisosOSM} pisos.` : ''}</p>
     <div class="forma">
-      <div><label>Pisos (sin contar planta baja)</label><div class="stepper"><button data-f="pisos" data-d="-1" aria-label="Menos pisos">−</button><output>${f.pisos}</output><button data-f="pisos" data-d="1" aria-label="Más pisos">+</button></div></div>
-      <div><label>Departamentos por piso</label><div class="stepper"><button data-f="deptos" data-d="-1" aria-label="Menos departamentos">−</button><output>${f.deptos}</output><button data-f="deptos" data-d="1" aria-label="Más departamentos">+</button></div></div>
-      <div><label>¿Hay departamentos en planta baja?</label><div class="seg"><button data-pb="1" class="${f.pb ? 'on' : ''}">Sí</button><button data-pb="0" class="${f.pb ? '' : 'on'}">No</button></div></div>
-      <div><label>Los departamentos van con</label><div class="seg"><button data-nom="letras" class="${f.nom === 'letras' ? 'on' : ''}">Letras (A, B…)</button><button data-nom="numeros" class="${f.nom === 'numeros' ? 'on' : ''}">Números (1, 2…)</button></div></div>
-      <div><label>Así va a quedar · ${pisos.length * deptos.length} timbres</label>
-        <div class="panel" style="padding:12px"><div class="pisos">${pisos.slice(0, 4).map(p => `<div class="piso" style="--cols:${deptos.length}"><span class="piso-lbl">${p}</span>${deptos.map(d => `<span class="timbre chico">${timbreLbl(p, d)}</span>`).join('')}</div>`).join('')}
-          ${resto > 0 ? `<div class="piso-lbl">… ${resto} ${resto === 1 ? 'piso' : 'pisos'} más</div>` : ''}</div></div></div>
-      ${e.forma && Object.keys(e.timbres || {}).length ? '<div class="aviso">Si cambiás la cantidad de pisos o departamentos, las marcas de los timbres que ya no existan quedan guardadas pero no se ven.</div>' : ''}
+      <div><label>¿Cómo están marcados los timbres?</label><div class="seg"><button data-tipo="numerado" class="${num ? 'on' : ''}">Números (1, 2, 3…)</button><button data-tipo="pisos" class="${num ? '' : 'on'}">Piso y depto (1A, 2B…)</button></div></div>
+      ${campos}
+      <div><label>Así va a quedar · ${celdasDe(f).length} timbres</label>
+        <div class="panel" style="padding:12px"><div class="pisos">${filas.slice(0, 4).map(r => filaPanel(r, cols, c => `<span class="timbre chico">${c.lbl}</span>`)).join('')}
+          ${resto > 0 ? `<div class="piso-lbl">… ${resto} ${resto === 1 ? 'fila' : 'filas'} más</div>` : ''}</div></div></div>
+      ${e.forma && Object.keys(e.timbres || {}).length ? '<div class="aviso">Si cambiás el portero, las marcas de los timbres que ya no existan quedan guardadas pero no se ven.</div>' : ''}
       <button class="btn primario" data-p="guardar-forma">Guardar portero</button>
       ${e.forma ? '<button class="btn chico" data-p="cancelar-forma">Cancelar</button>' : ''}
     </div></div>`;
@@ -631,27 +729,26 @@ function pintarPortero() {
   if (!e) { cerrarPortero(); uiToast('Ese edificio ya no existe', 'error'); return; }
   if (!e.forma) return pintarForma();
   porteroModo = 'grilla';
-  const { pisos, deptos } = claves(e.forma);
+  const { filas, cols } = grilla(e.forma);
   const p = progreso(e);
   const posibles = p.total - p.noQuiere;
   const pct = p.total ? Math.round(100 * (p.hechos + p.noQuiere) / p.total) : 0;
   const scroll = document.getElementById('portero').scrollTop;
   document.getElementById('portero').innerHTML = `<div class="por-wrap">${cabecera(e, `Portero · ${e.terrId ? 'Terr. ' + e.terrId : 'sin territorio'}`)}
-    ${!e.asignado ? '<div class="aviso neutro" style="margin:0 0 12px;display:flex;align-items:center;gap:10px">No lo tiene nadie.<button class="btn chico primario" data-p="tomar" style="margin-left:auto;height:34px;padding:0 12px">Tomarlo</button></div>' : ''}
     <div class="progreso"><div class="barra"><i style="width:${pct}%"></i></div>
       <div class="txt"><span>Vuelta ${vueltaDe(e)} · <b>${p.hechos}</b> de ${posibles} tocados</span>${p.noQuiere ? `<span>${p.noQuiere} no ${p.noQuiere === 1 ? 'quiere' : 'quieren'}</span>` : ''}</div></div>
     <div class="panel">
       <div class="rejilla">${'<i></i>'.repeat(9)}</div>
-      <div class="pisos">${pisos.map(pi => `<div class="piso" style="--cols:${deptos.length}"><span class="piso-lbl">${pi}</span>${deptos.map(d => {
-        const k = `${pi}-${d}`, r = marcaVigente(e, k);
-        return `<button class="timbre" data-k="${k}" ${r ? `data-res="${r.res}"` : ''} aria-label="${pi === 'PB' ? 'PB' : pi + '°'} ${d}${r ? ', ' + RES[r.res].label : ''}">${timbreLbl(pi, d)}${r ? `<small>${RES[r.res].corto}</small>` : ''}</button>`;
-      }).join('')}</div>`).join('')}</div>
+      <div class="pisos">${filas.map(fila => filaPanel(fila, cols, c => {
+        const r = marcaVigente(e, c.k);
+        return `<button class="timbre" data-k="${c.k}" ${r ? `data-res="${r.res}"` : ''} aria-label="${nombreTimbre(c.k)}${r ? ', ' + RES[r.res].label : ''}">${c.lbl}${r ? `<small>${RES[r.res].corto}</small>` : ''}</button>`;
+      })).join('')}</div>
       <div class="altavoz">${'<i></i>'.repeat(21)}</div>
     </div>
-    <div class="acciones dos" style="margin-top:16px">
+    ${gestiona(e) ? `<div class="acciones dos" style="margin-top:16px">
       <button class="btn chico" data-p="editar-forma">Editar portero</button>
       <button class="btn chico" data-p="nueva-vuelta">Nueva vuelta</button>
-    </div></div>`;
+    </div>` : ''}</div>`;
   document.getElementById('portero').scrollTop = scroll;
 
   const hb = document.getElementById('herramientas');
@@ -684,8 +781,7 @@ function alternarTimbre(e, k, res) {
 function hojaTimbre(e, k) {
   const r = e.timbres?.[k];
   const vigente = marcaVigente(e, k);
-  const [p, d] = k.split('-');
-  abrirHoja(`<div class="h-sup">${esc(e.direccion)}</div><div class="h-tit">${p === 'PB' ? 'PB' : p + '°'} ${d}</div>
+  abrirHoja(`<div class="h-sup">${esc(e.direccion)}</div><div class="h-tit">${nombreTimbre(k)}</div>
     ${r ? `<div class="ayuda" style="margin-bottom:6px">Última vez: ${RES[r.res]?.label || r.res} · ${fechaTxt(r.fecha)} · ${esc(r.nombre || '')}${!vigente ? ` (vuelta ${r.vuelta})` : ''}</div>` : ''}
     <div class="acciones dos">${Object.entries(RES).map(([key, x]) => `<button class="btn" data-r="${key}" style="background:${x.c};border-color:transparent;color:#fff">${x.label}</button>`).join('')}</div>
     ${vigente ? '<div class="acciones"><button class="btn chico" data-r="borrar">Borrar marca</button></div>' : ''}`, ev => {
@@ -706,19 +802,24 @@ document.getElementById('portero').addEventListener('click', async ev => {
   const st = ev.target.closest('[data-f]');
   if (st) {
     const campo = st.dataset.f;
-    formaTmp[campo] = Math.max(1, Math.min(campo === 'pisos' ? 40 : 16, formaTmp[campo] + Number(st.dataset.d)));
+    const max = { pisos: 40, deptos: 16, total: 120 }[campo];
+    formaTmp[campo] = Math.max(1, Math.min(max, formaTmp[campo] + Number(st.dataset.d)));
     return pintarForma();
   }
+  const tipo = ev.target.closest('[data-tipo]'); if (tipo) { formaTmp.tipo = tipo.dataset.tipo; return pintarForma(); }
+  const colsB = ev.target.closest('[data-cols]'); if (colsB) { formaTmp.columnas = Number(colsB.dataset.cols); return pintarForma(); }
   const pb = ev.target.closest('[data-pb]'); if (pb) { formaTmp.pb = pb.dataset.pb === '1'; return pintarForma(); }
   const nom = ev.target.closest('[data-nom]'); if (nom) { formaTmp.nom = nom.dataset.nom; return pintarForma(); }
 
   const a = ev.target.closest('[data-p]')?.dataset.p;
   if (a === 'cerrar') cerrarPortero();
-  if (a === 'tomar') tomar(e.id);
   if (a === 'editar-forma') { formaTmp = null; pintarForma(); }
   if (a === 'cancelar-forma') { formaTmp = null; pintarPortero(); }
   if (a === 'guardar-forma') {
-    const forma = { ...formaTmp };
+    const t = formaTmp;
+    const forma = t.tipo === 'numerado'
+      ? { tipo: 'numerado', total: t.total, columnas: t.columnas }
+      : { tipo: 'pisos', pisos: t.pisos, deptos: t.deptos, pb: t.pb, nom: t.nom };
     try {
       await updateDoc(edifRef(e.id), { forma, ...marca() });
       formaTmp = null;
@@ -750,13 +851,14 @@ document.getElementById('herramientas').addEventListener('click', ev => {
 // ─────────────────────────────────────────
 document.getElementById('btn-menu').addEventListener('click', () => {
   const ley = [
-    ['var(--e-sin)', 'Sin predicar'], ['var(--e-parcial)', 'Empezado, sin terminar'], ['var(--e-proc)', 'Lo tiene alguien'],
+    ['var(--e-sin)', 'Sin predicar'], ['var(--e-parcial)', 'Empezado, sin terminar'], ['var(--e-proc)', 'Tiene responsable'],
     ['var(--e-ok)', 'Terminado hace menos de 6 meses'], ['var(--e-warn)', 'Terminado hace 6 a 12 meses'], ['var(--e-bad)', 'Terminado hace más de un año'],
   ];
+  const leyComun = [['var(--e-neutro)', 'Edificio'], ['var(--e-proc)', 'A tu cargo (sos el responsable)']];
   abrirHoja(`<div class="h-tit">Edificios</div>
-    <div class="hist"><h4>Colores</h4>${ley.map(([c, t]) => `<div class="hist-item"><span><span class="estado-tag" style="--c:${c};padding:0;background:none"></span> ${t}</span><span></span></div>`).join('')}
-      <div class="hist-item"><span><b style="color:#EF9F27">?</b> Ubicación a revisar: tocalo y corregila</span><span></span></div></div>
-    <p class="ayuda" style="margin-top:14px">Tomá un edificio, abrí el portero y marcá cada timbre. Lo que marcás lo ven todos al instante.</p>
+    <div class="hist"><h4>Colores</h4>${(PUEDE_ADMIN ? ley : leyComun).map(([c, t]) => `<div class="hist-item"><span><span class="estado-tag" style="--c:${c};padding:0;background:none"></span> ${t}</span><span></span></div>`).join('')}
+      ${PUEDE_ADMIN ? '<div class="hist-item"><span><b style="color:#EF9F27">?</b> Ubicación a revisar: tocalo y corregila</span><span></span></div>' : ''}</div>
+    <p class="ayuda" style="margin-top:14px">Abrí el portero de un edificio y marcá cada timbre que tocás. Lo que marcás lo ven todos al instante. El responsable de cada edificio lo asigna el encargado de edificios.</p>
     ${PUEDE_ADMIN ? '<div class="acciones"><button class="btn chico" data-m="agregar">+ Agregar edificio</button></div>' : ''}`, ev => {
     if (ev.target.closest('[data-m="agregar"]')) {
       cerrarHoja();
@@ -793,6 +895,7 @@ async function cargarFondo() {
     const col = grupos[t.grupoId]?.color || '#888';
     polis.forEach(p => L.polygon(p, { color: col, weight: 1, opacity: .45, fillColor: col, fillOpacity: .07, interactive: false }).addTo(map));
   });
+  limitarMapa();
   const salon = conf.exists() ? conf.data().salonDelReino : null;
   if (salon?.lat != null) {
     const sc = grupos.C?.color || '#9c4dcc';

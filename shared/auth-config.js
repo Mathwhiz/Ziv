@@ -14,6 +14,7 @@ export const APP_ROLES = {
   ENCARGADO_VM:             'encargado_vm',
   ENCARGADO_GRUPO:          'encargado_grupo',
   ENCARGADO_CONFERENCIAS:   'encargado_conferencias',
+  ENCARGADO_EDIFICIOS:      'encargado_edificios',  // asigna responsables de edificios (como encargado de grupo)
   ANCIANO:                  'anciano',
   SIERVO_MINISTERIAL:       'siervo_ministerial',
   PRECURSOR_REGULAR:        'precursor_regular',
@@ -84,7 +85,15 @@ export const PERMISOS = {
     'acceso_predicacion',
     'acceso_telefonica',
     'acceso_edificios',
+  ],
+
+  // Edificios: asigna el responsable de cada edificio y lo da por terminado (igual que un encargado de grupo
+  // con los territorios). Ancianos y siervos ministeriales también pueden.
+  encargado_edificios: [
+    'acceso_edificios',
     'administrar_edificios',
+    'acceso_predicacion',
+    'acceso_telefonica',
   ],
 
   encargado_conferencias: [
@@ -105,6 +114,7 @@ export const PERMISOS = {
     'acceso_predicacion',
     'acceso_telefonica',
     'acceso_edificios',
+    'administrar_edificios',
   ],
 
   siervo_ministerial: [
@@ -114,6 +124,7 @@ export const PERMISOS = {
     'acceso_predicacion',
     'acceso_telefonica',
     'acceso_edificios',
+    'administrar_edificios',
   ],
 
   precursor_regular: [

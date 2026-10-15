@@ -70,6 +70,8 @@ service cloud.firestore {
     function rolesAsig()  { return ['admin_congre', 'encargado_asignaciones', 'encargado_vm']; }
     function rolesVm()    { return ['admin_congre', 'encargado_vm']; }
     function rolesConf()  { return ['admin_congre', 'encargado_conferencias']; }
+    // Edificios: asignan responsables y agregan/borran edificios (como el encargado de grupo en Territorios)
+    function rolesEdif()  { return ['admin_congre', 'encargado_edificios', 'anciano', 'siervo_ministerial']; }
     function rolesStaff() {
       return ['admin_congre', 'encargado_asignaciones', 'encargado_vm', 'encargado_grupo', 'encargado_conferencias'];
     }
@@ -79,7 +81,7 @@ service cloud.firestore {
     }
     // Quien puede ver la lista de publicadores: encargados + quien entra a Conferencias
     function rolesPublicadores() {
-      return rolesStaff().concat(['anciano', 'siervo_ministerial']);
+      return rolesStaff().concat(['anciano', 'siervo_ministerial', 'encargado_edificios']);
     }
 
     // Un usuario solo puede crearse a sí mismo SIN acceso: 'pendiente' (Google) o 'anonimo'.
@@ -219,23 +221,22 @@ service cloud.firestore {
       match /salidas/{id}          { allow read: if isMember(c); allow write: if hasCongreRole(c, rolesTerr()); }
       match /grupos/{id}           { allow read: if isMember(c); allow write: if hasCongreRole(c, ['admin_congre']); }
 
-      // Edificios (predicación por portero): los usa cualquier miembro aprobado. Agregar o borrar
-      // edificios es de los encargados de territorios. Un miembro solo toca el estado del portero,
-      // la ubicación y la asignación — y la asignación solo para tomarlo él o soltar la suya.
+      // Edificios (predicación por portero). Un miembro aprobado solo marca timbres. El responsable de
+      // ese edificio (asignado.pubId == su publicador vinculado) además arma el portero, empieza vuelta
+      // y mueve el pin. Todo lo demás (responsable, historial, crear, borrar) es de rolesEdif(), igual
+      // que un encargado de grupo con los territorios.
       match /edificios/{id} {
         allow read: if isMember(c);
-        allow create, delete: if hasCongreRole(c, rolesTerr());
-        allow update: if hasCongreRole(c, rolesTerr()) || (
-          isMember(c) &&
-          onlyKeys(['timbres', 'forma', 'vuelta', 'asignado', 'historial', 'punto', 'precision',
-                    'actualizadoEn', 'actualizadoPor']) &&
-          (
-            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['asignado']) ||
-            (resource.data.get('asignado', null) == null &&
-              request.resource.data.asignado.uid == request.auth.uid) ||
-            (resource.data.get('asignado', null) != null &&
-              resource.data.asignado.get('uid', null) == request.auth.uid &&
-              request.resource.data.asignado == null)
+        allow create, delete: if hasCongreRole(c, rolesEdif());
+        allow update: if hasCongreRole(c, rolesEdif()) || (
+          isMember(c) && (
+            onlyKeys(['timbres', 'actualizadoEn', 'actualizadoPor']) ||
+            (
+              resource.data.get('asignado', null) != null &&
+              resource.data.asignado.get('pubId', null) != null &&
+              resource.data.asignado.pubId == me().get('matchedPublisherId', null) &&
+              onlyKeys(['timbres', 'forma', 'vuelta', 'punto', 'precision', 'actualizadoEn', 'actualizadoPor'])
+            )
           )
         );
 
@@ -244,7 +245,7 @@ service cloud.firestore {
           allow read: if isMember(c);
           allow create: if isMember(c) && request.resource.data.uid == request.auth.uid;
           allow update: if false;
-          allow delete: if hasCongreRole(c, rolesTerr());
+          allow delete: if hasCongreRole(c, rolesEdif());
         }
       }
 
