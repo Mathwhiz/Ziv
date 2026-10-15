@@ -1934,6 +1934,7 @@ body.light-mode .cs-module-card:hover {
       <button class="ziv-sItem" id="ziv-sTema" onclick="uiToggleTheme()"></button>
       <div class="ziv-sDivider"></div>
       <a id="ziv-sPerfil" href="/perfil.html" class="ziv-sItem">Ver perfil</a>
+      <a id="ziv-sTutorial" href="/?tutorial#menu" class="ziv-sItem">Ver tutorial</a>
       <div class="ziv-sDivider"></div>
       <button class="ziv-sItem ziv-sItem--danger" onclick="sessionSignOut()">Cerrar sesión</button>
     </div>
@@ -1974,6 +1975,9 @@ window.updateSessionHeader = function(user) {
     bar.id = 'ziv-topbar';
     document.body.insertBefore(bar, document.body.firstChild);
   }
+
+  const tutorial = document.getElementById('ziv-sTutorial');
+  if (tutorial) tutorial.style.display = user.isAnonymous ? 'none' : '';
 
   if (user.isAnonymous) {
     wrap.innerHTML = `

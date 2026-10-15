@@ -285,6 +285,36 @@
       width: 100%;
       margin: 0 auto;
     }
+    .menu-pendiente {
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 18px;
+      background: rgba(242,184,75,.10);
+      border: 1px solid rgba(242,184,75,.35);
+    }
+    .menu-pendiente-tag {
+      display: inline-block;
+      padding: 5px 11px;
+      border-radius: 999px;
+      background: rgba(242,184,75,.16);
+      color: #e3a634;
+      font-size: 12.5px;
+      font-weight: 650;
+    }
+    body.light-mode .menu-pendiente-tag { color: #9a6a0c; }
+    .menu-pendiente b { display: block; font-size: 16px; margin: 10px 0 6px; color: var(--text-primary, #e8e8e8); }
+    .menu-pendiente p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-secondary, #aaa); }
+    .menu-pendiente button {
+      margin-top: 12px;
+      padding: 0;
+      border: 0;
+      background: none;
+      font: inherit;
+      font-size: 13.5px;
+      font-weight: 650;
+      color: var(--accent, #7F77DD);
+      cursor: pointer;
+    }
     .section-label {
       font-size: 11px;
       font-weight: 700;
@@ -577,75 +607,71 @@
     }
     .app-icon-shell {
       position: relative;
-      width: 116px;
-      height: 116px;
+      width: 104px;
+      height: 104px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 34px;
       isolation: isolate;
+      animation: hero-in .7s cubic-bezier(.22,1,.36,1) both;
     }
+    /* Resplandor detrás del logo («Ziv» = resplandor) */
     .app-icon-shell::before {
       content: '';
       position: absolute;
-      inset: -6px;
-      border-radius: 38px;
-      background: conic-gradient(from 0deg, rgba(127,119,221,0.0), rgba(127,119,221,0.6), rgba(55,138,221,0.42), rgba(29,158,117,0.16), rgba(127,119,221,0.0));
-      filter: blur(10px);
-      animation: hero-spin 10s linear infinite;
-      opacity: .9;
-      z-index: 0;
-    }
-    .app-icon-shell::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 34px;
-      background: radial-gradient(circle at 30% 25%, var(--k-bg-w18, rgba(255,255,255,.18)), transparent 38%), var(--k-bg-w04, rgba(255,255,255,.04));
-      border: 1px solid var(--k-bd-w08, rgba(255,255,255,.08));
-      z-index: 1;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-    .app-icon-orbit {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 12px;
-      height: 12px;
+      inset: -110px;
       border-radius: 50%;
-      background: #97C459;
-      box-shadow: 0 0 0 5px rgba(151,196,89,.14);
-      z-index: 3;
-      transform: translate(-50%, -50%) rotate(var(--clock-angle, 35deg)) translateY(-46px);
-      transition: transform .5s cubic-bezier(.22,.68,0,1);
+      background: radial-gradient(circle, rgba(242,184,75,.14), rgba(127,119,221,.10) 45%, transparent 70%);
+      z-index: -1;
+      pointer-events: none;
+    }
+    body.light-mode .app-icon-shell::before {
+      background: radial-gradient(circle, rgba(242,184,75,.28), rgba(127,119,221,.12) 45%, transparent 70%);
     }
     .app-icon {
-      position: relative;
-      z-index: 2;
-      filter: drop-shadow(0 0 14px rgba(127,119,221,.4));
+      width: 100%;
+      height: 100%;
+      display: block;
     }
     .app-name {
-      font-size: 2.5rem;
-      font-weight: 700;
-      letter-spacing: -0.04em;
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin: 6px 0 0;
       color: var(--text-primary, #e8e8e8);
+      animation: hero-in .7s .08s cubic-bezier(.22,1,.36,1) both;
     }
+    /* La «i» lleva un destello dorado en lugar del punto */
+    .app-name-i { position: relative; display: inline-block; }
+    .app-name-i svg {
+      position: absolute;
+      left: 50%;
+      top: .13em;
+      width: .38em;
+      height: .38em;
+      transform: translate(-50%, -50%);
+      fill: #F2B84B;
+    }
+    body.light-mode .app-name-i svg { fill: #c98a12; }
     .app-tagline {
       font-size: 16px;
       color: var(--text-secondary, #aaa);
       line-height: 1.55;
       max-width: 320px;
+      margin: 0;
+      animation: hero-in .7s .16s cubic-bezier(.22,1,.36,1) both;
     }
-    @keyframes hero-spin { to { transform: rotate(360deg); } }
+    @keyframes hero-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     .s1-slider {
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
+    .s1-slider { animation: hero-in .7s .28s cubic-bezier(.22,1,.36,1) both; }
     .slider-viewport {
       overflow: hidden;
-      height: 178px;
+      height: 206px;
       padding: 0 20px;
       touch-action: pan-y;
       cursor: grab;
@@ -710,6 +736,8 @@
       width: 34px;
       height: 34px;
       border-radius: 9px;
+      color: var(--slide-accent);
+      background: color-mix(in srgb, var(--slide-accent) 15%, transparent);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -731,39 +759,55 @@
       gap: 6px;
       margin-top: 2px;
     }
-    .fake-row {
+    .slide-body { flex: 1; justify-content: center; }
+    /* El contenido de la slide visible entra escalonado */
+    .slide-body > * { opacity: 0; transform: translateY(8px); transition: opacity .4s, transform .5s cubic-bezier(.22,1,.36,1); }
+    .slide.on .slide-body > * { opacity: 1; transform: none; }
+    .slide.on .slide-body > *:nth-child(2) { transition-delay: .08s; }
+    .slide.on .slide-body > *:nth-child(3) { transition-delay: .16s; }
+    .ej-row {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 5px 0;
-      border-bottom: 1px solid var(--border-primary, #2e3033);
+      padding: 6px 9px;
+      border-radius: 9px;
+      background: var(--k-bg-w04, rgba(255,255,255,.04));
+      font-size: 12.5px;
+      color: var(--text-primary, #e8e8e8);
     }
-    .fake-row:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-    .fake-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .fake-line {
-      height: 7px;
-      border-radius: 4px;
-      background: var(--border-primary, #2e3033);
-    }
-    .fake-line-s { width: 38%; }
-    .fake-line-m { width: 55%; }
-    .fake-line-l { flex: 1; }
-    .fake-badge {
+    .ej-pill {
       font-size: 10px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 5px;
-      flex-shrink: 0;
+      font-weight: 700;
+      letter-spacing: .02em;
+      padding: 3px 7px;
+      border-radius: 6px;
+      color: var(--slide-accent);
+      background: color-mix(in srgb, var(--slide-accent) 16%, transparent);
       white-space: nowrap;
     }
+    body.light-mode .ej-pill { color: color-mix(in srgb, var(--slide-accent) 62%, #1d1e22); }
+    .ej-der { margin-left: auto; font-size: 11.5px; color: var(--text-muted, #888); }
+    .ej-anillo { display: flex; align-items: center; gap: 16px; color: var(--text-primary, #e8e8e8); }
+    .ej-anillo svg { width: 84px; height: 84px; flex-shrink: 0; }
+    .ej-anillo b { font-size: 24px; display: block; }
+    .ej-anillo span { display: block; font-size: 12px; color: var(--text-secondary, #aaa); margin-top: 2px; }
+    .ej-arco { stroke-dasharray: 251; stroke-dashoffset: 251; transition: stroke-dashoffset 1.2s .2s cubic-bezier(.22,1,.36,1); }
+    .slide.on .ej-arco { stroke-dashoffset: 63; }
+    .ej-mapa { width: 100%; height: 108px; }
+    .ej-portero { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+    .ej-portero i {
+      aspect-ratio: 1.3;
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      font-style: normal;
+      font-size: 11px;
+      color: var(--text-secondary, #aaa);
+      border: 1px solid var(--border-primary, #2e3033);
+    }
+    .ej-portero i.si { border-color: #1D9E75; background: rgba(29,158,117,.2); }
+    .ej-portero i.no { border-color: #8a8f98; background: rgba(138,143,152,.2); }
+    .ej-portero i.rv { border-color: #EF9F27; background: rgba(239,159,39,.2); }
     .slider-dots {
       display: flex;
       align-items: center;
@@ -781,9 +825,24 @@
       transition: background .2s, transform .2s, width .2s;
     }
     .sdot.active {
-      width: 18px;
+      position: relative;
+      overflow: hidden;
+      width: 24px;
       border-radius: 3px;
+      background: var(--border-primary, #2e3033);
+    }
+    .sdot.active::after {
+      content: '';
+      position: absolute;
+      inset: 0;
       background: var(--accent, #7F77DD);
+      transform-origin: left;
+      animation: sdot-llena var(--sdot-dur, 4s) linear forwards;
+    }
+    @keyframes sdot-llena { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @media (prefers-reduced-motion: reduce) {
+      .sdot.active::after { animation: none; }
+      .slide-body > *, .ej-arco { transition: none; }
     }
     .s1-foot {
       padding: 8px 24px 24px;
@@ -969,11 +1028,8 @@
         gap: 8px;
       }
       .app-icon-shell {
-        width: 92px;
-        height: 92px;
-      }
-      .app-icon-orbit {
-        transform: translate(-50%, -50%) rotate(var(--clock-angle, 35deg)) translateY(-37px);
+        width: 88px;
+        height: 88px;
       }
       .app-name {
         font-size: 2.1rem;
@@ -986,7 +1042,7 @@
         gap: 8px;
       }
       .slider-viewport {
-        height: 150px;
+        height: 200px;
         padding: 0 16px;
       }
       .slide-card {
@@ -1140,186 +1196,106 @@
 
       <div class="s1-hero">
         <div class="app-icon-shell" aria-hidden="true">
-          <div class="app-icon-orbit"></div>
-          <img src="/assets/icon-192.png" alt="Ziv" class="app-icon" width="88" height="88" style="border-radius:22px;">
+          <img src="/assets/favicon.svg" alt="" class="app-icon" width="88" height="88">
         </div>
-        <h1 class="app-name">Ziv</h1>
-        <p class="app-tagline">Organización e información.</p>
+        <h1 class="app-name" aria-label="Ziv">Z<span class="app-name-i">ı<svg viewBox="-1 -1 2 2" aria-hidden="true"><path d="M0-1Q.16-.16 1 0Q.16 .16 0 1Q-.16 .16-1 0Q-.16-.16 0-1Z"/></svg></span>v</h1>
+        <p class="app-tagline">Lo de la congregación, en un solo lugar.</p>
       </div>
 
       <div class="s1-slider">
         <div class="slider-viewport" id="welcome-slider-vp" ontouchstart="welcomeTouch(event,'start')" ontouchend="welcomeTouch(event,'end')">
           <div class="slider-track" id="welcome-slider-track">
-            <div class="slide">
-              <div class="slide-card" style="--slide-accent:#5DB85D;">
-                <div class="slide-header">
-                  <div class="slide-icon" style="background:rgba(93,184,93,0.12)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5DB85D" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  </div>
-                  <div>
-                    <div class="slide-feature-title">Territorios</div>
-                    <div class="slide-feature-desc">Asigná zonas y controlá el estado de cada área.</div>
-                  </div>
-                </div>
-                <div class="slide-body">
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:#5DB85D"></div>
-                    <div class="fake-line fake-line-m"></div>
-                    <div class="fake-badge" style="background:rgba(93,184,93,0.12);color:var(--k-tx-5db85d, #5DB85D)">Activo</div>
-                  </div>
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:#EF9F27"></div>
-                    <div class="fake-line fake-line-s"></div>
-                    <div class="fake-badge" style="background:rgba(239,159,39,0.12);color:var(--k-tx-ef9f27, #EF9F27)">En curso</div>
-                  </div>
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
-                    <div class="fake-line fake-line-l"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="slide">
+            <div class="slide on">
               <div class="slide-card" style="--slide-accent:#5B8DDE;">
                 <div class="slide-header">
-                  <div class="slide-icon" style="background:rgba(91,141,222,0.12)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B8DDE" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/><line x1="14" y1="14" x2="20" y2="14"/><line x1="14" y1="17" x2="20" y2="17"/></svg>
+                  <div class="slide-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
                   </div>
                   <div>
                     <div class="slide-feature-title">Asignaciones</div>
-                    <div class="slide-feature-desc">Consultá tus partes en la reunión semanal.</div>
+                    <div class="slide-feature-desc">Acomodadores, sonido y más.</div>
                   </div>
                 </div>
                 <div class="slide-body">
-                  <div class="fake-row">
-                    <div class="fake-badge" style="background:rgba(91,141,222,0.12);color:var(--k-tx-5b8dde, #5B8DDE);min-width:60px;text-align:center">LECTOR</div>
-                    <div class="fake-line fake-line-l"></div>
-                  </div>
-                  <div class="fake-row">
-                    <div class="fake-badge" style="background:rgba(91,141,222,0.12);color:var(--k-tx-5b8dde, #5B8DDE);min-width:60px;text-align:center">SONIDO</div>
-                    <div class="fake-line fake-line-m"></div>
-                  </div>
-                  <div class="fake-row">
-                    <div class="fake-badge" style="background:rgba(91,141,222,0.12);color:var(--k-tx-5b8dde, #5B8DDE);min-width:60px;text-align:center">MICRO</div>
-                    <div class="fake-line fake-line-s"></div>
-                  </div>
+                  <div class="ej-row"><span class="ej-pill">LECTOR</span>Martín R.<span class="ej-der">Mié</span></div>
+                  <div class="ej-row"><span class="ej-pill">SONIDO</span>Pablo G.<span class="ej-der">Mié</span></div>
+                  <div class="ej-row"><span class="ej-pill">MICRÓFONOS</span>Lucas · Andrés<span class="ej-der">Sáb</span></div>
                 </div>
               </div>
             </div>
-
-            <div class="slide">
-              <div class="slide-card" style="--slide-accent:#1D9E75;">
-                <div class="slide-header">
-                  <div class="slide-icon" style="background:rgba(29,158,117,0.12)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                  </div>
-                  <div>
-                    <div class="slide-feature-title">Vida y Ministerio</div>
-                    <div class="slide-feature-desc">Programa de reuniones VM con asignaciones.</div>
-                  </div>
-                </div>
-                <div class="slide-body">
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:#1D9E75"></div>
-                    <div class="fake-line" style="width:30%"></div>
-                    <div class="fake-badge" style="background:rgba(29,158,117,0.12);color:var(--k-tx-1d9e75, #1D9E75)">Canción 52</div>
-                  </div>
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
-                    <div class="fake-line fake-line-l"></div>
-                  </div>
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
-                    <div class="fake-line fake-line-m"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div class="slide">
               <div class="slide-card" style="--slide-accent:#EF9F27;">
                 <div class="slide-header">
-                  <div class="slide-icon" style="background:rgba(239,159,39,0.12)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF9F27" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><line x1="19" y1="8" x2="23" y2="8"/><line x1="21" y1="6" x2="21" y2="10"/></svg>
+                  <div class="slide-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
                   </div>
                   <div>
-                    <div class="slide-feature-title">Administrador</div>
-                    <div class="slide-feature-desc">Gestioná hermanos, roles y semanas especiales.</div>
+                    <div class="slide-feature-title">Vida y Ministerio</div>
+                    <div class="slide-feature-desc">El programa de cada semana.</div>
                   </div>
                 </div>
                 <div class="slide-body">
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:#7F77DD"></div>
-                    <div class="fake-line fake-line-m"></div>
-                    <div class="fake-badge" style="background:rgba(127,119,221,0.10);color:var(--k-tx-7f77dd, #7F77DD)">Anciano</div>
-                  </div>
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
-                    <div class="fake-line fake-line-l"></div>
-                  </div>
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
-                    <div class="fake-line fake-line-s"></div>
-                  </div>
+                  <div class="ej-row"><span class="ej-pill">10 min</span>Tesoros de la Biblia</div>
+                  <div class="ej-row"><span class="ej-pill">4 min</span>Lectura de la Biblia</div>
+                  <div class="ej-row"><span class="ej-pill">3 min</span>Empiece conversaciones</div>
                 </div>
               </div>
             </div>
-
             <div class="slide">
               <div class="slide-card" style="--slide-accent:#E05277;">
                 <div class="slide-header">
-                  <div class="slide-icon" style="background:rgba(224,82,119,0.12)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E05277" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7"/><path d="M9 22V12h6v10"/><path d="M21 22H3"/></svg>
+                  <div class="slide-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg>
                   </div>
                   <div>
                     <div class="slide-feature-title">Predicación</div>
-                    <div class="slide-feature-desc">Tiempos, revisitas y estudios en una sola vista.</div>
+                    <div class="slide-feature-desc">Tiempos, revisitas y estudios.</div>
                   </div>
                 </div>
                 <div class="slide-body">
-                  <div class="fake-row">
-                    <div class="fake-badge" style="background:rgba(224,82,119,0.12);color:var(--k-tx-e05277, #E05277);min-width:44px;text-align:center">12 h</div>
-                    <div class="fake-line fake-line-m"></div>
-                  </div>
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:#E05277"></div>
-                    <div class="fake-line fake-line-l"></div>
-                    <div class="fake-badge" style="background:rgba(224,82,119,0.12);color:var(--k-tx-e05277, #E05277)">3 estudios</div>
-                  </div>
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
-                    <div class="fake-line fake-line-s"></div>
+                  <div class="ej-anillo">
+                    <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-opacity=".12" stroke-width="10"/><circle class="ej-arco" cx="50" cy="50" r="40" fill="none" stroke="#E05277" stroke-width="10" stroke-linecap="round" transform="rotate(-90 50 50)"/></svg>
+                    <div><b>12 h</b><span>de 15 este mes</span><span>3 revisitas · 1 estudio</span></div>
                   </div>
                 </div>
               </div>
             </div>
-
             <div class="slide">
-              <div class="slide-card" style="--slide-accent:#0DB6CC;">
+              <div class="slide-card" style="--slide-accent:#5DB85D;">
                 <div class="slide-header">
-                  <div class="slide-icon" style="background:rgba(13,182,204,0.12)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0DB6CC" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 11l2 2 4-4"/></svg>
+                  <div class="slide-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 8V9m0 0L9 7"/></svg>
                   </div>
                   <div>
-                    <div class="slide-feature-title">Conferencias</div>
-                    <div class="slide-feature-desc">Seguimiento simple de visitas y discursos del fin de semana.</div>
+                    <div class="slide-feature-title">Territorios</div>
+                    <div class="slide-feature-desc">Planificar y registrar salidas.</div>
                   </div>
                 </div>
                 <div class="slide-body">
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:#0DB6CC"></div>
-                    <div class="fake-line fake-line-m"></div>
-                    <div class="fake-badge" style="background:rgba(13,182,204,0.10);color:var(--k-tx-0db6cc, #0DB6CC)">Confirmada</div>
+                  <svg class="ej-mapa" viewBox="0 0 260 110" aria-hidden="true">
+                    <path d="M10 20 L80 8 L96 52 L30 66Z" fill="#378ADD" fill-opacity=".35" stroke="#378ADD" stroke-width="2"/>
+                    <path d="M96 52 L80 8 L160 14 L170 58Z" fill="#EF9F27" fill-opacity=".35" stroke="#EF9F27" stroke-width="2"/>
+                    <path d="M30 66 L96 52 L104 102 L20 100Z" fill="#97C459" fill-opacity=".35" stroke="#97C459" stroke-width="2"/>
+                    <path d="M96 52 L170 58 L180 104 L104 102Z" fill="#D85A30" fill-opacity=".35" stroke="#D85A30" stroke-width="2"/>
+                    <path d="M160 14 L250 20 L246 100 L180 104 L170 58Z" fill="#7F77DD" fill-opacity=".35" stroke="#7F77DD" stroke-width="2"/>
+                    <circle cx="132" cy="78" r="7" fill="#fff" stroke="#5DB85D" stroke-width="3"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="slide">
+              <div class="slide-card" style="--slide-accent:#A3B84C;">
+                <div class="slide-header">
+                  <div class="slide-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1M11 21v-3h2v3"/></svg>
                   </div>
-                  <div class="fake-row">
-                    <div class="fake-badge" style="background:rgba(13,182,204,0.10);color:var(--k-tx-0db6cc, #0DB6CC)">Domingo</div>
-                    <div class="fake-line fake-line-l"></div>
+                  <div>
+                    <div class="slide-feature-title">Edificios</div>
+                    <div class="slide-feature-desc">Predicación por portero.</div>
                   </div>
-                  <div class="fake-row">
-                    <div class="fake-dot" style="background:var(--border-input,#4a4d52)"></div>
-                    <div class="fake-line fake-line-s"></div>
-                  </div>
+                </div>
+                <div class="slide-body">
+                  <div class="ej-portero"><i>1</i><i class="si">2</i><i class="si">3</i><i>4</i><i>5</i><i class="no">6</i><i class="si">7</i><i>8</i><i class="rv">9</i><i>10</i><i>11</i><i>12</i></div>
                 </div>
               </div>
             </div>
@@ -1327,12 +1303,11 @@
         </div>
 
         <div class="slider-dots" id="welcome-slider-dots">
-          <button class="sdot active" onclick="goWelcomeSlide(0)" aria-label="Slide 1"></button>
-          <button class="sdot" onclick="goWelcomeSlide(1)" aria-label="Slide 2"></button>
-          <button class="sdot" onclick="goWelcomeSlide(2)" aria-label="Slide 3"></button>
-          <button class="sdot" onclick="goWelcomeSlide(3)" aria-label="Slide 4"></button>
-          <button class="sdot" onclick="goWelcomeSlide(4)" aria-label="Slide 5"></button>
-          <button class="sdot" onclick="goWelcomeSlide(5)" aria-label="Slide 6"></button>
+          <button class="sdot active" onclick="goWelcomeSlide(0, true)" aria-label="Ver Asignaciones"></button>
+          <button class="sdot" onclick="goWelcomeSlide(1, true)" aria-label="Ver Vida y Ministerio"></button>
+          <button class="sdot" onclick="goWelcomeSlide(2, true)" aria-label="Ver Predicación"></button>
+          <button class="sdot" onclick="goWelcomeSlide(3, true)" aria-label="Ver Territorios"></button>
+          <button class="sdot" onclick="goWelcomeSlide(4, true)" aria-label="Ver Edificios"></button>
         </div>
       </div>
 
@@ -1445,6 +1420,12 @@
       </header>
 
       <div class="dash-content">
+        <div id="menu-pendiente" class="menu-pendiente" style="display:none" role="status">
+          <span class="menu-pendiente-tag">⏳ En revisión</span>
+          <b>Tu cuenta todavía no está aprobada</b>
+          <p>Un encargado de la congregación tiene que habilitarla. Cuando lo haga, vas a ver acá lo que te corresponde — no hace falta que hagas nada.</p>
+          <button type="button" onclick="window.ZivTutorial?.pendiente()">Ver el tutorial de nuevo</button>
+        </div>
         <p class="section-label">Módulos disponibles</p>
         <div class="module-grid">
       <a id="menu-card-terr" class="cs-nav-card cs-nav-card-terr" href="territorios/index.html" style="display:none;">
@@ -1640,7 +1621,8 @@
     }
     syncInstallButtons();
   </script>
-  <script src="shared/ui-utils.js?v=3.5"></script>
+  <script src="shared/ui-utils.js?v=3.6"></script>
+  <script src="shared/tutorial.js?v=2"></script>
   <script type="module">
     import { db } from './shared/firebase.js';
     import './shared/auth.js';
@@ -1702,30 +1684,33 @@
       syncThemeButtonIcons();
     }
 
-    function syncHeroClock() {
-      const now = new Date();
-      const hours = now.getHours() % 12;
-      const minutes = now.getMinutes();
-      const angle = ((hours + minutes / 60) * 30);
-      document.documentElement.style.setProperty('--clock-angle', `${angle}deg`);
-    }
+    const WELCOME_SLIDE_MS = 4000;
 
-    window.goWelcomeSlide = function(i) {
+    // manual = la persona tocó un punto o deslizó: esa slide queda el doble antes de seguir sola
+    window.goWelcomeSlide = function(i, manual) {
       const dots = document.querySelectorAll('#welcome-slider-dots .sdot');
+      const slides = document.querySelectorAll('#welcome-slider-track .slide');
       const total = dots.length || 4;
       welcomeSlideIdx = ((i % total) + total) % total;
       document.getElementById('welcome-slider-track').style.transform = `translateX(-${welcomeSlideIdx * 100}%)`;
-      dots.forEach((dot, idx) => dot.classList.toggle('active', idx === welcomeSlideIdx));
+      slides.forEach((sl, idx) => sl.classList.toggle('on', idx === welcomeSlideIdx));
+      const dur = manual ? WELCOME_SLIDE_MS * 2 : WELCOME_SLIDE_MS;
+      document.getElementById('welcome-slider-dots').style.setProperty('--sdot-dur', dur + 'ms');
+      dots.forEach((dot, idx) => {
+        dot.classList.remove('active');
+        if (idx === welcomeSlideIdx) { void dot.offsetWidth; dot.classList.add('active'); }  // reinicia la barrita
+      });
+      if (welcomeSlideTimer) startWelcomeSlider(dur);
     };
 
-    function startWelcomeSlider() {
+    function startWelcomeSlider(delay = WELCOME_SLIDE_MS) {
       stopWelcomeSlider();
-      welcomeSlideTimer = setInterval(() => window.goWelcomeSlide(welcomeSlideIdx + 1), 3600);
+      welcomeSlideTimer = setTimeout(() => window.goWelcomeSlide(welcomeSlideIdx + 1), delay);
     }
 
     function stopWelcomeSlider() {
       if (welcomeSlideTimer) {
-        clearInterval(welcomeSlideTimer);
+        clearTimeout(welcomeSlideTimer);
         welcomeSlideTimer = null;
       }
     }
@@ -1737,8 +1722,8 @@
         return;
       }
       const dx = event.changedTouches[0].clientX - welcomeTouchStartX;
-      if (Math.abs(dx) > 38) window.goWelcomeSlide(dx < 0 ? welcomeSlideIdx + 1 : welcomeSlideIdx - 1);
-      startWelcomeSlider();
+      startWelcomeSlider(WELCOME_SLIDE_MS * 2);
+      if (Math.abs(dx) > 38) window.goWelcomeSlide(dx < 0 ? welcomeSlideIdx + 1 : welcomeSlideIdx - 1, true);
     };
 
     function bindWelcomeDrag() {
@@ -1768,12 +1753,8 @@
         welcomePointerDragging = false;
         viewport.classList.remove('dragging');
         track.style.transition = '';
-        if (Math.abs(dx) > 42) {
-          window.goWelcomeSlide(dx < 0 ? welcomeSlideIdx + 1 : welcomeSlideIdx - 1);
-        } else {
-          window.goWelcomeSlide(welcomeSlideIdx);
-        }
-        startWelcomeSlider();
+        startWelcomeSlider(WELCOME_SLIDE_MS * 2);
+        window.goWelcomeSlide(Math.abs(dx) > 42 ? (dx < 0 ? welcomeSlideIdx + 1 : welcomeSlideIdx - 1) : welcomeSlideIdx, true);
       }
 
       viewport.addEventListener('pointerup', event => finishPointerDrag(event.clientX));
@@ -1784,8 +1765,6 @@
       });
     }
 
-    syncHeroClock();
-    setInterval(syncHeroClock, 60000);
     bindWelcomeDrag();
 
     function relocateSessionHeader(viewId) {
@@ -2148,6 +2127,27 @@
           cardVm.querySelector('.cs-nav-sub').textContent = 'Programa de la reunión semanal';
         }
       }
+
+      const pendiente = !!user && !user.isAnonymous && (user.appRoles || [user.appRol]).includes('pendiente');
+      const aviso = document.getElementById('menu-pendiente');
+      if (aviso) aviso.style.display = pendiente ? '' : 'none';
+      programarTutorial(user, pendiente);
+    }
+
+    // Tutorial (shared/tutorial.js): una vez por carga, después de que el menú terminó de aparecer.
+    // ?tutorial en la URL (lo pone «Ver tutorial» del menú del usuario) lo muestra completo de nuevo.
+    let tutorialProgramado = false;
+    function programarTutorial(user, pendiente) {
+      if (tutorialProgramado || !user || user.isAnonymous || !window.ZivTutorial) return;
+      const forzar = new URLSearchParams(location.search).has('tutorial');
+      if (forzar) history.replaceState(null, '', location.pathname + location.hash);
+      if (!forzar && pendiente && window.ZivTutorial.visto().has('pendiente')) return;
+      tutorialProgramado = true;
+      setTimeout(() => {
+        if (!isViewVisible('view-menu')) { tutorialProgramado = false; return; }
+        if (pendiente) window.ZivTutorial.pendiente();
+        else window.ZivTutorial.recorrido({ todo: forzar });
+      }, 700);
     }
 
     async function navegarDespuesDeAuth(nombre, color) {

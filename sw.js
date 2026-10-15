@@ -1,12 +1,13 @@
 // Subir este número en cada deploy importante: el service worker nuevo se instala solo y
 // las pestañas abiertas avisan (ver 'Actualización de la app' en shared/ui-utils.js).
-const CACHE = 'ziv-v12';
+const CACHE = 'ziv-v13';
 
 // Archivos estáticos que se pre-cachean al instalar
 const SHELL = [
   '/',
   '/shared/firebase.js',
   '/shared/ui-utils.js',
+  '/shared/tutorial.js',
   '/assets/favicon.svg',
   '/admin.js',
   '/territorios/index.html',

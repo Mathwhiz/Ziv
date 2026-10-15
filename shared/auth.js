@@ -37,7 +37,7 @@ function normalizeAppRoles(data) {
   return ['publicador'];
 }
 
-const SELF_PROFILE_FIELDS = ['displayName', 'photoURL', 'birthDate', 'sexo', 'primerLogin', 'terminosAceptados', 'terminosVersion', 'terminosFecha'];
+const SELF_PROFILE_FIELDS = ['displayName', 'photoURL', 'birthDate', 'sexo', 'primerLogin', 'terminosAceptados', 'terminosVersion', 'terminosFecha', 'tutorialVisto'];
 
 // ── Caché de sesión (sessionStorage) ─────────────────────────────
 // Permite que authGuard resuelva inmediatamente en cada cambio de página
