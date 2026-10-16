@@ -1665,6 +1665,8 @@ window.upgradeInputs = function(container) {
       }
     }
     updateBtn();
+    // Si el código cambia el valor (y dispara 'change'), el botón se actualiza solo
+    select.addEventListener('change', updateBtn);
 
     btn.onclick = async () => {
       // Obtener opciones del select (excluye la primera vacía)

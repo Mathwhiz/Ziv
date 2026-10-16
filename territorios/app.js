@@ -746,6 +746,105 @@ function renderSalidas() {
   plantilla.forEach(p => addSalida(p.tipo, p));
 }
 
+// ── Copiar semana anterior ──
+// Toma las salidas que se registraron para la semana anterior a la que se está viendo (el registro más
+// reciente que tenga salidas en esas fechas) y las arma acá con la fecha +7 días. Todo queda editable.
+function setTerritorioSalida(salidaId, terr) {
+  const hidden = document.getElementById('sal-terr-' + salidaId);
+  const btn    = document.getElementById('sal-terr-btn-' + salidaId);
+  if (!hidden || !terr) return;
+  hidden.value = terr;
+  if (btn) {
+    btn.innerHTML = `<span class="ui-fake-input-icon">🗺</span><span style="color:var(--k-tx-eeeeee, #eee);">Territorio ${esc(terr)}</span>`;
+    btn.classList.remove('empty');
+  }
+  showTerrDaysHint(salidaId, terr);
+}
+
+function masDias(iso, n) {
+  const d = new Date(iso + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// fechaReg se guarda como DD/MM/AAAA (fmtDateLocal de este módulo): pasarla a AAAA-MM-DD para ordenar
+function claveFechaReg(f) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(f || ''));
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : String(f || '');
+}
+
+async function copiarSemanaAnterior() {
+  const prev = getWeekDates(semanaOffset - 1);
+  const btn  = document.getElementById('btn-copiar-semana');
+  const hayCargado = salidas.some(s =>
+    document.getElementById('sal-cond-' + s.id)?.value || document.getElementById('sal-terr-' + s.id)?.value);
+  if (hayCargado) {
+    const ok = await uiConfirm({
+      title: 'Copiar semana anterior',
+      msg: 'Se reemplazan las salidas que ya cargaste en esta semana.',
+      confirmText: 'Copiar', type: 'warn',
+    });
+    if (!ok) return;
+  }
+  if (btn) btn.disabled = true;
+  try {
+    const snap = await getDocs(query(salidaCol(), where('grupoId', '==', String(selectedGrupo))));
+    const enPrev = s => s.fecha && s.fecha >= prev.mon && s.fecha <= prev.sun;
+    const doc_ = snap.docs.map(d => d.data())
+      .filter(d => (d.salidas || []).some(enPrev))
+      .sort((a, b) => claveFechaReg(b.fechaReg).localeCompare(claveFechaReg(a.fechaReg)))[0];
+    const lista = (doc_?.salidas || []).filter(enPrev)
+      .sort((a, b) => (a.fecha + (a.hora || '')).localeCompare(b.fecha + (b.hora || '')));
+    if (!lista.length) {
+      uiToast(`No hay salidas registradas del ${formatShort(prev.mon)} al ${formatShort(prev.sun)}`, 'error');
+      return;
+    }
+
+    // Sacar las tarjetas actuales (queda la barra de progreso y, en Congregación, la telefónica fija)
+    document.querySelectorAll('#salidas-container [id^="salida-card-"]').forEach(el => el.remove());
+    salidas = [];
+
+    lista.forEach(s => {
+      const tipo = s.tipo === 'tel' ? 'tel' : 'campo';
+      const limpio = v => (v && v !== '—' ? String(v) : '');
+      addSalida(tipo, {
+        fecha: masDias(s.fecha, 7),
+        hora: (s.hora || '').replace('.', ':'),
+        encuentro: limpio(s.enc),
+      });
+      const id = salidaCounter;
+      // Conductor: si ya no está en la lista del grupo, se agrega igual para no perderlo
+      const cond = limpio(s.cond);
+      const sel  = document.getElementById('sal-cond-' + id);
+      if (sel && cond) {
+        if (![...sel.options].some(o => o.value === cond)) sel.add(new Option(cond, cond));
+        sel.value = cond;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if (tipo === 'campo') {
+        const [primero, ...resto] = terrsGuardados(s);
+        setTerritorioSalida(id, primero || '');
+        resto.forEach(t => {
+          addExtraTerritory(id);
+          const wraps = document.getElementById('extra-terrs-' + id)?.children || [];
+          const w = wraps[wraps.length - 1];
+          const hidden = w?.querySelector('input[type="hidden"]');
+          const btn = w?.querySelector('button.ui-fake-input');
+          if (hidden) hidden.value = t;
+          if (btn) { btn.innerHTML = `<span class="ui-fake-input-icon">🗺</span><span style="color:var(--k-tx-eeeeee, #eee);">Territorio ${esc(t)}</span>`; btn.classList.remove('empty'); }
+        });
+      }
+      updateCardStatus(id);
+    });
+    reordenarSalidas();
+    uiToast(`Se copiaron ${lista.length} salida${lista.length === 1 ? '' : 's'}: revisá y cambiá lo que haga falta`, 'success');
+  } catch (err) {
+    uiToast('No se pudo copiar: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 function getTerritoryOptions() {
   if (!territoriosData || Object.keys(territoriosData).length === 0)
     return '<option value="">— Sin datos —</option>';
@@ -1061,20 +1160,23 @@ function cargarEncuentrosPrevios() {
   _encuentrosPromesa = (async () => {
     const porTerr = {};
     try {
-      const snap = await getDocs(query(salidaCol(), orderBy('fechaReg', 'desc'), limit(200)));
+      // Todos los registros: ordenar por fechaReg (texto DD/MM/AAAA) no daba los más nuevos y dejaba
+      // afuera los que no tienen ese campo. Son pocos docs por semana; la recencia sale de cada fecha.
+      const snap = await getDocs(salidaCol());
       snap.forEach(d => {
         const data = d.data();
         (data.salidas || []).forEach(sal => {
           if (sal.tipo === 'tel') return;
-          const terr = String(sal.terr || '').trim();
           const enc  = String(sal.enc  || '').trim();
-          if (!terr || terr === '—' || !enc || enc === '—') return;
-          const lista = (porTerr[terr] = porTerr[terr] || {});
-          const clave = enc.toLowerCase();
-          const e = (lista[clave] = lista[clave] || { texto: enc, veces: 0, ultima: '' });
-          e.veces++;
-          const f = sal.fecha || data.fechaReg || '';
-          if (f >= e.ultima) { e.ultima = f; e.texto = enc; }   // se queda con la escritura más reciente
+          if (!enc || enc === '—') return;
+          terrsGuardados(sal).forEach(terr => {
+            const lista = (porTerr[terr] = porTerr[terr] || {});
+            const clave = enc.toLowerCase();
+            const e = (lista[clave] = lista[clave] || { texto: enc, veces: 0, ultima: '' });
+            e.veces++;
+            const f = sal.fecha || '';
+            if (f >= e.ultima) { e.ultima = f; e.texto = enc; }   // se queda con la escritura más reciente
+          });
         });
       });
     } catch (e) {
@@ -1335,6 +1437,20 @@ async function enviarWhatsapp() {
 // ─────────────────────────────────────────
 //   REGISTRAR EN PROGRESO
 // ─────────────────────────────────────────
+// Todos los territorios de una salida en Planificar: el principal y los «+» extra
+function terrsDeSalida(id) {
+  const main  = document.getElementById('sal-terr-' + id)?.value;
+  const extra = [...(document.getElementById('extra-terrs-' + id)?.querySelectorAll('input[type="hidden"]') || [])].map(i => i.value);
+  return [...new Set([main, ...extra].filter(v => v && v !== '—'))];
+}
+
+// Territorios de una salida ya guardada (salidas/): terrs si está, si no el terr viejo
+function terrsGuardados(s) {
+  if (Array.isArray(s?.terrs) && s.terrs.length) return s.terrs.map(String);
+  const t = String(s?.terr || '').trim();
+  return t && t !== '—' && !/^tel/i.test(t) ? [t] : [];
+}
+
 async function registrarEnProgreso() {
   const btn    = document.getElementById('btn-reg-prog');
   const status = document.getElementById('reg-prog-status');
@@ -1367,10 +1483,12 @@ async function registrarEnProgreso() {
     }
     await Promise.all(territoriosARegistrar.map(t => sincronizarUltimoHist(t.terr)));
 
-    // Guardar salida en historial
+    // Guardar salida en historial. terr = el primero (lo que leían las versiones viejas), terrs = todos:
+    // antes los territorios extra de una salida se marcaban en progreso pero no quedaban en el registro.
     const salidasParaHistorial = salidas.map(s => ({
       enc:   document.getElementById('sal-enc-'   + s.id)?.value || '—',
-      terr:  s.tipo === 'tel' ? 'TELEFÓNICA' : (document.getElementById('sal-terr-' + s.id)?.value || '—'),
+      terr:  s.tipo === 'tel' ? 'TELEFÓNICA' : (terrsDeSalida(s.id)[0] || '—'),
+      terrs: s.tipo === 'tel' ? [] : terrsDeSalida(s.id),
       fecha: document.getElementById('sal-fecha-' + s.id)?.value || '',
       cond:  document.getElementById('sal-cond-'  + s.id)?.value || '—',
       hora:  (document.getElementById('sal-hora-' + s.id)?.value || '').replace(':','.'),
@@ -1427,6 +1545,14 @@ function renderRegistrar() {
     show('reg-container'); show('reg-footer');
     return;
   }
+  if (enProgreso.length > 1) {
+    const todos = document.createElement('button');
+    todos.type = 'button';
+    todos.className = 'reg-todos';
+    todos.textContent = `✓ Marcar los ${enProgreso.length} como terminados hoy`;
+    todos.onclick = marcarTodosTerminados;
+    c.appendChild(todos);
+  }
   enProgreso.forEach(n => {
     const t = territoriosData[n];
     const ini = t.lastIni || '';
@@ -1461,9 +1587,30 @@ function renderRegistrar() {
         <div><label>Fecha fin</label><input type="date" id="reg-fin-${n}" value="${ini}" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-1e1e1e, #1e1e1e);color:var(--k-tx-eeeeee, #eee);margin-top:3px;"></div>
       </div>`;
     c.appendChild(div);
+    // El conductor viene de cuando se registró «en progreso»: ya queda elegido (se puede cambiar)
+    const cond = t.lastConductor && t.lastConductor !== '—' ? t.lastConductor : '';
+    const sel  = div.querySelector('#reg-cond-' + n);
+    if (sel && cond) {
+      if (![...sel.options].some(o => o.value === cond)) sel.add(new Option(cond, cond));
+      sel.value = cond;
+    }
   });
   show('reg-container'); show('reg-footer');
   if (window.upgradeInputs) upgradeInputs(c);
+}
+
+// Todos «Completado» con fin hoy; el conductor queda el que ya tenía. Hay que tocar Guardar igual.
+function marcarTodosTerminados() {
+  const hoyIso = masDias(getWeekDates(0).mon, (new Date().getDay() + 6) % 7);
+  let n = 0;
+  document.querySelectorAll('#reg-container .reg-card').forEach(card => {
+    const t = card.dataset.terr;
+    setEstado(t, 'completado');
+    const fin = document.getElementById('reg-fin-' + t);
+    if (fin) { fin.value = hoyIso; fin.dispatchEvent(new Event('change', { bubbles: true })); }
+    n++;
+  });
+  uiToast(`${n} marcados como terminados hoy. Revisá y tocá «Guardar cambios».`, 'success');
 }
 
 function setEstado(n, estado) {
@@ -1737,6 +1884,27 @@ function renderInfoBtn(container, n) {
   container.appendChild(card);
 }
 
+// «Más atrasados»: los que hace más de 60 días que no se trabajan (o nunca), del más viejo al más nuevo.
+// No entran los «No predica».
+let filtroInfo = 'todos';
+const DIAS_ATRASADO = 60;
+
+function diasDesdeUso(n) {
+  const t = territoriosData[n];
+  const last = t.lastFin || t.lastIni;
+  return last ? daysSince(last) : Infinity;
+}
+function esAtrasado(n) {
+  const estado = configData[n] || territoriosData[n].tipo || 'normal';
+  return estado !== 'no_predica' && !territoriosData[n].enProgreso && diasDesdeUso(n) > DIAS_ATRASADO;
+}
+
+function setFiltroInfo(f) {
+  filtroInfo = f;
+  document.querySelectorAll('#info-filtros .va-filtro').forEach(b => b.classList.toggle('on', b.dataset.f === f));
+  renderInfoGrid();
+}
+
 function renderInfoGrid() {
   const g = document.getElementById('info-grid');
   g.innerHTML = '';
@@ -1749,6 +1917,19 @@ function renderInfoGrid() {
   if (countPill) {
     countPill.textContent = `${nums.length} territorio${nums.length !== 1 ? 's' : ''}`;
     countPill.style.display = '';
+  }
+
+  const atrasados = nums.filter(esAtrasado).sort((a, b) => diasDesdeUso(b) - diasDesdeUso(a));
+  const nAtras = document.getElementById('info-atras-n');
+  if (nAtras) nAtras.textContent = atrasados.length ? String(atrasados.length) : '';
+  if (filtroInfo === 'atrasados') {
+    g.style.display = '';
+    if (!atrasados.length) {
+      g.innerHTML = `<div class="va-vacio">Ningún territorio con más de ${DIAS_ATRASADO} días sin trabajar 🎉</div>`;
+      return;
+    }
+    atrasados.forEach(n => renderInfoBtn(g, n));
+    return;
   }
 
   const hasCiudades = nums.some(n => territoriosData[n].ciudad);
@@ -1813,6 +1994,8 @@ async function openModal(n) {
   document.getElementById('modal-hist-loading').style.display = '';
   document.getElementById('modal-hist-content').style.display = 'none';
   document.getElementById('modal-edit-form').style.display = 'none';
+  _modalPunto = null;
+  actualizarComoLlegar();
 
   modal.style.display = 'flex';
   requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('open')));
@@ -1827,8 +2010,48 @@ async function openModal(n) {
     renderHistorial(rows);
     document.getElementById('modal-hist-content').style.display = '';
     document.getElementById('modal-notas').value = terrSnap.exists() ? (terrSnap.data().notas || '') : '';
+    if (modalTerr === n && terrSnap.exists()) {
+      _modalPunto = puntoDeTerritorio(terrSnap.data());
+      actualizarComoLlegar();
+    }
   } catch(err) {
     document.getElementById('modal-hist-loading').textContent = 'Error al cargar historial';
+  }
+}
+
+// ── Cómo llegar / Compartir (detalle del territorio) ──
+// Destino: el punto del territorio (o, si no tiene, el centro de sus polígonos).
+let _modalPunto = null;
+
+function puntoDeTerritorio(t) {
+  if (t?.punto && Number.isFinite(t.punto.lat) && Number.isFinite(t.punto.lng)) return t.punto;
+  const coords = (t?.poligonos || []).flatMap(p => p.coords || []).filter(c => Number.isFinite(c?.lat));
+  if (!coords.length) return null;
+  const lats = coords.map(c => c.lat), lngs = coords.map(c => c.lng);
+  return { lat: (Math.min(...lats) + Math.max(...lats)) / 2, lng: (Math.min(...lngs) + Math.max(...lngs)) / 2 };
+}
+
+const urlComoLlegar = p => `https://www.google.com/maps/dir/?api=1&destination=${p.lat.toFixed(6)},${p.lng.toFixed(6)}`;
+
+function actualizarComoLlegar() {
+  const a = document.getElementById('modal-como-llegar');
+  if (!a) return;
+  if (_modalPunto) { a.href = urlComoLlegar(_modalPunto); a.setAttribute('aria-disabled', 'false'); }
+  else { a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); }
+}
+
+// Manda el número y el link de Google Maps (lo abre cualquiera, con o sin cuenta) por WhatsApp u otra app
+async function compartirTerritorio() {
+  const n = modalTerr;
+  if (!n) return;
+  const t = territoriosData[n];
+  const num = t?.nombre ? t.nombre.replace(/^Territorio\s+/, '') : n;
+  const grupo = selectedGrupo === 'C' ? 'Congregación' : `Grupo ${selectedGrupo}`;
+  const texto = `Territorio ${num} · ${grupo}` + (_modalPunto ? `\nCómo llegar: ${urlComoLlegar(_modalPunto)}` : '');
+  if (navigator.share) {
+    try { await navigator.share({ text: texto }); } catch (err) { if (err?.name !== 'AbortError') console.warn(err); }
+  } else {
+    window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank', 'noopener');
   }
 }
 
@@ -1983,15 +2206,19 @@ async function goToHistorial() {
     const q = query(salidaCol(), where('grupoId', '==', String(selectedGrupo)));
     const snap = await getDocs(q);
     hide('hist-loading');
-    const sortedDocs = snap.docs.slice().sort((a, b) =>
-      (b.data().fechaReg || '').localeCompare(a.data().fechaReg || '')
-    );
+    // Cada registro se ordena por la primera fecha de sus salidas (fechaReg es DD/MM/AAAA: como texto
+    // «17/05» quedaba antes que «08/10»), el más nuevo arriba; adentro, por día y hora.
+    const primeraFecha = d => (d.data().salidas || []).map(s => s.fecha).filter(Boolean).sort()[0]
+      || claveFechaReg(d.data().fechaReg);
+    const sortedDocs = snap.docs.slice().sort((a, b) => primeraFecha(b).localeCompare(primeraFecha(a)));
     const rows = [];
     sortedDocs.forEach(d => {
       const data = d.data();
-      (data.salidas || []).forEach(s => {
-        rows.push({ ...s, fechaReg: data.fechaReg, salidaDocId: d.id });
-      });
+      const semana = primeraFecha(d);
+      (data.salidas || []).slice()
+        .sort((a, b) => ((a.fecha || '') + String(a.hora || '').padStart(5, '0'))
+          .localeCompare((b.fecha || '') + String(b.hora || '').padStart(5, '0')))
+        .forEach(s => rows.push({ ...s, fechaReg: data.fechaReg, semana, salidaDocId: d.id }));
     });
     renderHistorialSalidas(rows, sortedDocs);
     show('hist-content');
@@ -2012,7 +2239,7 @@ function renderHistorialSalidas(rows, docs) {
   // Agrupar por salidaDocId (cada documento = una semana registrada)
   const grupos = {}, orden = [];
   rows.forEach(r => {
-    if (!grupos[r.salidaDocId]) { grupos[r.salidaDocId] = { rows:[], fechaReg: r.fechaReg }; orden.push(r.salidaDocId); }
+    if (!grupos[r.salidaDocId]) { grupos[r.salidaDocId] = { rows:[], fechaReg: r.semana || r.fechaReg }; orden.push(r.salidaDocId); }
     grupos[r.salidaDocId].rows.push(r);
   });
   orden.forEach(docId => {
@@ -2021,17 +2248,19 @@ function renderHistorialSalidas(rows, docs) {
     group.className = 'hist-registro-group';
     group.innerHTML = `
       <div class="hist-registro-header">
-        <span class="hist-registro-fecha">Semana del ${fmtHistDate(g.fechaReg)}</span>
+        <span class="hist-registro-fecha">${/^\d{4}-\d{2}-\d{2}$/.test(g.fechaReg || '')
+          ? 'Semana del ' + formatShort(masDias(g.fechaReg, -((new Date(g.fechaReg + 'T12:00:00').getDay() + 6) % 7)))
+          : 'Registrado el ' + fmtHistDate(g.fechaReg)}</span>
         <button class="hist-registro-del" onclick="deleteHistorialDoc('${docId}', this)">Eliminar semana</button>
       </div>`;
     g.rows.forEach(r => {
       const esTel = String(r.terr).toUpperCase().includes('TEL');
-      const dia   = getDiaFromFecha(r.fecha ? fmtHistDate(r.fecha) : '');
+      const dia   = r.fecha ? ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date(r.fecha + 'T12:00:00').getDay()] : '';
       const row   = document.createElement('div');
       row.className = 'hist-row';
       row.innerHTML = `
-        <span class="hist-row-terr ${esTel ? 'hist-row-tel' : ''}">${esTel ? 'Tel.' : 'T.' + r.terr}</span>
-        <span class="hist-row-dia">${dia} ${r.fecha || ''}</span>
+        <span class="hist-row-terr ${esTel ? 'hist-row-tel' : ''}">${esTel ? 'Tel.' : 'T.' + (terrsGuardados(r).join(', ') || '—')}</span>
+        <span class="hist-row-dia">${dia} ${r.fecha ? formatShort(r.fecha) : ''}</span>
         <span class="hist-row-cond">${r.cond}</span>
         <span class="hist-row-hora">${r.hora}</span>`;
       group.appendChild(row);
@@ -2272,6 +2501,10 @@ window.handleModalBg = handleModalBg;
 window.entrarGrupoSeleccionado = entrarGrupoSeleccionado;
 window.generatePreview = generatePreview;
 window.guardarImagen = guardarImagen;
+window.setFiltroInfo = setFiltroInfo;
+window.compartirTerritorio = compartirTerritorio;
+window.copiarSemanaAnterior = copiarSemanaAnterior;
+window.marcarTodosTerminados = marcarTodosTerminados;
 window.enviarWhatsapp = enviarWhatsapp;
 window.registrarEnProgreso = registrarEnProgreso;
 window.goBackToConfig = goBackToConfig;

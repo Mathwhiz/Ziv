@@ -932,3 +932,46 @@ body.light-mode .va-terr[data-estado="normal"] .va-terr-num {
 .enc-sug small { opacity: 0.7; }
 .enc-sug:hover { border-color: var(--grupo-color, #97C459); }
 .enc-sug.activo { border-color: var(--grupo-color, #97C459); color: var(--text-primary, #e8e8e8); }
+
+/* ── Ver mi grupo: filtro «Más atrasados» (2026-10-16) ── */
+.va-filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.va-filtro {
+  background: var(--bg-card, #232628); border: 1px solid var(--border-primary, #2e3033);
+  color: var(--text-secondary, #aaa); border-radius: 20px; padding: 7px 14px;
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.va-filtro.on {
+  color: var(--text-primary, #e8e8e8);
+  border-color: var(--grupo-color, #97C459);
+  background: color-mix(in srgb, var(--grupo-color, #97C459) 16%, var(--bg-card, #232628));
+}
+.va-filtro-n { margin-left: 6px; font-weight: 800; color: #e06060; }
+.va-vacio { grid-column: 1 / -1; text-align: center; color: var(--text-muted, #777); font-size: 14px; padding: 24px 8px; }
+
+/* ── Detalle del territorio: Cómo llegar / Compartir ── */
+.modal-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 22px; }
+.modal-accion {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 8px; border-radius: 12px; font: inherit; font-size: 14px; font-weight: 600;
+  text-decoration: none; cursor: pointer;
+  background: var(--bg-card, #232628); color: var(--text-primary, #e8e8e8);
+  border: 1px solid color-mix(in srgb, var(--grupo-color, #97C459) 45%, var(--border-primary, #2e3033));
+}
+.modal-accion[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+
+/* ── Planificar: copiar semana anterior ── */
+.btn-copiar-semana {
+  display: block; margin: 0 auto 14px; padding: 8px 16px; border-radius: 10px; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 600;
+  background: color-mix(in srgb, var(--grupo-color, #97C459) 12%, transparent);
+  color: var(--grupo-color, #97C459);
+  border: 1px solid color-mix(in srgb, var(--grupo-color, #97C459) 45%, transparent);
+}
+body.light-mode .btn-copiar-semana { color: color-mix(in srgb, var(--grupo-color, #97C459) 58%, #1d1e22); }
+
+/* ── Registrar: marcar todos ── */
+.reg-todos {
+  width: 100%; margin-bottom: 12px; padding: 12px; border-radius: 12px; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 700;
+  background: rgba(29,158,117,0.14); color: var(--k-tx-5dcaa5, #5DCAA5); border: 1px solid rgba(29,158,117,0.45);
+}

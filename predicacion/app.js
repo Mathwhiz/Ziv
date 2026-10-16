@@ -1363,14 +1363,18 @@ async function cargarSalidasSemana() {
       porFecha[fecha].forEach(s => {
         const horaFmt     = s.hora ? s.hora.replace('.', ':') : '—';
         const esTel       = s.tipo === 'tel';
-        const terrTxt     = esTel ? 'Telefónica' : (s.terr && s.terr !== '—' ? `Territorio ${s.terr}` : 'Sin territorio');
-        const encTxt      = (!esTel && s.enc && s.enc !== '—') ? `<div class="sc-pred-enc">${s.enc}</div>` : '';
+        // terrs = todos los territorios de la salida (los registros viejos solo tienen terr)
+        const terrs       = esTel ? [] : (Array.isArray(s.terrs) && s.terrs.length ? s.terrs.map(String)
+                              : (s.terr && s.terr !== '—' ? [String(s.terr)] : []));
+        const nums        = terrs.length > 1 ? terrs.slice(0, -1).join(', ') + ' y ' + terrs[terrs.length - 1] : (terrs[0] || '');
+        const terrLabel   = (terrs.length > 1 ? 'Territorios ' : 'Territorio ') + nums;
+        const terrTxt     = esTel ? 'Telefónica' : (terrs.length ? esc(terrLabel) : 'Sin territorio');
+        const encTxt      = (!esTel && s.enc && s.enc !== '—') ? `<div class="sc-pred-enc">${esc(s.enc)}</div>` : '';
         const borderColor = esTel ? '#1D9E75' : (_grupoColor || '#E05277');
-        const hasTerr     = !esTel && s.terr && s.terr !== '—';
+        const hasTerr     = terrs.length > 0;
         const congreId    = _user?.congregacionId || sessionStorage.getItem('congreId') || '';
-        const terrParam   = encodeURIComponent(String(s.terr || ''));
+        const terrParam   = encodeURIComponent(terrs.join(','));
         const mapaUrl     = `../territorios/mapa.html?modo=registrar&enprogreso=${terrParam}&terrid=${terrParam}&congre=${congreId}`;
-        const terrLabel   = `Territorio ${s.terr}`;
         const mapBtn      = hasTerr
           ? `<button type="button" class="sc-pred-map-btn" title="Ver en mapa"
                onclick="abrirMapaOverlay('${mapaUrl.replace(/'/g, "\\'")}','${terrLabel.replace(/'/g, "\\'")}')">

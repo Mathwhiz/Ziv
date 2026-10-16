@@ -515,15 +515,35 @@ async function initMap() {
       await cargarHistorialInfo();
     }
   } catch(err) {
-    document.getElementById('loading-text').textContent = 'Error al cargar: ' + err.message;
+    // La pantalla de carga tapa el header: sin esto no había forma de salir
+    const permiso = err?.code === 'permission-denied' || /permission/i.test(err?.message || '');
+    document.getElementById('loading-text').textContent = permiso
+      ? 'No tenés acceso a este mapa con tu cuenta.'
+      : 'Error al cargar: ' + err.message;
+    document.querySelector('#map-loading .loading-spinner')?.remove();
+    if (!(window.parent && window.parent !== window)) {
+      const volver = document.createElement('button');
+      volver.className = 'map-back-btn';
+      volver.textContent = '← Volver';
+      volver.onclick = () => window.handleBack();
+      document.getElementById('map-loading').appendChild(volver);
+    }
     return;
   }
 
   document.getElementById('map-loading').classList.add('hidden');
 
-  // Ocultar header y filtros si viene embebido
+  // Ocultar header y filtros si viene embebido. Abierto como página propia (p. ej. «Ver mapa» de la salida de
+  // hoy en el menú) se deja el header: es el único «← Volver» que hay.
   if (_modoParam !== 'full' && _modoParam !== 'picker' && !isPublicMapMode()) {
-    document.querySelector('.map-header').style.display = 'none';
+    const embebido = window.parent && window.parent !== window;
+    if (embebido) document.querySelector('.map-header').style.display = 'none';
+    else if (_terrIdParam) {
+      const ids = String(_terrIdParam).split(',').filter(Boolean);
+      document.getElementById('map-title').textContent = ids.length > 1
+        ? 'Territorios ' + ids.slice(0, -1).join(', ') + ' y ' + ids[ids.length - 1]
+        : 'Territorio ' + ids[0];
+    }
     document.querySelector('.map-filters').style.display = 'none';
   }
   if (_modoParam === 'picker' || _params.get('picker') === '1') {
@@ -1030,7 +1050,8 @@ window.handleBack = function() {
     else if (window.opener) window.opener.postMessage(msg, '*');
   } else {
     if (isPublicMapMode()) window.location.href = '../index.html';
-    else history.back();
+    else if (history.length > 1) history.back();
+    else window.location.href = '/#menu';   // se abrió directo (link compartido, pestaña nueva): sin historial
   }
 };
 

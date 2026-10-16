@@ -361,15 +361,40 @@
     }
     .res-it:hover { background: var(--bg-hover, #272a2e); }
     .res-it.pronto { background: color-mix(in srgb, var(--rc) 12%, var(--bg-card, #232628)); }
-    .res-ic {
-      width: 34px; height: 34px; border-radius: 10px; flex: none; display: grid; place-items: center; font-size: 17px;
-      background: color-mix(in srgb, var(--rc) 18%, transparent);
+    .res-f {
+      width: 46px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border-radius: 10px; padding: 5px 0; line-height: 1.05;
+      background: color-mix(in srgb, var(--rc) 16%, transparent);
     }
+    .res-f-d { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: var(--rc); }
+    body.light-mode .res-f-d { color: color-mix(in srgb, var(--rc) 70%, #1d1e22); }
+    .res-f-n { font-size: 19px; font-weight: 800; color: var(--text-primary, #e8e8e8); }
+    .res-f-ic { font-size: 18px; min-height: 42px; }
     .res-tx { min-width: 0; }
     .res-t { display: block; font-size: 14px; font-weight: 600; color: var(--text-primary, #e8e8e8); }
     .res-s { display: block; font-size: 12.5px; color: var(--text-secondary, #aaa); margin-top: 1px; }
-    .res-cuando { margin-left: auto; padding-left: 8px; text-align: right; font-size: 11px; font-weight: 800; color: var(--rc); white-space: nowrap; }
-    body.light-mode .res-cuando { color: color-mix(in srgb, var(--rc) 70%, #1d1e22); }
+    /* Salida del grupo de HOY: tarjeta grande arriba de «Tus próximos días» */
+    .res-hoy {
+      background: color-mix(in srgb, #1D9E75 12%, var(--bg-card, #232628));
+      border: 1px solid color-mix(in srgb, #1D9E75 45%, var(--border-primary, #2e3033));
+      border-radius: 12px; padding: 11px 12px; margin-bottom: 8px;
+    }
+    .res-hoy-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .res-hoy-chip { background: #1D9E75; color: #fff; font-size: 11.5px; font-weight: 800; letter-spacing: .03em; border-radius: 20px; padding: 3px 9px; flex: none; }
+    .res-hoy-titulo { font-size: 16px; font-weight: 800; color: var(--text-primary, #e8e8e8); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .res-hoy-titulo span { color: #5DCAA5; }
+    body.light-mode .res-hoy-titulo span { color: #0f7a59; }
+    .res-hoy-grupo { margin-left: auto; font-size: 11.5px; color: var(--text-muted, #808080); font-weight: 600; white-space: nowrap; }
+    .res-hoy-datos { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-bottom: 9px; }
+    .res-dato { font-size: 13.5px; font-weight: 500; color: var(--text-primary, #e8e8e8); }
+    .res-hoy-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .res-hoy-btn {
+      border-radius: 9px; padding: 7px 8px; font-size: 13px; font-weight: 700; text-decoration: none;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      color: var(--text-primary, #e8e8e8); border: 1px solid color-mix(in srgb, #1D9E75 55%, var(--border-primary, #2e3033));
+    }
+    .res-hoy-btn.sol { background: #1D9E75; color: #fff; border-color: #1D9E75; }
+    .res-hoy-btn.full { grid-column: 1 / -1; }
     .res-vacio { font-size: 13px; color: var(--text-muted, #777); padding: 12px; text-align: center; border: 1px dashed var(--border-primary, #2e3033); border-radius: 12px; margin-bottom: 18px; }
     .section-label {
       font-size: 11px;
@@ -1725,7 +1750,7 @@
     }
     syncInstallButtons();
   </script>
-  <script src="shared/ui-utils.js?v=3.9"></script>
+  <script src="shared/ui-utils.js?v=4.0"></script>
   <script src="shared/tutorial.js?v=2"></script>
   <script type="module">
     import { db } from './shared/firebase.js';
@@ -2373,6 +2398,7 @@
       const lunes = new Date(); lunes.setDate(lunes.getDate() - ((lunes.getDay() + 6) % 7));
       const lunesIso = resIso(lunes);
       const items = [];
+      const salidasHoy = [];
       const tarea = p => p.catch(e => console.warn('[resumen]', e?.code || e));
 
       const nombreP = getDoc(doc(col('vm_publicadores'), pubId)).then(s => s.exists() ? s.data().nombre : null);
@@ -2399,18 +2425,31 @@
             partesVm(s, pubId).forEach(p => items.push({ fecha: f, c: '#EF9F27', ic: '📖', t: p, s: 'Vida y Ministerio', href: 'vida-ministerio/index.html' }));
           });
         })),
-        // Salidas del grupo esta semana
+        // Salidas del grupo esta semana (la de HOY va aparte, como tarjeta grande: salidasHoy)
         tarea(fichaP.then(async ficha => {
           if (!ficha?.grupoId) return;
           const snap = await getDocs(query(col('salidas'), where('grupoId', '==', String(ficha.grupoId))));
+          const vistas = new Set();   // el mismo día y hora puede estar en dos registros: una sola vez
           snap.forEach(d => (d.data().salidas || []).forEach(s => {
             if (!s.fecha || s.fecha < hoyIso || s.fecha > en(6 - ((hoy.getDay() + 6) % 7))) return;
             const tel = s.tipo === 'tel';
-            const lugar = tel ? 'Telefónica' : (s.terr && s.terr !== '—' ? 'Territorio ' + s.terr : 'Salida');
+            const sinValor = v => !v || v === '—';
+            // terrs = todos los territorios de la salida (los registros viejos solo tienen terr)
+            const terrs = tel ? [] : (Array.isArray(s.terrs) && s.terrs.length ? s.terrs.map(String) : (sinValor(s.terr) ? [] : [String(s.terr)]));
+            const clave = [s.fecha, s.hora, s.tipo, terrs.join(',')].join('|');
+            if (vistas.has(clave)) return;
+            vistas.add(clave);
+            if (s.fecha === hoyIso) {
+              salidasHoy.push({ ...s, tel, grupoId: String(ficha.grupoId), terrs,
+                terr: terrs[0] || '', enc: sinValor(s.enc) ? '' : s.enc, cond: sinValor(s.cond) ? '' : s.cond });
+              return;
+            }
+            const lugar = tel ? 'Telefónica' : (terrs.length ? nombreTerrs(terrs) : 'Salida');
             const hora = s.hora ? s.hora.replace('.', ':') + ' · ' : '';
             const enc = !tel && s.enc && s.enc !== '—' ? ' · ' + s.enc : '';
             items.push({ fecha: s.fecha, c: '#1D9E75', ic: '🗺️', t: hora + lugar, s: 'Salida del grupo' + enc, href: 'predicacion/index.html' });
           }));
+          if (salidasHoy.length) await prepararComoLlegar(cid, salidasHoy);
         })),
         // Discursos públicos que da afuera (próximo mes) — solo quien tiene el módulo
         window.hasPermission?.('acceso_conferencias') ? tarea(getDocs(query(col('conferencias'), where('pubId', '==', pubId))).then(snap => {
@@ -2427,16 +2466,77 @@
       ].filter(Boolean));
 
       items.sort((a, b) => (a.fecha || '9999').localeCompare(b.fecha || '9999'));
+      salidasHoy.sort((a, b) => String(a.hora || '').localeCompare(String(b.hora || '')));
       const lista = document.getElementById('menu-resumen-list');
-      lista.innerHTML = items.length ? '<div class="resumen-list">' + items.map(x => {
+      const hoyHtml = salidasHoy.map(tarjetaSalidaHoy).join('');
+      // Cada renglón arranca con la fecha (día arriba, número grande): se entiende de un vistazo cuándo es
+      const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+      const bloqueFecha = f => {
+        if (!f) return '<span class="res-f res-f-ic" aria-hidden="true">📌</span>';
+        const d = new Date(f + 'T12:00:00');
+        const dia = f === hoyIso ? 'Hoy' : f === en(1) ? 'Mañana' : DIAS[d.getDay()];
+        return `<span class="res-f"><span class="res-f-d">${dia}</span><span class="res-f-n">${d.getDate()}</span></span>`;
+      };
+      lista.innerHTML = hoyHtml + (items.length ? '<div class="resumen-list">' + items.map(x => {
         const pronto = x.fecha && x.fecha <= en(2);
-        const cuando = !x.fecha ? '' : x.fecha === hoyIso ? 'Hoy' : x.fecha === en(1) ? 'Mañana' : resFecha(x.fecha);
         return `<a class="res-it${pronto ? ' pronto' : ''}" href="${x.href}" style="--rc:${x.c}">
-          <span class="res-ic" aria-hidden="true">${x.ic}</span>
-          <span class="res-tx"><span class="res-t">${window.esc(x.t)}</span><span class="res-s">${window.esc(x.s)}</span></span>
-          <span class="res-cuando">${cuando}</span></a>`;
-      }).join('') + '</div>' : '<div class="res-vacio">Sin novedades en los próximos días</div>';
+          ${bloqueFecha(x.fecha)}
+          <span class="res-tx"><span class="res-t">${window.esc(x.t)}</span><span class="res-s"><span aria-hidden="true">${x.ic}</span> ${window.esc(x.s)}</span></span></a>`;
+      }).join('') + '</div>' : (hoyHtml ? '' : '<div class="res-vacio">Sin novedades en los próximos días</div>'));
       caja.style.display = '';
+    }
+
+    // «Territorio 12» / «Territorios 12 y 14» (conPrefijo=false: solo los números)
+    function nombreTerrs(t, conPrefijo = true) {
+      const nums = t.length > 1 ? t.slice(0, -1).join(', ') + ' y ' + t[t.length - 1] : (t[0] || '');
+      return conPrefijo ? (t.length > 1 ? 'Territorios ' : 'Territorio ') + nums : nums;
+    }
+
+    // ── Salida de hoy: «Cómo llegar» ──
+    // Si el encuentro es una dirección («Tellez y King», «Esq. Belgrano y Mitre») se busca en Google Maps
+    // dentro de la ciudad de la congregación; si es una familia («Flia. Scalese») o no hay, al centro del territorio.
+    const ES_FAMILIA = /^(flia|familia|casa|hno|hna|hermano|hermana)\b/i;
+    async function prepararComoLlegar(cid, salidas) {
+      let ciudad = '';
+      try { ciudad = (await getDoc(doc(db, 'congregaciones', cid))).data()?.ciudadPrincipal || ''; } catch {}
+      await Promise.all(salidas.map(async s => {
+        if (s.tel) return;
+        if (s.enc && !ES_FAMILIA.test(s.enc.trim())) {
+          const dir = s.enc.replace(/^esq(uina)?\.?\s*/i, '') + (ciudad ? ', ' + ciudad : '');
+          s.llegar = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(dir);
+          return;
+        }
+        if (!s.terr) return;
+        try {
+          const t = (await getDoc(doc(db, 'congregaciones', cid, 'territorios', s.terr))).data();
+          let p = t?.punto;
+          if (!(Number.isFinite(p?.lat) && Number.isFinite(p?.lng))) {
+            const cs = (t?.poligonos || []).flatMap(x => x.coords || []).filter(c => Number.isFinite(c?.lat));
+            p = cs.length ? { lat: cs.reduce((a, c) => a + c.lat, 0) / cs.length, lng: cs.reduce((a, c) => a + c.lng, 0) / cs.length } : null;
+          }
+          if (p) s.llegar = `https://www.google.com/maps/dir/?api=1&destination=${p.lat.toFixed(6)},${p.lng.toFixed(6)}`;
+        } catch {}
+      }));
+    }
+
+    function tarjetaSalidaHoy(s) {
+      const cid = sessionStorage.getItem('congreId') || localStorage.getItem('ziv_congre_id') || '';
+      const hora = s.hora ? String(s.hora).replace('.', ':') : '';
+      const grupo = s.grupoId === 'C' ? 'Congregación' : 'Grupo ' + s.grupoId;
+      const titulo = s.tel ? '<span>Telefónica</span>'
+        : (s.terrs.length ? `${s.terrs.length > 1 ? 'Territorios' : 'Territorio'} <span>${esc(nombreTerrs(s.terrs, false))}</span>` : 'Salida');
+      const dato = (ic, k, v) => v ? `<span class="res-dato" title="${k}"><span aria-hidden="true">${ic}</span> ${esc(v)}</span>` : '';
+      const mapa = !s.tel && s.terr
+        ? `<a class="res-hoy-btn sol" href="territorios/mapa.html?congre=${encodeURIComponent(cid)}&modo=registrar&enprogreso=${encodeURIComponent(s.terrs.join(','))}&terrid=${encodeURIComponent(s.terrs.join(','))}">🗺 Ver mapa</a>` : '';
+      const llegar = s.llegar ? `<a class="res-hoy-btn" href="${esc(s.llegar)}" target="_blank" rel="noopener">🧭 Cómo llegar</a>` : '';
+      const tel = s.tel && window.hasPermission?.('acceso_telefonica') ? `<a class="res-hoy-btn sol full" href="telefonica/">📞 Abrir Telefónica</a>` : '';
+      let btns = [mapa, llegar, tel].filter(Boolean);
+      if (btns.length === 1) btns = [btns[0].replace('class="res-hoy-btn', 'class="res-hoy-btn full')];
+      return `<div class="res-hoy">
+        <div class="res-hoy-top"><span class="res-hoy-chip">HOY${hora ? ' ' + esc(hora) : ''}</span><span class="res-hoy-titulo">${titulo}</span><span class="res-hoy-grupo">${grupo}</span></div>
+        <div class="res-hoy-datos">${dato('📍', 'Encuentro', s.enc)}${dato('👤', 'Conduce', s.cond)}</div>
+        ${btns.length ? `<div class="res-hoy-btns">${btns.join('')}</div>` : ''}
+      </div>`;
     }
 
     // Tutorial (shared/tutorial.js): una vez por carga, después de que el menú terminó de aparecer.
