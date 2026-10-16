@@ -565,14 +565,20 @@ window.goToVerPrograma = async function() {
   await cargarProgramaPublico();
 };
 
+// El invitado (sin cuenta) ve solo la semana actual: sin flechas para cambiar de semana
+const soloSemanaActual = () => !!window.currentUser?.isAnonymous;
+
 // Título + cargador en la vista pública, para mostrarla antes de tener los datos
 function mostrarProgramaPublicoCargando() {
+  document.querySelectorAll('#view-programa-pub .pub-nav')
+    .forEach(b => { b.style.display = soloSemanaActual() ? 'none' : ''; });
   document.getElementById('pub-semana-titulo').textContent = 'Semana del ' + fmtDisplay(pubFecha);
   document.getElementById('pub-contenido').innerHTML =
     '<div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>';
 }
 
 window.navSemanaPublico = async function(dir) {
+  if (soloSemanaActual()) return;
   const base = parseFechaIso(pubFecha);
   pubFecha = base; // normalizar antes de navegar
   const d = new Date(base + 'T12:00:00');

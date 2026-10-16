@@ -1585,7 +1585,7 @@
         </div>
       </a>
 
-      <a class="cs-nav-card cs-nav-card-pred" href="predicacion/index.html">
+      <a id="menu-card-pred" class="cs-nav-card cs-nav-card-pred" href="predicacion/index.html" style="display:none;">
         <div class="cs-nav-icon cs-nav-icon-pred">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:#E05277" aria-hidden="true"><rect x="3" y="7.5" width="18" height="12.5" rx="3"/><path d="M8.5 7.5V6a2 2 0 012-2h3a2 2 0 012 2v1.5"/><path d="M3 12.5h18v2H3z" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M3 12.5h18"/><path d="M12 11.5v3"/></svg>
         </div>
@@ -2190,6 +2190,8 @@
       if (cardTel)   cardTel.style.display   = window.hasPermission?.('acceso_telefonica')   ? '' : 'none';
       const cardEdif = document.getElementById('menu-card-edif');
       if (cardEdif)  cardEdif.style.display  = window.hasPermission?.('acceso_edificios')    ? '' : 'none';
+      const cardPred = document.getElementById('menu-card-pred');
+      if (cardPred)  cardPred.style.display  = window.hasPermission?.('acceso_predicacion')  ? '' : 'none';
 
       // Hermana registrada: ocultar módulos no relevantes, redirigir VM al visor público
       const esHermana = user && !user.isAnonymous && user.sexo === 'M';

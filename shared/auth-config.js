@@ -158,11 +158,11 @@ export const PERMISOS = {
   // Acceso anónimo: Asignaciones/VM tienen vista pública propia (sin datos de
   // encargado). Territorios (interno) y Hermanos quedan afuera — Territorios
   // solo lo ven encargado_grupo/admin; el mapa público (mapa.html?modo=public)
-  // es una vista aparte que no pasa por authGuard.
+  // es una vista aparte que no pasa por authGuard. En VM el invitado ve solo la semana actual
+  // (vida-ministerio/app.js). Predicación no: es personal y necesita cuenta.
   anonimo: [
     'acceso_asignaciones',
     'acceso_vm',
-    'acceso_predicacion',
   ],
 
 };
