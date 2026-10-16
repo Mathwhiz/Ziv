@@ -27,6 +27,14 @@
     border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer;
   }
   .map-title { font-size: 14px; color: #ccc; font-weight: 500; flex: 1; }
+  /* Mapa público: invita a crear la cuenta (solo sin sesión o como invitado) */
+  .map-registro-btn {
+    display: none; flex-shrink: 0;
+    background: #7F77DD; color: #fff; border: none;
+    border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 2px 10px rgba(127,119,221,0.35);
+  }
+  .map-registro-btn:hover { background: #8F87EA; }
 
   .map-filters {
     position: fixed; top: 47px; left: 0; right: 0; z-index: 999;
@@ -188,6 +196,7 @@
 <div class="map-header">
   <button class="map-back-btn" onclick="handleBack()">← Volver</button>
   <div class="map-title" id="map-title">Territorios</div>
+  <button class="map-registro-btn" id="map-registro-btn" onclick="irARegistro()">Registrate</button>
 </div>
 
 <div class="map-filters" id="map-filters-bar">
@@ -221,13 +230,45 @@
 
 <!-- Firebase SDK -->
 <script type="module">
-import { db } from '../shared/firebase.js';
+import { db, auth } from '../shared/firebase.js';
 import {
-  collection, doc, getDoc, getDocs, query, where, orderBy, limit
+  collection, doc, getDoc, getDocs, query, where, orderBy, limit, setDoc, increment
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 
 const _params = new URLSearchParams(window.location.search);
 const CONGRE_ID = _params.get('congre') || sessionStorage.getItem('congreId') || 'sur';
+
+// ── Mapa público: contador de visitas + botón «Registrate» ──
+// Contador por día en congregaciones/{id}/visitas_mapa/{AAAA-MM-DD}: vistas (cada apertura), personas (primera
+// apertura del día en ese dispositivo) y registro (toques en «Registrate»). Solo números: lo ve el admin en 📊.
+function hoyLocal() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function sumarVisitaMapa(campos) {
+  return setDoc(doc(db, 'congregaciones', CONGRE_ID, 'visitas_mapa', hoyLocal()),
+    Object.fromEntries(campos.map(k => [k, increment(1)])), { merge: true }).catch(() => {});
+}
+function contarAperturaMapa() {
+  const clave = 'ziv_mapa_visto_' + CONGRE_ID;
+  let nueva = false;
+  try { nueva = localStorage.getItem(clave) !== hoyLocal(); localStorage.setItem(clave, hoyLocal()); } catch {}
+  sumarVisitaMapa(nueva ? ['vistas', 'personas'] : ['vistas']);
+}
+window.irARegistro = async function() {
+  // Esperar un poco a que se guarde el toque (si no, la navegación lo corta), pero sin trabar el botón
+  await Promise.race([sumarVisitaMapa(['registro']), new Promise(r => setTimeout(r, 800))]);
+  window.location.href = '/?registro=' + encodeURIComponent(CONGRE_ID);
+};
+if (_params.get('modo') === 'public') {
+  contarAperturaMapa();
+  // Quien ya tiene cuenta no necesita la invitación
+  onAuthStateChanged(auth, user => {
+    const btn = document.getElementById('map-registro-btn');
+    if (btn) btn.style.display = (!user || user.isAnonymous) ? 'block' : 'none';
+  });
+}
 
 // Dinámico — se construye en cargarGrupos()
 let GRUPO_COLORS = {};

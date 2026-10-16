@@ -465,6 +465,14 @@
     .act-stat  { background:var(--k-bg-2a2a2a, #2a2a2a); border-radius:10px; padding:10px 14px; flex:1; text-align:center; }
     .act-stat-n { font-size:22px; font-weight:700; color:var(--k-tx-7f77dd, #7F77DD); }
     .act-stat-l { font-size:11px; color:var(--text-muted, #666); margin-top:2px; }
+    /* Mapa público: visitas por día */
+    .act-mapa { background:var(--bg-card, #232628); border:0.5px solid var(--k-bd-3a3a3a, #3a3a3a); border-radius:12px; padding:12px 14px; margin-bottom:16px; }
+    .act-mapa-tit { font-size:12px; font-weight:600; color:var(--text-secondary, #aaa); margin-bottom:10px; }
+    .act-mapa .act-stats { margin-bottom:12px; }
+    .act-barras { display:flex; align-items:flex-end; gap:3px; height:60px; }
+    .act-barra { flex:1; background:#7F77DD; border-radius:3px 3px 0 0; min-height:2px; opacity:.8; }
+    .act-barra.cero { background:var(--k-bg-3a3a3a, #3a3a3a); opacity:1; }
+    .act-barras-pie { display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted, #666); margin-top:4px; }
 
     /* Salón del Reino */
     .salon-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -709,6 +717,7 @@
     <div style="height:52px;"></div>
     <p class="section-title" id="act-title">Actividad</p>
     <p class="section-sub" id="act-sub">Últimas 100 acciones</p>
+    <div id="act-mapa"></div>
     <div class="act-stats" id="act-stats"></div>
     <div id="act-loading" class="loading-wrap"><div class="spinner"></div><div>Cargando...</div></div>
     <div id="act-list" style="display:none"></div>

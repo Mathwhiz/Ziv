@@ -468,6 +468,34 @@
     .auth-lista li:nth-child(1) .auth-lista-ic { background: rgba(91,141,222,.14); }
     .auth-lista li:nth-child(2) .auth-lista-ic { background: rgba(224,82,119,.14); }
     .auth-lista li:nth-child(3) .auth-lista-ic { background: rgba(239,159,39,.14); }
+
+    /* Cartel «Creá tu cuenta» sobre el menú (invitado que viene del botón Registrate del mapa público) */
+    .reg-overlay {
+      position: fixed; inset: 0; z-index: 400;
+      display: flex; align-items: flex-end; justify-content: center;
+      background: rgba(0,0,0,0); transition: background .3s;
+    }
+    .reg-overlay.open { background: rgba(0,0,0,.6); }
+    .reg-sheet {
+      width: 100%; max-width: 440px; max-height: 92vh; overflow-y: auto;
+      background: var(--bg-card, #232628); border: 1px solid var(--k-bd-3a3a3a, #3a3a3a); border-bottom: none;
+      border-radius: 22px 22px 0 0; padding: 26px 22px 22px;
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      transform: translateY(100%); transition: transform .38s cubic-bezier(.22,1,.36,1);
+    }
+    .reg-overlay.open .reg-sheet { transform: translateY(0); }
+    @media (min-width: 600px) {
+      .reg-overlay { align-items: center; }
+      .reg-sheet { border-radius: 22px; border-bottom: 1px solid var(--k-bd-3a3a3a, #3a3a3a); transform: translateY(24px); opacity: 0; transition: transform .3s, opacity .3s; }
+      .reg-overlay.open .reg-sheet { transform: none; opacity: 1; }
+    }
+    .reg-sheet h2 { font-size: 21px; font-weight: 700; color: var(--text-primary, #e8e8e8); margin: 0 0 6px; }
+    .reg-sheet .reg-sub { font-size: 14px; color: var(--text-secondary, #aaa); line-height: 1.5; margin: 0 0 20px; }
+    .reg-sheet .auth-lista { margin-bottom: 22px; animation: none; }
+    .reg-sheet .auth-lista li { font-size: 14px; line-height: 1.35; }
+    .reg-sheet .auth-lista li .auth-lista-ic { background: color-mix(in srgb, var(--ic-bg) 14%, transparent) !important; }
+    .reg-sheet .auth-logos { animation: none; }
+    .reg-sheet .btn-skip { margin-top: 0; }
     .auth-back-btn {
       position: absolute;
       top: 14px;
@@ -1901,6 +1929,86 @@
     const titulo     = document.getElementById('menu-titulo');
     const congreIcon = document.getElementById('menu-congre-icon');
     const congreWrap = document.getElementById('menu-congre-wrapper');
+
+    // ?registro=<congreId>: viene del botón «Registrate» del mapa público. Deja elegida esa congregación
+    // (como si la hubiera tocado en la lista) y sigue el flujo normal: sin sesión → pantalla de Google.
+    const registroId = new URLSearchParams(location.search).get('registro');
+    if (registroId) {
+      history.replaceState(null, '', '/');
+      try {
+        const snap = await getDoc(doc(db, 'congregaciones', registroId));
+        if (snap.exists()) {
+          const d = snap.data();
+          const nombre = d.nombre || registroId;
+          const color  = d.color || colorPara(registroId).color;
+          sessionStorage.setItem('congreId', registroId);
+          sessionStorage.setItem('congreNombre', nombre);
+          sessionStorage.setItem('congreColor', color);
+          localStorage.setItem('ziv_congre_id', registroId);
+          localStorage.setItem('ziv_congre_nombre', nombre);
+          localStorage.setItem('ziv_congre_color', color);
+        }
+      } catch (err) { console.warn('[registro] no se pudo leer la congregación', err); }
+    }
+
+    // Invitado que llega desde «Registrate»: el menú ya está a la vista, encima va un cartel con lo que gana
+    // creando la cuenta. Sin sesión no hace falta (va a la pantalla de Google) y con cuenta tampoco.
+    if (registroId) {
+      window.waitForAuth().then(u => { if (u?.isAnonymous) setTimeout(abrirRegistroSheet, 450); });
+    }
+
+    const REG_ITEMS = [
+      ['#5B8DDE', '<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17"/><path d="M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/>',
+        'Tus asignaciones y partes, marcadas en el programa'],
+      ['#7F77DD', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+        '«Tus próximos días»: lo que te toca, apenas abrís la app'],
+      ['#EF9F27', '<path d="M12 7c-1.5-2-4-3-9-3v14c5 0 7.5 1 9 3 1.5-2 4-3 9-3V4c-5 0-7.5 1-9 3z"/><path d="M12 7v14"/>',
+        'Todo el programa de Vida y Ministerio, no solo esta semana'],
+      ['#E05277', '<rect x="3" y="7.5" width="18" height="12.5" rx="3"/><path d="M8.5 7.5V6a2 2 0 012-2h3a2 2 0 012 2v1.5"/><path d="M3 12.5h18"/>',
+        'Tu registro de predicación: horas, revisitas y estudios'],
+      ['#1D9E75', '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/>',
+        'Edificios y Telefónica para salir a predicar'],
+    ];
+
+    function abrirRegistroSheet() {
+      if (document.getElementById('reg-overlay')) return;
+      const nombre = sessionStorage.getItem('congreNombre') || localStorage.getItem('ziv_congre_nombre') || '';
+      const color  = sessionStorage.getItem('congreColor')  || localStorage.getItem('ziv_congre_color')  || '#7F77DD';
+      const google = document.querySelector('#btn-google svg')?.outerHTML || '';
+      const ov = document.createElement('div');
+      ov.id = 'reg-overlay';
+      ov.className = 'reg-overlay';
+      ov.innerHTML = `
+        <div class="reg-sheet" role="dialog" aria-modal="true" aria-labelledby="reg-tit">
+          <div class="auth-logos" aria-hidden="true">
+            <img src="/assets/favicon.svg" alt="" width="56" height="56">
+            <span class="auth-mas">+</span>
+            <span class="auth-congre-ini" style="--cg-c:${esc(color)}">${esc(iniciales(nombre))}</span>
+          </div>
+          <h2 id="reg-tit">Creá tu cuenta</h2>
+          <p class="reg-sub">Con tu cuenta de Google, Ziv te muestra lo tuyo en ${esc(nombre || 'tu congregación')}:</p>
+          <ul class="auth-lista">
+            ${REG_ITEMS.map(([c, d, t]) => `<li><span class="auth-lista-ic" style="--ic-bg:${c}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="--ic:${c}" aria-hidden="true">${d}</svg></span>${t}</li>`).join('')}
+          </ul>
+          <button class="btn-google" id="reg-google">${google}Continuar con Google</button>
+          <button class="btn-skip" id="reg-ahora-no">Ahora no</button>
+          <div class="auth-note">La primera vez, un encargado de la congregación aprueba tu cuenta.</div>
+        </div>`;
+      const cerrar = () => {
+        ov.classList.remove('open');
+        document.removeEventListener('keydown', onKey);
+        setTimeout(() => ov.remove(), 350);
+      };
+      const onKey = e => { if (e.key === 'Escape') cerrar(); };
+      ov.addEventListener('click', e => { if (e.target === ov) cerrar(); });
+      document.addEventListener('keydown', onKey);
+      document.body.appendChild(ov);
+      ov.querySelector('#reg-ahora-no').onclick = cerrar;
+      ov.querySelector('#reg-google').onclick = () => window.zivIniciarSesion?.();
+      requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('open')));
+      ov.querySelector('#reg-google').focus({ preventScroll: true });
+    }
+
     const savedId = sessionStorage.getItem('congreId') || localStorage.getItem('ziv_congre_id');
     const savedNombre = sessionStorage.getItem('congreNombre') || localStorage.getItem('ziv_congre_nombre');
     const savedColor  = sessionStorage.getItem('congreColor')  || localStorage.getItem('ziv_congre_color');

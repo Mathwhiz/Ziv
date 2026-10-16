@@ -653,7 +653,7 @@ const CONGRE_SUBCOLS = [
   'vidaministerio', 'vmMeses', 'conferencias', 'congregacionesCircuito', 'edificios',
   'mapa_config', 'mapa_grupos', 'mapa_territorios', 'config_privada',
   'vm_config', 'vm_programa', 'vm_publicadores', 'vm_especiales',
-  'asig_config', 'asig_programa', 'asig_especiales', 'actividad',
+  'asig_config', 'asig_programa', 'asig_especiales', 'actividad', 'visitas_mapa',
 ];
 const CONGRE_SUBCOLS_HIJAS = { territorios: ['historial'], edificios: ['visitas'] };
 
@@ -1938,9 +1938,48 @@ async function openActividad(congreId, congreNombre) {
   document.getElementById('act-title').textContent = congreNombre || congreId;
   document.getElementById('act-sub').textContent   = 'Últimas 100 acciones registradas';
   document.getElementById('act-stats').innerHTML   = '';
+  document.getElementById('act-mapa').innerHTML    = '';
   document.getElementById('act-loading').style.display = 'flex';
   document.getElementById('act-list').style.display    = 'none';
+  loadMapaPublico(congreId);
   await loadActividad(congreId);
+}
+
+// Visitas al mapa público (territorios/mapa.html?modo=public): contador por día en visitas_mapa/{AAAA-MM-DD}
+async function loadMapaPublico(congreId) {
+  const caja = document.getElementById('act-mapa');
+  try {
+    const snap = await getDocs(collection(db, 'congregaciones', congreId, 'visitas_mapa'));
+    const porDia = new Map(snap.docs.map(d => [d.id, d.data()]));
+    const dias = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      dias.push(fmtDateLocal(d));
+    }
+    const suma = (k, lista) => lista.reduce((t, f) => t + (porDia.get(f)?.[k] || 0), 0);
+    const hoy = dias[dias.length - 1];
+    const max = Math.max(1, ...dias.map(f => porDia.get(f)?.personas || 0));
+    const barras = dias.map(f => {
+      const p = porDia.get(f)?.personas || 0;
+      return `<div class="act-barra${p ? '' : ' cero'}" style="height:${Math.round(p / max * 100)}%" title="${f.slice(8)}/${f.slice(5, 7)}: ${p} persona${p === 1 ? '' : 's'}"></div>`;
+    }).join('');
+    const stat = (n, l) => `<div class="act-stat"><div class="act-stat-n">${n}</div><div class="act-stat-l">${l}</div></div>`;
+    caja.innerHTML = `
+      <div class="act-mapa">
+        <div class="act-mapa-tit">Mapa público · últimos 30 días</div>
+        <div class="act-stats">
+          ${stat(suma('personas', [hoy]), 'personas hoy')}
+          ${stat(suma('personas', dias), 'personas')}
+          ${stat(suma('vistas', dias), 'aperturas')}
+          ${stat(suma('registro', dias), 'tocaron «Registrate»')}
+        </div>
+        <div class="act-barras">${barras}</div>
+        <div class="act-barras-pie"><span>hace 30 días</span><span>hoy</span></div>
+      </div>`;
+  } catch (err) {
+    caja.innerHTML = '';
+    console.warn('[mapa público] no se pudieron leer las visitas', err);
+  }
 }
 
 async function loadActividad(congreId) {

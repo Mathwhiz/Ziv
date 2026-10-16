@@ -539,6 +539,9 @@ function showView(id) {
 }
 
 window.goToCover = function() {
+  // Sin rol de encargado la portada no sirve (solo tiene «Ver programa», donde ya está): la casita
+  // vuelve directo al menú de módulos en vez de dejarlo en una pantalla intermedia.
+  if (!puedeVerComoEncargado()) { window.location.href = '../index.html#menu'; return; }
   showView('view-cover');
 };
 

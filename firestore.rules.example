@@ -137,6 +137,16 @@ service cloud.firestore {
         (d.get('cambios', null) == null || (d.cambios is list && d.cambios.size() <= 80));
     }
 
+    // Contador del mapa público: cada campo queda igual o sube exactamente 1
+    function subeUno(d, prev, k) {
+      return !(k in d) ||
+        (d[k] is int && (d[k] == prev.get(k, 0) || d[k] == prev.get(k, 0) + 1));
+    }
+    function sumaUno(d, prev) {
+      return d.keys().hasOnly(['vistas', 'personas', 'registro']) &&
+        subeUno(d, prev, 'vistas') && subeUno(d, prev, 'personas') && subeUno(d, prev, 'registro');
+    }
+
     function onlyKeys(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
@@ -307,6 +317,15 @@ service cloud.firestore {
       match /config_privada/{id} {
         allow read: if hasCongreRole(c, rolesStaff());
         allow write: if hasCongreRole(c, ['admin_congre']);
+      }
+
+      // Contador del mapa público por día (territorios/mapa.html?modo=public, sin sesión): solo números
+      // que suben de a 1. Lo lee el admin (📊 en admin.html).
+      match /visitas_mapa/{dia} {
+        allow read: if hasCongreRole(c, ['admin_congre']);
+        allow create: if dia.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && sumaUno(request.resource.data, {});
+        allow update: if sumaUno(request.resource.data, resource.data);
+        allow delete: if isAdminGeneral();
       }
 
       // Auditoría: cualquiera con sesión (también el invitado) crea entradas a su nombre; nadie las
