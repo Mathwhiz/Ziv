@@ -120,6 +120,23 @@ service cloud.firestore {
         userData.congregacionId == me().congregacionId;
     }
 
+    // Entrada del registro de actividad (shared/actividad.js)
+    function validActividad(d) {
+      return d.keys().hasOnly(['uid', 'deviceId', 'nombre', 'modulo', 'accion', 'detalle', 'anonimo',
+                               'timestamp', 'semana', 'cambios']) &&
+        d.uid == request.auth.uid &&
+        d.timestamp == request.time &&
+        d.modulo in ['territorios', 'asignaciones', 'vida-ministerio', 'hermanos', 'conferencias',
+                     'predicacion', 'edificios'] &&
+        d.accion in ['apertura', 'guardado', 'edicion', 'auto_asignar', 'generacion'] &&
+        d.nombre is string && d.nombre.size() <= 120 &&
+        d.deviceId is string && d.deviceId.size() <= 64 &&
+        d.anonimo is bool &&
+        (d.get('detalle', null) == null || (d.detalle is string && d.detalle.size() <= 300)) &&
+        (d.get('semana', null) == null || (d.semana is string && d.semana.size() <= 10)) &&
+        (d.get('cambios', null) == null || (d.cambios is list && d.cambios.size() <= 80));
+    }
+
     function onlyKeys(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
@@ -179,7 +196,9 @@ service cloud.firestore {
           (isAdminGeneral() || sameCongreAdmin(resource.data)) &&
           onlyKeys(['appRol', 'appRoles', 'grupoEncargado', 'matchEstado', 'matchedPublisherId']) &&
           isValidManagedRoleUpdate()
-        );
+        ) ||
+        // Renombrar una congregación (admin.html) mueve a sus usuarios al id nuevo
+        (isAdminGeneral() && onlyKeys(['congregacionId']));
 
       allow delete: if false;
 
@@ -290,11 +309,14 @@ service cloud.firestore {
         allow write: if hasCongreRole(c, ['admin_congre']);
       }
 
-      // Auditoría: cualquiera crea entradas (también sin sesión); nadie las edita ni borra.
+      // Auditoría: cualquiera con sesión (también el invitado) crea entradas a su nombre; nadie las
+      // edita. Campos y tamaños acotados: se muestran en admin.html. Solo admin_general borra
+      // (al eliminar la congregación).
       match /actividad/{id} {
         allow read: if hasCongreRole(c, ['admin_congre']);
-        allow create: if true;
-        allow update, delete: if false;
+        allow create: if signedIn() && validActividad(request.resource.data);
+        allow update: if false;
+        allow delete: if isAdminGeneral();
       }
     }
   }

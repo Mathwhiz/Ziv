@@ -1219,7 +1219,9 @@ function generatePreview() {
   const color = GROUP_COLORS[selectedGrupo] || '#eee';
   document.getElementById('preview-grupo-title').textContent = `${grupoLabel} — Salidas de la semana`;
   document.getElementById('preview-grupo-color').innerHTML  = `<span style="color:${color}">${grupoLabel}</span>`;
-  document.getElementById('preview-congre-color').innerHTML = `<span style="color:var(--k-tx-7f77dd, #7F77DD)">${CONGRE_NOMBRE}</span>`;
+  document.getElementById('preview-congre-color').innerHTML = `<span style="color:var(--k-tx-7f77dd, #7F77DD)">${esc(CONGRE_NOMBRE)}</span>`;
+  const topEl = document.querySelector('.card-preview-top');
+  if (topEl) topEl.textContent = /^congregaci[oó]n\b/i.test(CONGRE_NOMBRE) ? CONGRE_NOMBRE : 'Congregación ' + CONGRE_NOMBRE;
   document.querySelector('.card-preview').style.borderColor = color;
   document.querySelector('.card-preview-header').style.borderBottomColor = color;
   const colorOscuro = { '1':'#0c2a45', '2':'#2e1e00', '3':'#1a2e0a', '4':'#2e1000', 'C':'#1e1a3a' };
@@ -1279,17 +1281,55 @@ function goBackToConfig() {
   if (status) status.textContent = '';
 }
 
-function guardarImagen() {
+async function canvasSalidas() {
   const el = document.querySelector('.card-preview');
   const originalWidth = el.style.width;
   el.style.width = '900px';
-  html2canvas(el, { backgroundColor: '#1e1e1e', scale: 1, width: 900 }).then(canvas => {
+  try {
+    return await html2canvas(el, { backgroundColor: '#1e1e1e', scale: 1, width: 900 });
+  } finally {
     el.style.width = originalWidth;
-    const link = document.createElement('a');
-    link.download = `salidas-grupo-${selectedGrupo}.jpg`;
-    link.href = canvas.toDataURL('image/jpeg', 0.92);
-    link.click();
-  });
+  }
+}
+
+function descargarCanvas(canvas) {
+  const link = document.createElement('a');
+  link.download = `salidas-grupo-${selectedGrupo}.jpg`;
+  link.href = canvas.toDataURL('image/jpeg', 0.92);
+  link.click();
+}
+
+async function guardarImagen() {
+  descargarCanvas(await canvasSalidas());
+}
+
+// Abre el menú de compartir del celular con la imagen (WhatsApp, etc.). Donde no se pueden compartir
+// archivos (la mayoría de las PC) baja la imagen para adjuntarla a mano.
+async function enviarWhatsapp() {
+  const btn = document.getElementById('btn-enviar-wa');
+  const txt = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = 'Preparando…'; }
+  try {
+    const canvas = await canvasSalidas();
+    const blob   = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92));
+    const file   = new File([blob], `salidas-grupo-${selectedGrupo}.jpg`, { type: 'image/jpeg' });
+    const titulo = document.getElementById('preview-grupo-title')?.textContent || 'Salidas de la semana';
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: titulo });
+      } catch (err) {
+        if (err?.name !== 'AbortError') throw err;   // cerrar el menú no es un error
+      }
+    } else {
+      descargarCanvas(canvas);
+      uiToast('Imagen descargada: adjuntala en el grupo de WhatsApp', 'success');
+    }
+  } catch (err) {
+    console.error(err);
+    uiToast('No se pudo compartir: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = txt; }
+  }
 }
 
 // ─────────────────────────────────────────
@@ -2090,6 +2130,7 @@ async function refreshChatNotas() {
     const misIds = getMisIds();
     const currentUid = window.currentUser?.uid || null;
     const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    _chatTextos = new Map(items.map(n => [n.id, n.texto || '']));
     const list = document.getElementById('chat-list');
     if (!items.length) { show('chat-empty'); list.innerHTML = ''; return; }
     list.innerHTML = items.map(n => {
@@ -2098,7 +2139,7 @@ async function refreshChatNotas() {
       const fechaStr = `${String(fecha.getDate()).padStart(2,'0')}/${String(fecha.getMonth()+1).padStart(2,'0')} ${String(fecha.getHours()).padStart(2,'0')}:${String(fecha.getMinutes()).padStart(2,'0')}`;
       const acciones = esMio ? `
         <div class="chat-item-actions">
-          <button class="chat-btn-edit" onclick="abrirEditNota('${n.id}', ${JSON.stringify(n.texto || '').replace(/</g,'\\u003c')})">Editar</button>
+          <button class="chat-btn-edit" onclick="abrirEditNota('${n.id}')">Editar</button>
           <button class="chat-btn-del"  onclick="eliminarNota('${n.id}')">Eliminar</button>
         </div>` : '';
       return `<div class="chat-item">
@@ -2143,10 +2184,13 @@ async function sendChatNota(btnEl) {
   }
 }
 
-window.abrirEditNota = function(docId, textoActual) {
+// Texto de cada nota por id: el botón Editar pasa solo el id (el texto adentro de un onclick cortaba el atributo)
+let _chatTextos = new Map();
+
+window.abrirEditNota = function(docId) {
   _chatEditDocId = docId;
   const ta = document.getElementById('chat-edit-texto');
-  if (ta) ta.value = textoActual;
+  if (ta) ta.value = _chatTextos.get(docId) || '';
   document.getElementById('chat-edit-modal').style.display = 'flex';
 };
 
@@ -2228,6 +2272,7 @@ window.handleModalBg = handleModalBg;
 window.entrarGrupoSeleccionado = entrarGrupoSeleccionado;
 window.generatePreview = generatePreview;
 window.guardarImagen = guardarImagen;
+window.enviarWhatsapp = enviarWhatsapp;
 window.registrarEnProgreso = registrarEnProgreso;
 window.goBackToConfig = goBackToConfig;
 window.addSalida = addSalida;

@@ -30,14 +30,18 @@ function getDeviceId() {
 export async function logActividad(congreId, modulo, accion, detalle = null, extra = null) {
   if (!congreId) return;
   try {
+    // Varios módulos lo llaman al cargar, antes de que se restaure la sesión: las reglas exigen
+    // sesión y el uid propio, así que esperar a auth (y de paso el nombre sale bien).
+    if (typeof window.waitForAuth === 'function') await window.waitForAuth();
     const user = window.currentUser;
+    if (!user?.uid) return;
     await addDoc(collection(db, 'congregaciones', congreId, 'actividad'), {
-      uid:       user?.uid     ?? null,
-      deviceId:  getDeviceId(),
-      nombre:    user?.displayName || (user?.isAnonymous ? 'Invitado' : '—'),
+      uid:       user.uid,
+      deviceId:  getDeviceId().slice(0, 64),
+      nombre:    String(user.displayName || (user.isAnonymous ? 'Invitado' : '—')).slice(0, 120),
       modulo,
       accion,
-      detalle,
+      detalle:   detalle == null ? null : String(detalle).slice(0, 300),
       ...(extra && typeof extra === 'object' ? extra : {}),
       anonimo:   !!(user?.isAnonymous),
       timestamp: serverTimestamp(),

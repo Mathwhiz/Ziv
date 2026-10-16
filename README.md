@@ -17,6 +17,8 @@
 |--------|--------------|
 | **Territories** | Territory maps (Leaflet + OpenStreetMap) by group, usage history, planning of field service outings, a read-only public map and a printable report. |
 | **Field service** | Personal timer, monthly hours, return visits and Bible studies, goals and the group's outings for the week. |
+| **Apartment buildings** | Map of apartment buildings for intercom witnessing: who is in charge of each one, and a shared, live intercom panel to mark each doorbell (answered, not at home, return visit…) by rounds. |
+| **Telephone witnessing** | Shortcut to the congregation's telephone territory tool, embedded in the app. |
 | **Assignments** | Weekly meeting assignments (sound, microphones, attendants, reader…) with automatic rotation and a public weekly view. |
 | **Life and Ministry** | Midweek meeting schedule: imports the weekly program, assigns parts with a fair rotation, auxiliary classroom, assignment slips and a public viewer. |
 | **Public talks** | Incoming and outgoing speakers for the weekend meeting, speakers' outlines and circuit contacts. |

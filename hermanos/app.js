@@ -1282,12 +1282,13 @@ async function refreshChatNotas() {
     const misIds = getMisIdsAdmin();
     const currentUid = window.currentUser?.uid || null;
     const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    _chatTextos = new Map(items.map(n => [n.id, n.texto || '']));
     if (!items.length) { if(emptyEl) emptyEl.style.display=''; return; }
     listEl.innerHTML = items.map(n => {
       const esMio = (currentUid && n.ownerUid === currentUid) || misIds.includes(n.id);
       const fecha = n.createdAt?.toDate ? n.createdAt.toDate() : new Date();
       const fechaStr = `${String(fecha.getDate()).padStart(2,'0')}/${String(fecha.getMonth()+1).padStart(2,'0')} ${String(fecha.getHours()).padStart(2,'0')}:${String(fecha.getMinutes()).padStart(2,'0')}`;
-      const acciones = esMio ? `<div class="chat-item-actions"><button class="chat-btn-edit" onclick="abrirEditNota('${n.id}',${JSON.stringify(n.texto||'').replace(/</g,'\\u003c')})">Editar</button><button class="chat-btn-del" onclick="eliminarNota('${n.id}')">Eliminar</button></div>` : '';
+      const acciones = esMio ? `<div class="chat-item-actions"><button class="chat-btn-edit" onclick="abrirEditNota('${n.id}')">Editar</button><button class="chat-btn-del" onclick="eliminarNota('${n.id}')">Eliminar</button></div>` : '';
       return `<div class="chat-item"><div class="chat-item-head"><span class="chat-item-author">${esc(n.autor||'?')}</span><span class="chat-item-date">${fechaStr}</span></div><div class="chat-item-text">${esc(n.texto||'')}</div>${acciones}</div>`;
     }).join('');
     listEl.style.display = '';
@@ -1320,11 +1321,13 @@ window.sendChatNota = async function(btnEl) {
 };
 
 let _chatEditDocId = null;
+// Texto de cada nota por id: el botón Editar pasa solo el id (el texto adentro de un onclick cortaba el atributo)
+let _chatTextos = new Map();
 
-window.abrirEditNota = function(docId, textoActual) {
+window.abrirEditNota = function(docId) {
   _chatEditDocId = docId;
   const ta = document.getElementById('chat-edit-texto');
-  if (ta) ta.value = textoActual;
+  if (ta) ta.value = _chatTextos.get(docId) || '';
   document.getElementById('chat-edit-modal').style.display = 'flex';
 };
 

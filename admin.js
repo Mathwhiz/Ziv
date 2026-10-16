@@ -24,7 +24,7 @@ function setAdminAuthStatus(text, showButton = false) {
     return;
   }
   if (!window.hasPermission('acceso_admin')) {
-    setAdminAuthStatus(`La cuenta <strong>${user.email || user.displayName || 'actual'}</strong> no tiene permiso de admin.`, false);
+    setAdminAuthStatus(`La cuenta <strong>${esc(user.email || user.displayName || 'actual')}</strong> no tiene permiso de admin.`, false);
     return;
   }
 
@@ -33,16 +33,16 @@ function setAdminAuthStatus(text, showButton = false) {
     if (snap.exists() && snap.data().pin) {
       ADMIN_PIN = snap.data().pin;
       _adminAuthOk = true;
-      setAdminAuthStatus(`Sesión activa: <strong>${user.email || user.displayName || user.uid}</strong>`, false);
+      setAdminAuthStatus(`Sesión activa: <strong>${esc(user.email || user.displayName || user.uid)}</strong>`, false);
     } else {
       _adminAuthOk = false;
-      setAdminAuthStatus(`Sesión activa: <strong>${user.email || user.displayName || user.uid}</strong>`, false);
+      setAdminAuthStatus(`Sesión activa: <strong>${esc(user.email || user.displayName || user.uid)}</strong>`, false);
       document.getElementById('pin-error').textContent =
         'Falta crear config/superadmin → { pin } en Firestore';
     }
   } catch(e) {
     _adminAuthOk = false;
-    setAdminAuthStatus(`Sesión activa: <strong>${user.email || user.displayName || user.uid}</strong>`, false);
+    setAdminAuthStatus(`Sesión activa: <strong>${esc(user.email || user.displayName || user.uid)}</strong>`, false);
     document.getElementById('pin-error').textContent = 'Error al conectar con Firestore';
   }
 })();
@@ -52,7 +52,7 @@ window.adminSignIn = async function() {
     await window.signInWithGoogle();
     window.location.reload();
   } catch (err) {
-    setAdminAuthStatus(`No se pudo iniciar sesión: <strong>${err.message}</strong>`, true);
+    setAdminAuthStatus(`No se pudo iniciar sesión: <strong>${esc(err.message)}</strong>`, true);
   }
 };
 
@@ -642,10 +642,56 @@ async function editCongre(id) {
   }
 }
 
+// ─────────────────────────────────────────
+//   TODO EL CONTENIDO DE UNA CONGREGACIÓN
+// ─────────────────────────────────────────
+// Firestore no borra subcolecciones solas: eliminar y renombrar recorren esta lista.
+// ⚠️ Una colección nueva dentro de congregaciones/{id} tiene que agregarse acá, o queda huérfana
+// al eliminar (y se pierde al renombrar).
+const CONGRE_SUBCOLS = [
+  'grupos', 'territorios', 'salidas', 'publicadores', 'asignaciones', 'semanasEspeciales',
+  'vidaministerio', 'vmMeses', 'conferencias', 'congregacionesCircuito', 'edificios',
+  'mapa_config', 'mapa_grupos', 'mapa_territorios', 'config_privada',
+  'vm_config', 'vm_programa', 'vm_publicadores', 'vm_especiales',
+  'asig_config', 'asig_programa', 'asig_especiales', 'actividad',
+];
+const CONGRE_SUBCOLS_HIJAS = { territorios: ['historial'], edificios: ['visitas'] };
+
+// Todos los docs de la congregación (sin el doc principal), incluidos los anidados y el chat
+async function docsDeCongre(id) {
+  const base = ['congregaciones', id];
+  const out = [];
+  for (const sub of CONGRE_SUBCOLS) {
+    const snap = await getDocs(collection(db, ...base, sub));
+    for (const d of snap.docs) {
+      out.push(d);
+      for (const hija of CONGRE_SUBCOLS_HIJAS[sub] || []) {
+        out.push(...(await getDocs(collection(d.ref, hija))).docs);
+      }
+    }
+    // chatNotas/{canal} no tiene doc propio (solo la subcolección mensajes): los canales salen de los grupos
+    if (sub === 'grupos') {
+      const canales = ['congregacion', ...snap.docs.map(g => 'grupo_' + (g.data().id ?? g.id))];
+      for (const canal of new Set(canales)) {
+        out.push(...(await getDocs(collection(db, ...base, 'chatNotas', canal, 'mensajes'))).docs);
+      }
+    }
+  }
+  return out;
+}
+
+async function enTandas(items, fn) {
+  for (let i = 0; i < items.length; i += 400) {
+    const batch = writeBatch(db);
+    items.slice(i, i + 400).forEach(it => fn(batch, it));
+    await batch.commit();
+  }
+}
+
 async function deleteCongre(id, nombre) {
   const ok = await uiConfirm({
     title: 'Eliminar congregación',
-    msg: `¿Seguro que querés eliminar "${nombre}"? Se borrarán también sus grupos, territorios, publicadores y asignaciones. Esta acción no se puede deshacer.`,
+    msg: `¿Seguro que querés eliminar "${esc(nombre)}"? Se borra todo su contenido: territorios, publicadores, programas, conferencias, edificios, chat y actividad. Esta acción no se puede deshacer.`,
     confirmText: 'Eliminar',
     cancelText: 'Cancelar',
     type: 'danger',
@@ -654,15 +700,8 @@ async function deleteCongre(id, nombre) {
 
   uiLoading.show('Eliminando...');
   try {
-    const subcols = ['grupos', 'territorios', 'salidas', 'publicadores', 'asignaciones', 'vidaministerio', 'mapa_grupos', 'mapa_territorios', 'config_privada', 'vm_programa', 'vm_publicadores', 'vm_especiales', 'asig_programa', 'asig_especiales'];
-    for (const sub of subcols) {
-      const snap = await getDocs(collection(db, 'congregaciones', id, sub));
-      if (snap.empty) continue;
-      const batch = writeBatch(db);
-      snap.forEach(d => batch.delete(d.ref));
-      await batch.commit();
-    }
-    await deleteDoc(publicConfigRef(id)).catch(() => {});
+    const docs = await docsDeCongre(id);
+    await enTandas(docs, (batch, d) => batch.delete(d.ref));
     await deleteDoc(doc(db, 'congregaciones', id));
     uiLoading.hide();
     uiToast('Congregación eliminada', 'success');
@@ -964,34 +1003,17 @@ async function renameCongre(oldId, newId) {
   const oldSnap = await getDoc(doc(db, 'congregaciones', oldId));
   await setDoc(doc(db, 'congregaciones', newId), oldSnap.data());
 
-  const subcols = ['grupos', 'territorios', 'historial', 'salidas', 'publicadores', 'asignaciones', 'vidaministerio', 'mapa_grupos', 'mapa_territorios', 'config_privada', 'vm_programa', 'vm_publicadores', 'vm_especiales', 'asig_programa', 'asig_especiales'];
-  for (const sub of subcols) {
-    const snap = await getDocs(collection(db, 'congregaciones', oldId, sub));
-    if (snap.empty) continue;
-    const docs = snap.docs;
-    for (let i = 0; i < docs.length; i += 400) {
-      const batch = writeBatch(db);
-      docs.slice(i, i + 400).forEach(d => batch.set(doc(db, 'congregaciones', newId, sub, d.id), d.data()));
-      await batch.commit();
-    }
-  }
+  // Copiar todo (con las subcolecciones anidadas) cambiando solo el id de la congregación en la ruta
+  const prefijo = `congregaciones/${oldId}/`;
+  const docs = await docsDeCongre(oldId);
+  await enTandas(docs, (batch, d) =>
+    batch.set(doc(db, `congregaciones/${newId}/` + d.ref.path.slice(prefijo.length)), d.data()));
 
-  const oldPublicConfig = await getDoc(publicConfigRef(oldId));
-  if (oldPublicConfig.exists()) {
-    await setDoc(publicConfigRef(newId), oldPublicConfig.data());
-    await deleteDoc(publicConfigRef(oldId));
-  }
+  // Los usuarios quedan apuntando a la congregación nueva (si no, pierden el acceso)
+  const usuarios = await getDocs(query(collection(db, 'usuarios'), where('congregacionId', '==', oldId)));
+  await enTandas(usuarios.docs, (batch, u) => batch.update(u.ref, { congregacionId: newId }));
 
-  for (const sub of subcols) {
-    const snap = await getDocs(collection(db, 'congregaciones', oldId, sub));
-    if (snap.empty) continue;
-    const docs = snap.docs;
-    for (let i = 0; i < docs.length; i += 400) {
-      const batch = writeBatch(db);
-      docs.slice(i, i + 400).forEach(d => batch.delete(d.ref));
-      await batch.commit();
-    }
-  }
+  await enTandas(docs, (batch, d) => batch.delete(d.ref));
   await deleteDoc(doc(db, 'congregaciones', oldId));
 }
 
@@ -1427,21 +1449,21 @@ function renderMatchesList() {
   }
   list.innerHTML = matchesList.map(m => {
     const rolesHtml = roles => fmtRoles(roles)
-      ? `<div style="font-size:11px;color:var(--text-muted, #666);margin-top:2px;">${fmtRoles(roles)}</div>` : '';
+      ? `<div style="font-size:11px;color:var(--text-muted, #666);margin-top:2px;">${esc(fmtRoles(roles))}</div>` : '';
     const candidatesHtml = m.candidates.length > 0
       ? m.candidates.map(p => `
           <div class="match-pub-row">
             <div style="flex:1;min-width:0;">
-              <div style="font-size:14px;color:var(--k-tx-dddddd, #ddd);">${p.nombre}</div>
+              <div style="font-size:14px;color:var(--k-tx-dddddd, #ddd);">${esc(p.nombre)}</div>
               ${rolesHtml(p.roles)}
             </div>
-            <button class="btn-match-sel" onclick="resolverMatch('${m.uid}','${p.id}','${p.nombre.replace(/'/g,"\\'")}','${m.congregacionId||''}')">Seleccionar</button>
+            <button class="btn-match-sel" onclick="resolverMatch('${m.uid}','${p.id}')">Seleccionar</button>
           </div>`).join('')
       : '<p style="font-size:13px;color:var(--text-muted, #666);margin:6px 0;">No se encontraron coincidencias en la base.</p>';
 
     return `<div class="match-card">
-      <div style="font-size:16px;font-weight:600;color:var(--k-tx-eeeeee, #eee);">${m.displayName || '(sin nombre)'}</div>
-      <div style="font-size:12px;color:var(--text-muted, #666);margin-top:2px;">${m.email || 'Sin email'}${m.congregacionId ? ' · ' + m.congregacionId : ''}</div>
+      <div style="font-size:16px;font-weight:600;color:var(--k-tx-eeeeee, #eee);">${esc(m.displayName || '(sin nombre)')}</div>
+      <div style="font-size:12px;color:var(--text-muted, #666);margin-top:2px;">${esc(m.email || 'Sin email')}${m.congregacionId ? ' · ' + esc(m.congregacionId) : ''}</div>
       ${m.candidates.length > 0
         ? '<div style="font-size:11px;color:var(--k-tx-888888, #888);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 8px;">Posibles coincidencias</div>'
         : ''}
@@ -1451,8 +1473,12 @@ function renderMatchesList() {
   }).join('');
 }
 
-async function resolverMatch(uid, pubId, pubNombre, congreId) {
-  const ok = await uiConfirm({ title: 'Confirmar match', msg: `¿Vincular este usuario con "${pubNombre}"?`, confirmText: 'Confirmar', type: 'info' });
+async function resolverMatch(uid, pubId) {
+  const m   = matchesList.find(x => x.uid === uid);
+  const pub = m?.candidates.find(p => p.id === pubId);
+  if (!m || !pub) return;
+  const congreId = m.congregacionId;
+  const ok = await uiConfirm({ title: 'Confirmar match', msg: `¿Vincular a <b>${esc(m.displayName || '(sin nombre)')}</b> con <b>${esc(pub.nombre)}</b>?`, confirmText: 'Confirmar', type: 'info' });
   if (!ok) return;
   try {
     const extraRoles = congreId ? await _rolesDesdePublicador(congreId, pubId) : [];
@@ -1507,6 +1533,13 @@ const ROLES_ASIGNABLES = [
 // Estado de la vista de usuarios (necesario para refrescar tras vincular)
 let _usuariosCongreId     = null;
 let _usuariosCongreNombre = null;
+// Datos de cada fila: los botones pasan solo el uid (nada que escribió el usuario va dentro de un onclick)
+let _usuariosPorUid = new Map();
+let _pubsPorId      = new Map();   // publicadores de la congregación: para mostrar con quién está vinculado
+
+function _pubVinculado(u) {
+  return u?.matchedPublisherId ? _pubsPorId.get(u.matchedPublisherId) || null : null;
+}
 
 async function openUsuarios(congreId, congreNombre) {
   _usuariosCongreId     = congreId;
@@ -1520,7 +1553,11 @@ async function openUsuarios(congreId, congreNombre) {
   list.innerHTML = '';
 
   try {
-    const snap    = await getDocs(query(collection(db, 'usuarios'), where('congregacionId', '==', congreId)));
+    const [snap, pubsSnap] = await Promise.all([
+      getDocs(query(collection(db, 'usuarios'), where('congregacionId', '==', congreId))),
+      getDocs(collection(db, 'congregaciones', congreId, 'publicadores')).catch(() => null),
+    ]);
+    _pubsPorId = new Map((pubsSnap?.docs || []).map(d => [d.id, { id: d.id, ...d.data() }]));
     const usuarios = snap.docs
       .map(d => ({ uid: d.id, ...d.data() }))
       .filter(u => !u.isAnonymous)
@@ -1538,23 +1575,23 @@ async function openUsuarios(congreId, congreNombre) {
       return;
     }
 
+    _usuariosPorUid = new Map(usuarios.map(u => [u.uid, u]));
     list.innerHTML = usuarios.map(u => {
-      const ini = (u.displayName || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
-      const badge = {
-        ok:        '<span class="mbadge ok">✓ Vinculado</span>',
-        pendiente: '<span class="mbadge pendiente">⚠ Ambiguo</span>',
-        sin_match: '<span class="mbadge sin_match">Sin match</span>',
-      }[u.matchEstado] || '';
-      const vincularBtn = u.matchEstado !== 'ok'
-        ? `<button class="btn-vincular" onclick="abrirVincularModal('${u.uid}','${(u.displayName||'').replace(/'/g,"\\'")}')">🔗 Vincular</button>`
-        : '';
-      const nameSafe  = (u.displayName || '').replace(/'/g, "\\'");
-      const roles     = u.appRoles || (u.appRol ? [u.appRol] : ['publicador']);
-      const rolesStr  = roles.join(',');
-      const grupoEnc  = u.grupoEncargado || '';
+      const ini = esc((u.displayName || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join(''));
+      // El vínculo lo puede haber escrito el propio usuario al registrarse: mostrar siempre con quién
+      const pub   = _pubVinculado(u);
+      const badge = u.matchEstado === 'ok'
+        ? (pub ? `<span class="mbadge ok">✓ ${esc(pub.nombre || 'Vinculado')}</span>`
+               : '<span class="mbadge pendiente">⚠ Vínculo a un publicador que no existe</span>')
+        : ({
+            pendiente: '<span class="mbadge pendiente">⚠ Ambiguo</span>',
+            sin_match: '<span class="mbadge sin_match">Sin match</span>',
+          }[u.matchEstado] || '');
+      const vincularBtn = `<button class="btn-vincular" onclick="abrirVincularModal('${u.uid}')">🔗 ${u.matchEstado === 'ok' ? 'Cambiar' : 'Vincular'}</button>`;
+      const roles     = u.appRoles || (u.appRol ? [u.appRol] : ['pendiente']);
       const pendienteAprobacion = roles.includes('pendiente');
       const rolesPills = roles.map(r =>
-        `<span style="font-size:10px;color:var(--k-tx-9b8fdd, #9b8fdd);background:rgba(127,119,221,0.12);border:0.5px solid rgba(127,119,221,0.25);border-radius:6px;padding:2px 7px;">${ROL_LABELS[r] || r}</span>`
+        `<span style="font-size:10px;color:var(--k-tx-9b8fdd, #9b8fdd);background:rgba(127,119,221,0.12);border:0.5px solid rgba(127,119,221,0.25);border-radius:6px;padding:2px 7px;">${esc(ROL_LABELS[r] || r)}</span>`
       ).join('');
       const aprobarBtn = pendienteAprobacion
         ? `<button onclick="aprobarComoPublicador('${u.uid}')"
@@ -1564,14 +1601,14 @@ async function openUsuarios(congreId, congreNombre) {
         <div class="usuario-row">
           <div class="usuario-avatar">${ini}</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:14px;font-weight:600;color:var(--k-tx-eeeeee, #eee);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.displayName || '(sin nombre)'}</div>
+            <div style="font-size:14px;font-weight:600;color:var(--k-tx-eeeeee, #eee);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(u.displayName || '(sin nombre)')}</div>
             <div style="font-size:11px;color:var(--text-muted, #666);margin-top:1px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.email || 'Sin email'}</span>${badge}${vincularBtn}
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(u.email || 'Sin email')}</span>${badge}${vincularBtn}
             </div>
             <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:6px;">
               ${rolesPills}
               ${aprobarBtn}
-              <button onclick="abrirRolesModal('${u.uid}','${nameSafe}','${rolesStr}','${grupoEnc}')"
+              <button onclick="abrirRolesModal('${u.uid}')"
                 style="font-size:11px;color:var(--k-tx-888888, #888);background:var(--k-bg-2a2a2a, #2a2a2a);border:0.5px solid var(--k-bd-3a3a3a, #3a3a3a);border-radius:7px;padding:3px 9px;cursor:pointer;">✏ Editar roles</button>
             </div>
           </div>
@@ -1595,8 +1632,9 @@ function cerrarVincularModal() {
   if (m) m.remove();
 }
 
-async function abrirVincularModal(uid, nombre) {
+async function abrirVincularModal(uid) {
   cerrarVincularModal();
+  const nombre = esc(_usuariosPorUid.get(uid)?.displayName || '(sin nombre)');
 
   const modal = document.createElement('div');
   modal.id = 'vincular-modal';
@@ -1619,7 +1657,7 @@ async function abrirVincularModal(uid, nombre) {
   document.body.appendChild(modal);
 
   _vincUid    = uid;
-  _vincNombre = nombre;
+  _vincNombre = _usuariosPorUid.get(uid)?.displayName || '(sin nombre)';
   _vincPubs   = [];
 
   try {
@@ -1649,28 +1687,39 @@ function filtrarVincPubs(q) {
   list.innerHTML = filtrados.map(p => `
     <div class="match-pub-row">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;color:var(--k-tx-dddddd, #ddd);">${p.nombre}</div>
-        ${p.roles?.length ? `<div style="font-size:11px;color:var(--text-muted, #666);margin-top:2px;">${fmtRoles(p.roles)}</div>` : ''}
+        <div style="font-size:14px;color:var(--k-tx-dddddd, #ddd);">${esc(p.nombre)}</div>
+        ${p.roles?.length ? `<div style="font-size:11px;color:var(--text-muted, #666);margin-top:2px;">${esc(fmtRoles(p.roles))}</div>` : ''}
       </div>
-      <button class="btn-match-sel" onclick="confirmarVinculo('${p.id}','${(p.nombre||'').replace(/'/g,"\\'")}')">Vincular</button>
+      <button class="btn-match-sel" onclick="confirmarVinculo('${p.id}')">Vincular</button>
     </div>`).join('');
 }
 
+// Roles al vincular con una ficha: conserva los de encargado que ya tenga y reemplaza los que salen de la ficha
+function _rolesConVinculo(rolesActuales, extraRoles) {
+  const deFicha = new Set(Object.values(_ROL_PUB_A_APP));
+  const quedan  = (rolesActuales || []).filter(r => r !== 'pendiente' && r !== 'publicador' && !deFicha.has(r));
+  return [...new Set(['publicador', ...extraRoles, ...quedan])];
+}
+
 async function aprobarComoPublicador(uid) {
-  const ok = await uiConfirm({
-    title:       'Aprobar acceso',
-    msg:         '¿Dar acceso de publicador a este usuario?',
-    confirmText: 'Aprobar',
-    type:        'info',
-  });
-  if (!ok) return;
   try {
     const snap = await getDoc(doc(db, 'usuarios', uid));
     const data = snap.exists() ? snap.data() : {};
-    const extraRoles = (data.matchEstado === 'ok' && data.matchedPublisherId && _usuariosCongreId)
-      ? await _rolesDesdePublicador(_usuariosCongreId, data.matchedPublisherId)
-      : [];
+    // El vínculo puede venir escrito por el propio usuario al registrarse: decir con quién y qué roles da
+    const pub = (data.matchEstado === 'ok' && data.matchedPublisherId) ? _pubsPorId.get(data.matchedPublisherId) : null;
+    const extraRoles = pub ? await _rolesDesdePublicador(_usuariosCongreId, pub.id) : [];
     const appRoles = [...new Set(['publicador', ...extraRoles])];
+    const quien = esc(data.displayName || '(sin nombre)');
+    const vinculo = pub
+      ? `Vinculado con la ficha de <b>${esc(pub.nombre)}</b>. Si no es esa persona, cancelá y usá «🔗 Cambiar».`
+      : (data.matchedPublisherId ? 'El vínculo apunta a un publicador que no existe: se aprueba sin roles de la ficha.' : 'Sin ficha de publicador vinculada.');
+    const ok = await uiConfirm({
+      title:       'Aprobar acceso',
+      msg:         `<b>${quien}</b><br>${vinculo}<br><br>Roles: ${appRoles.map(r => esc(ROL_LABELS[r] || r)).join(', ')}`,
+      confirmText: 'Aprobar',
+      type:        'info',
+    });
+    if (!ok) return;
     await updateDoc(doc(db, 'usuarios', uid), { appRol: 'publicador', appRoles });
     uiToast('Usuario aprobado', 'success');
     openUsuarios(_usuariosCongreId, _usuariosCongreNombre);
@@ -1679,17 +1728,19 @@ async function aprobarComoPublicador(uid) {
   }
 }
 
-async function confirmarVinculo(pubId, pubNombre) {
+async function confirmarVinculo(pubId) {
+  const pub = _vincPubs.find(p => p.id === pubId);
+  if (!pub) return;
   const ok = await uiConfirm({
     title:       'Confirmar vínculo',
-    msg:         `¿Vincular "${_vincNombre}" con "${pubNombre}"?`,
+    msg:         `¿Vincular a <b>${esc(_vincNombre)}</b> con <b>${esc(pub.nombre)}</b>?`,
     confirmText: 'Vincular',
     type:        'info',
   });
   if (!ok) return;
   try {
     const extraRoles = _usuariosCongreId ? await _rolesDesdePublicador(_usuariosCongreId, pubId) : [];
-    const appRoles = [...new Set(['publicador', ...extraRoles])];
+    const appRoles = _rolesConVinculo(_usuariosPorUid.get(_vincUid)?.appRoles, extraRoles);
     await updateDoc(doc(db, 'usuarios', _vincUid), { matchedPublisherId: pubId, matchEstado: 'ok', appRol: 'publicador', appRoles });
     cerrarVincularModal();
     uiToast('Vínculo guardado', 'success');
@@ -1717,12 +1768,15 @@ window.toggleEncargadoGrupoSel = function() {
   if (wrap) wrap.style.display = checked ? '' : 'none';
 };
 
-async function abrirRolesModal(uid, nombre, rolesStr, grupoEncargado) {
+async function abrirRolesModal(uid) {
   cerrarRolesModal();
+  const u = _usuariosPorUid.get(uid) || {};
+  const nombre         = esc(u.displayName || '');
+  const grupoEncargado = u.grupoEncargado || '';
   _rolesUid    = uid;
-  _rolesNombre = nombre;
+  _rolesNombre = u.displayName || '';
 
-  const currentRoles = rolesStr ? rolesStr.split(',').filter(Boolean) : ['publicador'];
+  const currentRoles = u.appRoles?.length ? u.appRoles : (u.appRol ? [u.appRol] : ['publicador']);
 
   const checkboxes = ROLES_ASIGNABLES.map(r => `
     <label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--k-bd-2a2a2a, #2a2a2a);cursor:pointer;">
@@ -1860,8 +1914,7 @@ const ACT_ACCIONES = {
 };
 
 function actEsc(s) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return esc(typeof s === 'string' ? s : (s == null ? '' : JSON.stringify(s)));
 }
 
 function actCambiosHtml(cambios) {
@@ -1927,13 +1980,14 @@ async function loadActividad(congreId) {
         html += `<div class="act-day-hdr">${dayLabel}</div>`;
         lastDayKey = dayKey;
       }
-      const mod     = ACT_MODULOS[e.modulo] || { label: e.modulo, icon: '📱', color: '#666' };
-      const accion  = ACT_ACCIONES[e.accion] || e.accion;
+      // Todo lo de la entrada lo escribe el cliente (las reglas dejan crear a cualquiera con sesión): escapar
+      const mod     = ACT_MODULOS[e.modulo] || { label: actEsc(e.modulo), icon: '📱', color: '#666' };
+      const accion  = ACT_ACCIONES[e.accion] || actEsc(e.accion);
       const hora    = ts ? ts.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—';
-      const nombre  = e.nombre || (e.anonimo ? 'Invitado' : '—');
+      const nombre  = actEsc(e.nombre || (e.anonimo ? 'Invitado' : '—'));
       const anonBadge  = e.anonimo ? ' <span style="font-size:10px;color:var(--k-tx-555555, #555);">(invitado)</span>' : '';
       const detalleHtml = e.detalle
-        ? `<div class="act-detalle">${e.detalle}</div>${actCambiosHtml(e.cambios)}`
+        ? `<div class="act-detalle">${actEsc(e.detalle)}</div>${actCambiosHtml(e.cambios)}`
         : actCambiosHtml(e.cambios);
       html += `
         <div class="act-entry">
