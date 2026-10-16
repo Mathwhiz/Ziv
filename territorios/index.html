@@ -25,7 +25,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Territorios — Ziv</title>
 <link rel="stylesheet" href="../shared/styles-base.css?v=1.5">
-<link rel="stylesheet" href="/territorios/styles.css?v=1.9">
+<link rel="stylesheet" href="/territorios/styles.css?v=2.1">
 </head>
 <body class="ziv-booting">
 <div class="ziv-boot loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
@@ -45,13 +45,6 @@
 </button>
 
 <div class="app">
-
-  <!-- Barra de pasos -->
-  <div class="step-bar" id="step-bar" style="display:none;">
-    <div class="step" id="s1"></div>
-    <div class="step" id="s2"></div>
-    <div class="step" id="s3"></div>
-  </div>
 
  <!-- ── COVER ── -->
   <div id="view-cover" class="view">
@@ -221,21 +214,14 @@
   </div>
 
   <!-- ── REGISTRAR TERRITORIOS ── -->
-  <div id="view-registrar" class="view" style="display:none;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-      <p class="section-title" style="margin-bottom:0;">Registrar territorios</p>
+  <div id="view-registrar" class="view tf" style="display:none;">
+    <div class="tf-cab">
+      <button type="button" class="tf-volver" onclick="goToModo()" aria-label="Volver">←</button>
+      <h1>Registrar territorios<small id="reg-grupo-label">—</small></h1>
     </div>
-    <p class="section-sub">Grupo <span id="reg-grupo-label">?</span> &mdash; marcá los que se completaron</p>
     <div id="reg-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando...</div></div>
     <div id="reg-error" style="display:none;"></div>
     <div id="reg-container" style="display:none;"></div>
-    <div id="reg-footer" style="display:none;">
-      <button class="btn-guardar" id="btn-guardar" onclick="guardarRegistros()">Guardar cambios</button>
-      <div class="save-status" id="save-status"></div>
-      <div style="margin-top:10px;">
-        <button class="btn-secondary" style="width:100%;" onclick="goToModo()">← Volver</button>
-      </div>
-    </div>
   </div>
 
   <!-- ── INFO GRUPO ── -->
@@ -352,55 +338,51 @@
   </div>
 
   <!-- ── HISTORIAL ── -->
-  <div id="view-historial" class="view" style="display:none;">
-    <p class="section-title" id="hist-titulo" style="font-size:32px;margin-bottom:4px;">Historial</p>
-    <p class="section-sub" style="margin-bottom:14px;">Salidas registradas</p>
+  <div id="view-historial" class="view tf" style="display:none;">
+    <div class="tf-cab">
+      <button type="button" class="tf-volver" onclick="goToModo()" aria-label="Volver">←</button>
+      <h1>Historial de salidas<small id="hist-titulo">—</small></h1>
+    </div>
     <div id="hist-loading" class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando...</div></div>
     <div id="hist-error" style="display:none;"></div>
     <div id="hist-content" style="display:none;"></div>
-    <button class="btn-secondary" style="width:100%;margin-top:8px;" onclick="goToModo()">← Volver</button>
   </div>
 
   <!-- ── PLANIFICADOR ── -->
-  <div id="view-config" class="view" style="display:none;">
-    <div class="plan-header">
-      <div>
-        <p class="plan-titulo">Planificar salidas</p>
-        <p id="plan-grupo-label" style="font-size:14px;font-weight:600;margin-top:2px;color:var(--grupo-color,#97C459);">—</p>
-      </div>
-      <div class="plan-btns">
-        <button class="btn-add-tel"   onclick="addSalida('tel')">+ Telefónica</button>
-        <button class="btn-add-salida" onclick="addSalida('campo')">+ Salida</button>
-      </div>
+  <div id="view-config" class="view tf" style="display:none;">
+    <div class="tf-cab">
+      <button type="button" class="tf-volver" onclick="goToModo()" aria-label="Volver">←</button>
+      <h1>Planificar salidas<small id="plan-grupo-label">—</small></h1>
     </div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;">
-      <button id="btn-semana-prev" onclick="cambiarSemana(-1)" style="font-size:18px;padding:2px 10px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-2a2a2a, #2a2a2a);color:var(--text-secondary, #aaa);cursor:pointer;">←</button>
-      <span id="week-info" style="font-size:14px;color:var(--k-tx-888888, #888);"></span>
-      <button onclick="cambiarSemana(1)" style="font-size:18px;padding:2px 10px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-2a2a2a, #2a2a2a);color:var(--text-secondary, #aaa);cursor:pointer;">→</button>
+    <div class="tf-semana">
+      <button type="button" id="btn-semana-prev" onclick="cambiarSemana(-1)" aria-label="Semana anterior">‹</button>
+      <b id="week-info"></b>
+      <button type="button" onclick="cambiarSemana(1)" aria-label="Semana siguiente">›</button>
     </div>
-    <button type="button" class="btn-copiar-semana" id="btn-copiar-semana" onclick="copiarSemanaAnterior()">⧉ Copiar semana anterior</button>
+    <div class="tf-barra">
+      <button type="button" class="tf-chip" id="btn-copiar-semana" onclick="copiarSemanaAnterior()">⧉ Copiar semana anterior</button>
+      <span class="tf-listas" id="plan-listas"></span>
+    </div>
     <div id="terr-loading" class="loading-wrap" style="display:none;">
       <div class="spinner"></div>
       <div class="loading-txt">Cargando territorios...</div>
     </div>
     <div id="terr-error" style="display:none;"></div>
+    <div id="tel-fija"></div>
     <div id="salidas-container"></div>
-    <div class="plan-footer">
-      <button class="btn-secondary" onclick="goToModo()" style="flex:1;">← Volver</button>
-      <button class="btn-primary"   id="btn-generar-tabla" onclick="generatePreview()" style="flex:2;font-size:12px;padding:7px 12px;">Generar tabla →</button>
+    <div class="tf-agregar" id="plan-agregar">
+      <button type="button" onclick="addSalida('campo')">+ Salida de campo</button>
+      <button type="button" onclick="addSalida('tel')">+ Telefónica</button>
     </div>
   </div>
 
-  <!-- ── VISTA PREVIA ── -->
-  <div id="view-preview" class="view" style="display:none;">
-    <div class="preview-header-wrap">
-      <div class="preview-tag" id="preview-tag-label">Tabla de Salidas</div>
-      <div class="preview-title-line">
-        <span id="preview-grupo-color"></span>
-        <span class="preview-sep">·</span>
-        <span id="preview-congre-color"></span>
-      </div>
+  <!-- ── VISTA PREVIA (paso 2: revisar y guardar) ── -->
+  <div id="view-preview" class="view tf" style="display:none;">
+    <div class="tf-cab">
+      <button type="button" class="tf-volver" onclick="goBackToConfig()" aria-label="Volver a editar">←</button>
+      <h1>Revisar y guardar<small id="preview-sub">—</small></h1>
     </div>
+    <div class="tf-img-wrap" id="preview-wrap" onclick="toggleImagenGrande()">
     <div class="card-preview">
       <div class="card-preview-header">
         <div class="card-preview-top">Congregación Sur</div>
@@ -411,16 +393,13 @@
         <tbody id="preview-body"></tbody>
       </table>
     </div>
-    <div style="display:flex;gap:8px;margin-top:12px;">
-      <button class="btn-secondary" onclick="goBackToConfig()" style="flex:1;">← Editar</button>
-      <button class="btn-save"      onclick="guardarImagen()"  style="flex:1;">Guardar imagen</button>
-      <button id="btn-enviar-wa" onclick="enviarWhatsapp()"
-        style="flex:1;padding:11px;background:var(--k-bg-1a2e0a, #1a2e0a);color:var(--k-tx-97c459, #97C459);border:0.5px solid var(--k-bd-3b6d11, #3B6D11);border-radius:12px;cursor:pointer;font-size:13px;font-weight:500;">
-        📲 Enviar al grupo
-      </button>
     </div>
-    <button class="btn-registrar-prog" id="btn-reg-prog" onclick="registrarEnProgreso()">Registrar territorios como en progreso</button>
-    <div class="reg-prog-status" id="reg-prog-status"></div>
+    <button type="button" class="tf-btn tf-btn-pri" id="btn-reg-prog" onclick="registrarEnProgreso()">✓ Guardar semana</button>
+    <p class="tf-nota" id="reg-prog-status">Guarda las salidas y deja los territorios en progreso.</p>
+    <div class="tf-dos">
+      <button type="button" class="tf-btn tf-btn-sec" id="btn-enviar-wa" onclick="enviarWhatsapp()">📲 Enviar al grupo</button>
+      <button type="button" class="tf-btn tf-btn-sec" onclick="guardarImagen()">⬇ Imagen</button>
+    </div>
   </div>
 
   <!-- ── MAPA POPUP ── -->
@@ -435,6 +414,12 @@
   </div>
 
 </div><!-- /.app -->
+
+<!-- Botón fijo abajo (Planificar: «Revisar y guardar», Registrar: «Guardar cambios»). Va fuera de las
+     vistas: el fadeIn de .view usa transform y correría un position:fixed mientras anima. -->
+<div class="tf-pie" id="tf-pie" style="display:none;"><div class="tf-pie-in">
+  <button type="button" class="tf-btn tf-btn-pri" id="tf-pie-btn"></button>
+</div></div>
 
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>

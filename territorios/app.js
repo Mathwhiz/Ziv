@@ -144,15 +144,6 @@ function hexToRgba(hex, a) {
   return `rgba(${r},${g},${b},${a})`;
 }
 
-const DIA_COLORS = {
-  'Lunes':    '#85B7EB',
-  'Martes':   '#85B7EB',
-  'Miércoles':'#C0DD97',
-  'Jueves':   '#FAC775',
-  'Viernes':  '#C0DD97',
-  'Sábado':   '#CDB4FF',
-  'Domingo':  '#F09595',
-};
 
 // ─────────────────────────────────────────
 //   UTILIDADES DOM
@@ -161,6 +152,9 @@ function show(id) {
   document.getElementById(id).style.display = '';
   if (!id.startsWith('view-')) return;
   window.scrollTo(0, 0);   // cada pantalla arranca arriba (si no, quedaba a la altura de la anterior)
+  // Botón fijo de abajo: Planificar lo tiene siempre; Registrar lo pone cuando terminó de cargar
+  if (id === 'view-config') setPie('Revisar y guardar →', generatePreview);
+  else setPie(null);
   const homeBtn = document.getElementById('btn-home');
   const mapaBtn = document.getElementById('btn-mapa-float');
   if (homeBtn) {
@@ -184,11 +178,6 @@ function show(id) {
   }
 }
 function hide(id) { document.getElementById(id).style.display = 'none'; }
-function setStep(n) {
-  document.getElementById('step-bar').style.display = 'flex';
-  for (let i = 1; i <= 3; i++)
-    document.getElementById('s' + i).className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
-}
 
 function formatShort(ds) {
   if (!ds) return '—';
@@ -223,10 +212,6 @@ function getWeekDates(offset = 0) {
   return { mon:d(0), tue:d(1), wed:d(2), thu:d(3), fri:d(4), sat:d(5), sun:d(6) };
 }
 
-function getNombreDia(fecha) {
-  if (!fecha) return '—';
-  return DIAS_ES[new Date(fecha + 'T00:00:00').getDay()];
-}
 
 function fmtDate(ds) {
   if (!ds) return '';
@@ -368,7 +353,6 @@ function goToCover() {
   hide('view-informe');
   hideChatFab();
   show('view-cover');
-  document.getElementById('step-bar').style.display = 'none';
 }
 
 function goToModo() {
@@ -400,7 +384,6 @@ function goToModo() {
   if (statusEl) { statusEl.textContent = 'Sin planificar'; statusEl.className = 'plan-status-dot sin-plan'; }
 
   show('view-modo');
-  document.getElementById('step-bar').style.display = 'none';
 
   actualizarBadgePlanificada(w);
 }
@@ -553,10 +536,7 @@ function _applyGrupoColorToBtn(btn, id) {
   btn.style.setProperty('--gc-bg-sel',      hexToRgba(c, 0.16));
   btn.style.setProperty('--gc-badge',       hexToRgba(c, 0.2));
   btn.style.setProperty('--grupo-hover-bg', hexToRgba(c, 0.13));
-  // color del número sobre la insignia sólida: oscuro si el color de grupo es claro, blanco si es oscuro
-  const n = parseInt(c.replace('#', ''), 16);
-  const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
-  btn.style.setProperty('--gc-on', lum > 0.62 ? '#1d1e22' : '#ffffff');
+  btn.style.setProperty('--gc-on', colorSobre(c));   // número sobre la insignia sólida
 }
 
 cargarGrupos();
@@ -611,6 +591,13 @@ function mostrarAvisoSinGrupo() {
 // ─────────────────────────────────────────
 //   PLANIFICADOR
 // ─────────────────────────────────────────
+// Cada salida vive en `salidas` (no en el DOM): { id, tipo, fecha, hora, conductor, encuentro, encAuto, terrs[] }.
+// La lista se vuelve a pintar entera desde ahí (son 4–7 renglones); solo el campo Encuentro se actualiza
+// sin repintar, para no perder el foco mientras se escribe.
+const DIAS_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MESES_C    = ['ene.','feb.','mar.','abr.','may.','jun.','jul.','ago.','sep.','oct.','nov.','dic.'];
+let salidaAbierta = null;   // id de la salida que está abierta para editar
+
 function getPlantilla(grupo) {
   const week = getWeekDates(semanaOffset);
   if (grupo === 'C') {
@@ -632,17 +619,101 @@ function getPlantilla(grupo) {
   ];
 }
 
+function nombreGrupo() {
+  const g = GRUPOS.find(x => String(x.id) === String(selectedGrupo));
+  return g ? g.label : (selectedGrupo === 'C' ? 'Congregación' : 'Grupo ' + selectedGrupo);
+}
+
+// Texto sobre el color del grupo: oscuro si el color es claro, blanco si es oscuro (igual que la insignia de los botones de grupo)
+function colorSobre(c) {
+  const n = parseInt(String(c).replace('#', ''), 16);
+  const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  return lum > 0.62 ? '#1d1e22' : '#ffffff';
+}
+
+// Color del grupo en las pantallas de Planificar / Revisar / Registrar / Historial y en el botón fijo de abajo
+function colorGrupoEnPantallas() {
+  const c = GROUP_COLORS[selectedGrupo] || '#97C459';
+  document.querySelectorAll('.tf, #tf-pie').forEach(el => {
+    el.style.setProperty('--gc', c);
+    el.style.setProperty('--gc-on', colorSobre(c));
+    el.style.setProperty('--grupo-color', c);
+  });
+}
+
+// Botón fijo de abajo: texto + acción, o null para ocultarlo
+function setPie(texto, fn) {
+  const pie = document.getElementById('tf-pie');
+  const btn = document.getElementById('tf-pie-btn');
+  if (!pie || !btn) return;
+  if (!texto) { pie.style.display = 'none'; document.body.classList.remove('tf-con-pie'); return; }
+  btn.textContent = texto;
+  btn.disabled = false;
+  btn.onclick = fn;
+  pie.style.display = '';
+  document.body.classList.add('tf-con-pie');
+}
+
+function hoyISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function fechaCorta(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T12:00:00');
+  return `${DIAS_CORTO[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}`;
+}
+
+function bloqueFecha(iso, chica = false) {
+  if (!iso) return `<span class="tf-fecha${chica ? ' chica' : ''}"><span class="d">—</span><span class="n">·</span></span>`;
+  const d = new Date(iso + 'T12:00:00');
+  return `<span class="tf-fecha${chica ? ' chica' : ''}"><span class="d">${DIAS_CORTO[d.getDay()]}</span><span class="n">${d.getDate()}</span></span>`;
+}
+
+// «Semana del 13 al 19 de oct.» (o «del 27 de sep. al 3 de oct.») para cualquier día de esa semana
+function tituloSemana(iso) {
+  const lun = masDias(iso, -((new Date(iso + 'T12:00:00').getDay() + 6) % 7));
+  const a = new Date(lun + 'T12:00:00'), b = new Date(masDias(lun, 6) + 'T12:00:00');
+  return a.getMonth() === b.getMonth()
+    ? `Semana del ${a.getDate()} al ${b.getDate()} de ${MESES_C[b.getMonth()]}`
+    : `Semana del ${a.getDate()} de ${MESES_C[a.getMonth()]} al ${b.getDate()} de ${MESES_C[b.getMonth()]}`;
+}
+
+// «Territorio 22» / «Territorios 22 y 24» / «Territorios 20, 22 y 24»
+function nombreTerrs(t) {
+  if (!t.length) return '';
+  if (t.length === 1) return 'Territorio ' + t[0];
+  return 'Territorios ' + t.slice(0, -1).join(', ') + ' y ' + t[t.length - 1];
+}
+
+// Días sin trabajar de un territorio (también de otros grupos, para Congregación)
+function datosTerr(n) {
+  if (territoriosData[n]) return territoriosData[n];
+  for (const g of Object.values(allTerritoriosData)) if (g && g[n]) return g[n];
+  return null;
+}
+function diasSinTrabajar(n) {
+  const d = datosTerr(n);
+  return d ? daysSince(d.lastFin || d.lastIni) : 9999;
+}
+
 async function goToStep1() {
   cargarEncuentrosPrevios();   // en segundo plano: cuando elijan territorio ya está listo
   hide('view-cover'); hide('view-preview');
   hide('view-modo');  hide('view-registrar'); hide('view-info');
-  show('view-config'); setStep(1);
+  show('view-config');
+  colorGrupoEnPantallas();
+  document.getElementById('plan-grupo-label').textContent = nombreGrupo();
   semanaOffset = 0;
   updateWeekInfo();
   hide('terr-error');
 
   // Cargador dentro de la pantalla (como Registrar / Ver mi grupo), no overlay de pantalla completa
   document.getElementById('salidas-container').innerHTML = '';
+  document.getElementById('tel-fija').innerHTML = '';
+  document.getElementById('plan-listas').textContent = '';
+  hide('plan-agregar');
   show('terr-loading');
 
   try {
@@ -663,23 +734,21 @@ async function goToStep1() {
     configData = await fetchConfig(selectedGrupo);
 
     hide('terr-loading');
+    show('plan-agregar');
     renderSalidas();
   } catch(err) {
     hide('terr-loading');
     const errEl = document.getElementById('terr-error');
-    errEl.innerHTML = `<div class="error-wrap">Error al cargar: ${err.message}. <button class="btn-secondary" style="font-size:12px;padding:4px 10px;margin-left:8px;" onclick="goToStep1()">Reintentar</button></div>`;
+    errEl.innerHTML = `<div class="error-wrap">Error al cargar: ${esc(err.message)}. <button class="btn-secondary" style="font-size:12px;padding:4px 10px;margin-left:8px;" onclick="goToStep1()">Reintentar</button></div>`;
     show('terr-error');
   }
 }
 
 function updateWeekInfo() {
   const w = getWeekDates(semanaOffset);
-  document.getElementById('week-info').textContent = `Semana del ${formatShort(w.mon)} al ${formatShort(w.sun)}`;
+  document.getElementById('week-info').textContent = tituloSemana(w.mon);
   const prevBtn = document.getElementById('btn-semana-prev');
-  if (prevBtn) {
-    prevBtn.style.opacity = semanaOffset <= 0 ? '0.3' : '1';
-    prevBtn.style.pointerEvents = semanaOffset <= 0 ? 'none' : 'auto';
-  }
+  if (prevBtn) prevBtn.disabled = semanaOffset <= 0;   // no se planifica para atrás
 }
 
 function cambiarSemana(dir) {
@@ -690,81 +759,31 @@ function cambiarSemana(dir) {
 }
 
 function renderSalidas() {
-  const c = document.getElementById('salidas-container');
-  c.innerHTML = '';
-  // ── Aplicar color del grupo ──
-  const _gc = GROUP_COLORS[selectedGrupo] || '#97C459';
-  const _gcBg = hexToRgba(_gc, 0.12);
-  const _gcBd = hexToRgba(_gc, 0.35);
-  const _vc = document.getElementById('view-config');
-  if (_vc) {
-    _vc.style.setProperty('--grupo-color', _gc);
-    _vc.style.setProperty('--grupo-color-bg', _gcBg);
-    _vc.style.setProperty('--grupo-color-bd', _gcBd);
-  }
-  // ── Nombre del grupo en el header ──
-  const _gl = GRUPOS.find(g => String(g.id) === String(selectedGrupo));
-  const _glabel = _gl ? _gl.label : 'Grupo ' + selectedGrupo;
-  const _planSub = document.getElementById('plan-grupo-label');
-  if (_planSub) { _planSub.textContent = _glabel; _planSub.style.color = _gc; }
-  // ── Botón generar tabla ──
-  const _btnGen = document.getElementById('btn-generar-tabla');
-  if (_btnGen) { _btnGen.style.background = _gc; _btnGen.style.color = '#fff'; }
-  // ── Botones agregar ──
-  const _btnCampo = document.querySelector('.btn-add-salida');
-  const _btnTel   = document.querySelector('.btn-add-tel');
-  if (_btnCampo) { _btnCampo.style.color = _gc; _btnCampo.style.borderColor = hexToRgba(_gc, 0.5); _btnCampo.style.background = hexToRgba(_gc, 0.1); }
-  if (_btnTel)   { _btnTel.style.color   = _gc; _btnTel.style.borderColor   = hexToRgba(_gc, 0.4); _btnTel.style.background   = hexToRgba(_gc, 0.08); }
-  // ── Progress bar v2 ──
-  const _pb = document.createElement('div');
-  _pb.className = 'plan-progress-wrap';
-  _pb.innerHTML = '<span class="plan-progress-label">Progreso</span><div class="plan-progress-track"><div class="plan-progress-fill" id="plan-progress-fill" style="width:0%"></div></div><span class="plan-progress-count" id="plan-progress-count">0/0 listas</span>';
-  c.appendChild(_pb);
+  colorGrupoEnPantallas();
+  pintarTelFija();
   salidas = [];
   salidaCounter = 0;
-
-  if (selectedGrupo === 'C') {
-    const telBlock = document.createElement('div');
-    telBlock.className = 'salida-card-new tipo-tel';
-    telBlock.style.marginBottom = '14px';
-    telBlock.innerHTML = `
-      <div class="salida-card-top" style="margin-bottom:8px;">
-        <span style="font-size:16px;font-weight:500;color:var(--k-tx-5dcaa5, #5DCAA5);">Telefónica fija — Lunes a Sábado</span>
-      </div>
-      <div style="font-size:13px;color:var(--k-tx-888888, #888);margin-bottom:10px;">
-        ID: 844 0225 6636 &nbsp;·&nbsp; Contraseña: 479104
-      </div>
-      <div class="form-row">
-        <div><label>Hora mañana</label><input type="time" id="tel-fija-manana" value="10:00"></div>
-        <div><label>Hora tarde</label><input type="time" id="tel-fija-tarde" value="17:00"></div>
-      </div>`;
-    c.appendChild(telBlock);
-    if (window.upgradeInputs) upgradeInputs(telBlock);
-  }
-
-  const plantilla = getPlantilla(selectedGrupo);
-  plantilla.forEach(p => addSalida(p.tipo, p));
+  salidaAbierta = null;
+  getPlantilla(selectedGrupo).forEach(p => nuevaSalida(p.tipo, p));
+  pintarSalidas();
 }
 
-// ── Copiar semana anterior ──
-// Toma las salidas que se registraron para la semana anterior a la que se está viendo (el registro más
-// reciente que tenga salidas en esas fechas) y las arma acá con la fecha +7 días. Todo queda editable.
-function setTerritorioSalida(salidaId, terr) {
-  const hidden = document.getElementById('sal-terr-' + salidaId);
-  const btn    = document.getElementById('sal-terr-btn-' + salidaId);
-  if (!hidden || !terr) return;
-  hidden.value = terr;
-  if (btn) {
-    btn.innerHTML = `<span class="ui-fake-input-icon">🗺</span><span style="color:var(--k-tx-eeeeee, #eee);">Territorio ${esc(terr)}</span>`;
-    btn.classList.remove('empty');
-  }
-  showTerrDaysHint(salidaId, terr);
-}
-
-function masDias(iso, n) {
-  const d = new Date(iso + 'T12:00:00');
-  d.setDate(d.getDate() + n);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// Congregación: telefónica fija de lunes a sábado (sale en la imagen; no se guarda como salida)
+function pintarTelFija() {
+  const c = document.getElementById('tel-fija');
+  if (selectedGrupo !== 'C') { c.innerHTML = ''; return; }
+  c.innerHTML = `
+    <div class="tf-sal tf-sal-fija">
+      <div class="tf-fija-in">
+        <div class="tf-sal-t"><span class="tf-tel">📞 Telefónica fija</span> · Lunes a Sábado</div>
+        <div class="tf-sal-s">ID 844 0225 6636 · Clave 479104</div>
+        <div class="tf-dos tf-campo">
+          <div><label>Hora mañana</label><input type="time" id="tel-fija-manana" value="10:00"></div>
+          <div><label>Hora tarde</label><input type="time" id="tel-fija-tarde" value="17:00"></div>
+        </div>
+      </div>
+    </div>`;
+  if (window.upgradeInputs) upgradeInputs(c);
 }
 
 // fechaReg se guarda como DD/MM/AAAA (fmtDateLocal de este módulo): pasarla a AAAA-MM-DD para ordenar
@@ -773,12 +792,19 @@ function claveFechaReg(f) {
   return m ? `${m[3]}-${m[2]}-${m[1]}` : String(f || '');
 }
 
+function masDias(iso, n) {
+  const d = new Date(iso + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// ── Copiar semana anterior ──
+// Toma las salidas que se registraron para la semana anterior a la que se está viendo (el registro más
+// reciente que tenga salidas en esas fechas) y las arma acá con la fecha +7 días. Todo queda editable.
 async function copiarSemanaAnterior() {
   const prev = getWeekDates(semanaOffset - 1);
   const btn  = document.getElementById('btn-copiar-semana');
-  const hayCargado = salidas.some(s =>
-    document.getElementById('sal-cond-' + s.id)?.value || document.getElementById('sal-terr-' + s.id)?.value);
-  if (hayCargado) {
+  if (salidas.some(s => s.conductor || s.terrs.length)) {
     const ok = await uiConfirm({
       title: 'Copiar semana anterior',
       msg: 'Se reemplazan las salidas que ya cargaste en esta semana.',
@@ -793,50 +819,26 @@ async function copiarSemanaAnterior() {
     const doc_ = snap.docs.map(d => d.data())
       .filter(d => (d.salidas || []).some(enPrev))
       .sort((a, b) => claveFechaReg(b.fechaReg).localeCompare(claveFechaReg(a.fechaReg)))[0];
-    const lista = (doc_?.salidas || []).filter(enPrev)
-      .sort((a, b) => (a.fecha + (a.hora || '')).localeCompare(b.fecha + (b.hora || '')));
+    const lista = (doc_?.salidas || []).filter(enPrev);
     if (!lista.length) {
       uiToast(`No hay salidas registradas del ${formatShort(prev.mon)} al ${formatShort(prev.sun)}`, 'error');
       return;
     }
-
-    // Sacar las tarjetas actuales (queda la barra de progreso y, en Congregación, la telefónica fija)
-    document.querySelectorAll('#salidas-container [id^="salida-card-"]').forEach(el => el.remove());
+    const limpio = v => (v && v !== '—' ? String(v) : '');
     salidas = [];
-
+    salidaAbierta = null;
     lista.forEach(s => {
       const tipo = s.tipo === 'tel' ? 'tel' : 'campo';
-      const limpio = v => (v && v !== '—' ? String(v) : '');
-      addSalida(tipo, {
+      // El conductor se copia aunque ya no esté en la lista del grupo
+      nuevaSalida(tipo, {
         fecha: masDias(s.fecha, 7),
         hora: (s.hora || '').replace('.', ':'),
+        conductor: limpio(s.cond),
         encuentro: limpio(s.enc),
+        terrs: tipo === 'campo' ? terrsGuardados(s) : [],
       });
-      const id = salidaCounter;
-      // Conductor: si ya no está en la lista del grupo, se agrega igual para no perderlo
-      const cond = limpio(s.cond);
-      const sel  = document.getElementById('sal-cond-' + id);
-      if (sel && cond) {
-        if (![...sel.options].some(o => o.value === cond)) sel.add(new Option(cond, cond));
-        sel.value = cond;
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-      if (tipo === 'campo') {
-        const [primero, ...resto] = terrsGuardados(s);
-        setTerritorioSalida(id, primero || '');
-        resto.forEach(t => {
-          addExtraTerritory(id);
-          const wraps = document.getElementById('extra-terrs-' + id)?.children || [];
-          const w = wraps[wraps.length - 1];
-          const hidden = w?.querySelector('input[type="hidden"]');
-          const btn = w?.querySelector('button.ui-fake-input');
-          if (hidden) hidden.value = t;
-          if (btn) { btn.innerHTML = `<span class="ui-fake-input-icon">🗺</span><span style="color:var(--k-tx-eeeeee, #eee);">Territorio ${esc(t)}</span>`; btn.classList.remove('empty'); }
-        });
-      }
-      updateCardStatus(id);
     });
-    reordenarSalidas();
+    pintarSalidas();
     uiToast(`Se copiaron ${lista.length} salida${lista.length === 1 ? '' : 's'}: revisá y cambiá lo que haga falta`, 'success');
   } catch (err) {
     uiToast('No se pudo copiar: ' + err.message, 'error');
@@ -845,269 +847,165 @@ async function copiarSemanaAnterior() {
   }
 }
 
-function getTerritoryOptions() {
-  if (!territoriosData || Object.keys(territoriosData).length === 0)
-    return '<option value="">— Sin datos —</option>';
-  const lista = Object.keys(territoriosData)
-    .filter(n => (configData[n] || 'normal') !== 'no_predica')
-    .map(n => {
-      const d = territoriosData[n];
-      const lastDate = d.lastFin || d.lastIni;
-      return { n, days: daysSince(lastDate) };
-    })
-    .sort((a, b) => b.days - a.days);
-  return '<option value="">— Elegir territorio —</option>' +
-    lista.map(t => `<option value="${t.n}">Terr. ${t.n} (${t.days}d)</option>`).join('');
-}
+const salidaPorId = id => salidas.find(s => s.id === Number(id));
+const salidaLista = s => !!s.conductor && (s.tipo === 'tel' || s.terrs.length > 0);
 
-function getConductorOptions(grupo, sel = '') {
-  const conductores = CONDUCTORES_BY_GROUP[grupo] || [];
-  return '<option value="">— Elegir conductor —</option>' +
-    conductores.map(c => `<option value="${c}" ${c===sel?'selected':''}>${c}</option>`).join('');
-}
-
-function updateDiaLabel(id) {
-  const fecha = document.getElementById('sal-fecha-' + id)?.value;
-  const label = document.getElementById('sal-dia-label-' + id);
-  const nombre = getNombreDia(fecha);
-  const color  = DIA_COLORS[nombre] || '#eee';
-  if (label) { label.textContent = nombre; label.style.color = color; }
-  // v2 header blocks
-  const numEl  = document.getElementById('scv2-dia-num-' + id);
-  const abbrEl = document.getElementById('scv2-dia-abbr-' + id);
-  const card   = document.getElementById('salida-card-' + id);
-  if (numEl)  numEl.textContent  = fecha ? parseInt(fecha.split('-')[2]) : '—';
-  if (abbrEl) abbrEl.textContent = nombre ? nombre.slice(0,3) : '—';
-  if (card)   card.style.setProperty('--dia-color', color);
-}
-
-function reordenarSalidas() {
-  const container = document.getElementById('salidas-container');
-  const fixedBlock = container.querySelector('.tipo-tel:not([id^="salida-card-"])');
-  const cards = [...container.querySelectorAll('[id^="salida-card-"]')];
-  cards.sort((a, b) => {
-    const idA = parseInt(a.id.replace('salida-card-', ''));
-    const idB = parseInt(b.id.replace('salida-card-', ''));
-    const fechaA = document.getElementById('sal-fecha-' + idA)?.value || '';
-    const fechaB = document.getElementById('sal-fecha-' + idB)?.value || '';
-    if (fechaA !== fechaB) return fechaA.localeCompare(fechaB);
-    const horaA  = document.getElementById('sal-hora-'  + idA)?.value || '';
-    const horaB  = document.getElementById('sal-hora-'  + idB)?.value || '';
-    return horaA.localeCompare(horaB);
-  });
-  if (fixedBlock) container.appendChild(fixedBlock);
-  cards.forEach(card => container.appendChild(card));
-}
-
-function addSalida(tipo, data = {}) {
-  if (salidas.length >= 20) return;
-  const id = ++salidaCounter;
+function nuevaSalida(tipo, data = {}) {
   const week = getWeekDates(semanaOffset);
   const s = {
-    id, tipo,
+    id: ++salidaCounter, tipo,
     fecha: data.fecha || week.tue,
     hora:  data.hora  || (tipo === 'tel' ? '17:30' : '18:30'),
     conductor: data.conductor || '',
     encuentro: data.encuentro || '',
-    territorio: data.territorio || ''
+    encAuto: false,
+    terrs: [...new Set((data.terrs || (data.territorio ? [data.territorio] : [])).map(String))],
   };
   salidas.push(s);
-  renderSalidaCard(s);
+  return s;
+}
+
+function addSalida(tipo) {
+  if (salidas.length >= 20) return;
+  const s = nuevaSalida(tipo);
+  salidaAbierta = s.id;
+  pintarSalidas();
+  document.getElementById('salida-card-' + s.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function removeSalida(id) {
-  salidas = salidas.filter(s => s.id !== id);
-  const el = document.getElementById('salida-card-' + id);
-  if (el) el.remove();
-  updatePlanProgress();
+  salidas = salidas.filter(s => s.id !== Number(id));
+  if (salidaAbierta === Number(id)) salidaAbierta = null;
+  pintarSalidas();
 }
 
-function renderSalidaCard(s) {
-  const c = document.getElementById('salidas-container');
+// Toca un renglón: se abre para editar y se cierra el que estaba abierto
+function abrirSalida(id) {
+  salidaAbierta = salidaAbierta === Number(id) ? null : Number(id);
+  pintarSalidas();
+}
+
+function subSalida(s) {
+  return [s.conductor ? esc(s.conductor) : '<span class="tf-falta">falta conductor</span>', s.encuentro && esc(s.encuentro)]
+    .filter(Boolean).join(' · ');
+}
+
+function htmlSalida(s) {
   const esTel = s.tipo === 'tel';
-  const div = document.createElement('div');
-  const nombreDia = getNombreDia(s.fecha);
-  const diaColor  = DIA_COLORS[nombreDia] || '#eee';
-  const diaNum    = s.fecha ? parseInt(s.fecha.split('-')[2]) : '—';
-  const diaAbbr   = nombreDia ? nombreDia.slice(0,3) : '—';
-
-  div.className = 'salida-card-v2 ' + (esTel ? 'tipo-tel' : 'tipo-campo');
-  div.id = 'salida-card-' + s.id;
-  div.style.setProperty('--dia-color', diaColor);
-
-  const encField = `
-    <div>
-      <label class="scv2-field-label">Encuentro / Familia</label>
-      <div class="scv2-input-wrap">
-        <input type="text" id="sal-enc-${s.id}" value="${s.encuentro}"
-          placeholder="Ej: Flia. García / esq. X y Y" style="flex:1;">
-        ${esTel ? '' : `<button type="button" class="scv2-icon-btn green" onclick="openEncuentroPicker(${s.id})" title="Mapa">📍</button>`}
-      </div>
-      ${esTel ? '' : `<div class="enc-sugs" id="enc-sugs-${s.id}"></div>`}
+  const lista = salidaLista(s);
+  const titulo = esTel
+    ? `${esc(s.hora)} · <span class="tf-tel">Telefónica</span>`
+    : `${esc(s.hora)} · ${s.terrs.length ? esc(nombreTerrs(s.terrs)) : '<span class="tf-falta">sin territorio</span>'}`;
+  const terrs = esTel ? '' : `
+      <div class="tf-campo"><label>${s.terrs.length > 1 ? 'Territorios' : 'Territorio'}</label>
+        <div class="tf-terrs">
+          ${s.terrs.map((t, k) => {
+            const d = diasSinTrabajar(t);
+            return `<div class="tf-terr">🗺 Territorio ${esc(t)}
+              <span class="tf-dias ${daysClass(d)}">${d >= 9999 ? 'sin registro' : d + (d === 1 ? ' día' : ' días')}</span>
+              <button type="button" class="tf-x" aria-label="Quitar territorio ${esc(t)}" onclick="quitarTerrSalida(${s.id}, ${k})">✕</button></div>`;
+          }).join('')}
+          <div class="tf-con-icono">
+            <button type="button" class="tf-entrada tf-mas" onclick="openTerritorioPicker(${s.id})">+ ${s.terrs.length ? 'Otro territorio' : 'Elegir territorio'}</button>
+            <button type="button" class="tf-icono" onclick="openMapaPicker(${s.id})" aria-label="Elegir en el mapa" title="Elegir en el mapa">📍</button>
+          </div>
+        </div>
+      </div>`;
+  const enc = esTel
+    ? `<input type="text" class="tf-entrada" id="sal-enc-${s.id}" value="${esc(s.encuentro)}" placeholder="Familia o ID de la reunión" oninput="setEncuentroSalida(${s.id}, this.value)">`
+    : `<div class="tf-con-icono">
+         <input type="text" class="tf-entrada" id="sal-enc-${s.id}" value="${esc(s.encuentro)}" placeholder="Familia o esquina" oninput="setEncuentroSalida(${s.id}, this.value)">
+         <button type="button" class="tf-icono" onclick="openEncuentroPicker(${s.id})" aria-label="Elegir el punto de encuentro en el mapa" title="Elegir el punto de encuentro en el mapa">📍</button>
+       </div>
+       <div class="tf-sugs" id="enc-sugs-${s.id}"></div>`;
+  return `
+    <div class="tf-sal${s.id === salidaAbierta ? ' abierta' : ''}" id="salida-card-${s.id}">
+      <button type="button" class="tf-sal-fila" onclick="abrirSalida(${s.id})" aria-expanded="${s.id === salidaAbierta}">
+        ${bloqueFecha(s.fecha)}
+        <span class="tf-sal-tx"><span class="tf-sal-t">${titulo}</span><span class="tf-sal-s" id="sal-sub-${s.id}">${subSalida(s)}</span></span>
+        <span class="tf-estado ${lista ? 'ok' : 'no'}" aria-label="${lista ? 'Lista' : 'Incompleta'}">${lista ? '✓' : '!'}</span>
+      </button>
+      ${s.id !== salidaAbierta ? '' : `
+      <div class="tf-sal-edit">
+        <div class="tf-dos tf-campo">
+          <div><label>Día</label><button type="button" class="tf-entrada" onclick="elegirDiaSalida(${s.id})">📅 ${fechaCorta(s.fecha)}</button></div>
+          <div><label>Hora</label><button type="button" class="tf-entrada" onclick="elegirHoraSalida(${s.id})">🕐 ${esc(s.hora || '—')}</button></div>
+        </div>
+        <div class="tf-campo"><label>Conductor</label>
+          <button type="button" class="tf-entrada${s.conductor ? '' : ' vacia'}" onclick="elegirConductorSalida(${s.id})">👤 ${s.conductor ? esc(s.conductor) : 'Elegir conductor'}</button>
+        </div>
+        ${terrs}
+        <div class="tf-campo"><label>Encuentro / Familia</label>${enc}</div>
+        <button type="button" class="tf-quitar" onclick="removeSalida(${s.id})">Quitar esta salida</button>
+      </div>`}
     </div>`;
-
-  const terrFields = esTel ? encField : `
-    <div>
-      <label class="scv2-field-label">Territorio</label>
-      <div class="scv2-input-wrap">
-        <input type="hidden" id="sal-terr-${s.id}" value="">
-        <button type="button" id="sal-terr-btn-${s.id}" class="ui-fake-input empty" style="flex:1;"
-          onclick="openTerritorioPicker(${s.id}, 'sal-terr-${s.id}', 'sal-terr-btn-${s.id}')">
-          <span class="ui-fake-input-icon">🗺</span><span>Elegir</span></button>
-        <span class="terr-days-hint" id="scv2-terr-days-${s.id}" style="display:none;"></span>
-        <button type="button" class="scv2-icon-btn" onclick="openMapaPicker(${s.id})" title="Mapa">🗺</button>
-        <button type="button" class="scv2-icon-btn green" onclick="addExtraTerritory(${s.id})" style="font-size:16px;padding:4px 8px;">+</button>
-      </div>
-      <div id="extra-terrs-${s.id}"></div>
-    </div>
-    ${encField}`;
-
-  div.innerHTML = `
-    <div class="scv2-header">
-      <div class="scv2-dia-block">
-        <span class="scv2-dia-num" id="scv2-dia-num-${s.id}">${diaNum}</span>
-        <span class="scv2-dia-abbr" id="scv2-dia-abbr-${s.id}">${diaAbbr}</span>
-      </div>
-      <div class="scv2-meta">
-        <div class="scv2-hora-row">
-          <span class="scv2-hora-text" id="scv2-hora-text-${s.id}">${s.hora || '—'}</span>
-          <span class="scv2-tipo-tag ${esTel ? 'tel' : ''}">${esTel ? '📞 Telefónica' : '🚶 Campo'}</span>
-        </div>
-        <span class="scv2-dia-text" id="sal-dia-label-${s.id}">${nombreDia}</span>
-      </div>
-      <div class="scv2-status warn" id="scv2-status-${s.id}">⚠ Incompleta</div>
-      <button class="scv2-remove" onclick="removeSalida(${s.id})">✕</button>
-    </div>
-    <div class="scv2-divider"></div>
-    <div class="scv2-fields">
-      <div class="scv2-row">
-        <div>
-          <label class="scv2-field-label">Día</label>
-          <input type="date" id="sal-fecha-${s.id}" value="${s.fecha}" style="width:100%;">
-        </div>
-        <div>
-          <label class="scv2-field-label">Hora</label>
-          <input type="time" id="sal-hora-${s.id}" value="${s.hora}" style="width:100%;">
-        </div>
-      </div>
-      <div>
-        <label class="scv2-field-label">Conductor</label>
-        <div class="scv2-input-wrap">
-          <select id="sal-cond-${s.id}" style="flex:1;">${getConductorOptions(selectedGrupo, s.conductor)}</select>
-          <button type="button" class="scv2-icon-btn"
-            onclick="openConductorPicker('sal-cond-${s.id}', selectedGrupo, this)">👤</button>
-        </div>
-      </div>
-      ${terrFields}
-    </div>`;
-
-  c.appendChild(div);
-  if (window.upgradeInputs) upgradeInputs(div);
-
-  const fechaEl = div.querySelector('#sal-fecha-' + s.id);
-  if (fechaEl) fechaEl.addEventListener('change', () => { updateDiaLabel(s.id); reordenarSalidas(); updateCardStatus(s.id); });
-
-  const horaEl = div.querySelector('#sal-hora-' + s.id);
-  if (horaEl) horaEl.addEventListener('change', () => {
-    const ht = document.getElementById('scv2-hora-text-' + s.id);
-    if (ht) ht.textContent = horaEl.value || '—';
-    reordenarSalidas();
-  });
-
-  const condEl = div.querySelector('#sal-cond-' + s.id);
-  if (condEl) condEl.addEventListener('change', () => updateCardStatus(s.id));
-
-  setTimeout(() => updateCardStatus(s.id), 0);
 }
 
-// ─── PLAN v2 helpers ───
-function isSalidaCompleta(id) {
-  const s = salidas.find(x => x.id === id);
-  if (!s) return false;
-  const cond = document.getElementById('sal-cond-' + id)?.value || '';
-  if (!cond) return false;
-  if (s.tipo === 'tel') return true;
-  const terr = document.getElementById('sal-terr-' + id)?.value || '';
-  return !!terr;
+function pintarSalidas() {
+  salidas.sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
+  document.getElementById('salidas-container').innerHTML = salidas.map(htmlSalida).join('');
+  const listas = salidas.filter(salidaLista).length;
+  document.getElementById('plan-listas').innerHTML = salidas.length
+    ? `<b>${listas}</b> de ${salidas.length} ${salidas.length === 1 ? 'lista' : 'listas'}` : '';
+  document.querySelectorAll('#plan-agregar button').forEach(b => { b.disabled = salidas.length >= 20; });
+  if (salidaAbierta) pintarSugerencias(salidaAbierta);
 }
 
-function updateCardStatus(id) {
-  const ok    = isSalidaCompleta(id);
-  const card  = document.getElementById('salida-card-' + id);
-  const badge = document.getElementById('scv2-status-' + id);
-  if (card)  card.classList.toggle('scv2-completa', ok);
-  if (badge) { badge.textContent = ok ? '✓ Lista' : '⚠ Incompleta'; badge.className = 'scv2-status ' + (ok ? 'ok' : 'warn'); }
-  updatePlanProgress();
+async function elegirDiaSalida(id) {
+  const s = salidaPorId(id);
+  if (!s) return;
+  const r = await uiDatePicker({ value: s.fecha, label: 'Día de la salida' });
+  if (r) { s.fecha = r; pintarSalidas(); }
 }
 
-function updatePlanProgress() {
-  const total = salidas.length;
-  const done  = salidas.filter(s => isSalidaCompleta(s.id)).length;
-  const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
-  const fill  = document.getElementById('plan-progress-fill');
-  const count = document.getElementById('plan-progress-count');
-  if (fill)  fill.style.width = pct + '%';
-  if (count) count.textContent = done + '/' + total + ' listas';
+async function elegirHoraSalida(id) {
+  const s = salidaPorId(id);
+  if (!s) return;
+  const r = await uiTimePicker({ value: s.hora, label: 'Hora de la salida' });
+  if (r) { s.hora = r; pintarSalidas(); }
 }
 
-function showTerrDaysHint(salidaId, terrNum) {
-  const hint = document.getElementById('scv2-terr-days-' + salidaId);
-  if (!hint) return;
-  if (!terrNum || !territoriosData[terrNum]) { hint.style.display = 'none'; return; }
-  const d = territoriosData[terrNum];
-  const lastDate = d.lastFin || d.lastIni;
-  const dias = daysSince(lastDate);
-  if (!dias || dias >= 9999) { hint.style.display = 'none'; return; }
-  const cls = dias > 90 ? 'terr-days-old' : dias > 45 ? 'terr-days-mid' : 'terr-days-new';
-  hint.className = 'terr-days-hint ' + cls;
-  hint.textContent = dias + 'd';
-  hint.style.display = '';
+async function elegirConductorSalida(id) {
+  const s = salidaPorId(id);
+  if (!s) return;
+  const conductores = [...(CONDUCTORES_BY_GROUP[selectedGrupo] || [])];
+  if (s.conductor && !conductores.includes(s.conductor)) conductores.unshift(s.conductor);
+  if (!conductores.length) { uiToast('No hay conductores cargados para este grupo', 'error'); return; }
+  const r = await uiConductorPicker({ conductores, value: s.conductor, label: 'Elegí el conductor' });
+  if (r !== null && r !== undefined) { s.conductor = r; pintarSalidas(); }
 }
 
-
-function addExtraTerritory(salidaId) {
-  const container = document.getElementById('extra-terrs-' + salidaId);
-  if (!container) return;
-  const idx = container.children.length + 2;
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:6px;';
-  const hiddenId = `sal-terr-${salidaId}-x${idx}`;
-  const btnId    = `sal-terr-btn-${salidaId}-x${idx}`;
-  wrap.innerHTML = `
-    <input type="hidden" id="${hiddenId}" value="">
-    <button type="button" id="${btnId}" class="ui-fake-input empty" style="flex:1;font-size:13px;"
-      onclick="openTerritorioPicker('${salidaId}', '${hiddenId}', '${btnId}')">
-      <span class="ui-fake-input-icon">🗺</span><span>Elegir territorio</span>
-    </button>
-    <button type="button" onclick="this.parentElement.remove()" style="padding:6px 9px;background:var(--k-bg-2e1a1a, #2e1a1a);color:var(--k-tx-f09595, #F09595);border:0.5px solid var(--k-bd-a32d2d, #A32D2D);border-radius:8px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;">−</button>`;
-  container.appendChild(wrap);
+function quitarTerrSalida(id, k) {
+  const s = salidaPorId(id);
+  if (!s) return;
+  s.terrs.splice(k, 1);
+  pintarSalidas();
 }
 
-// ─────────────────────────────────────────
-//   CONDUCTOR PICKER
-// ─────────────────────────────────────────
-function openConductorPicker(selectId, grupo, btn) {
-  const conductores = CONDUCTORES_BY_GROUP[grupo] || [];
-  if (!window.uiConductorPicker || conductores.length === 0) return;
-  const sel = document.getElementById(selectId);
-  uiConductorPicker({
-    conductores,
-    value: sel ? sel.value : '',
-    label: 'Elegí el conductor',
-    color: GCOLORS[grupo] || '#97C459',
-  }).then(resultado => {
-    if (resultado === null) return;
-    if (sel) sel.value = resultado;
-  });
+function sumarTerrs(id, nuevos) {
+  const s = salidaPorId(id);
+  if (!s) return;
+  nuevos.map(String).filter(t => t && t !== '—').forEach(t => { if (!s.terrs.includes(t)) s.terrs.push(t); });
+  pintarSalidas();
+  actualizarSugerenciasEncuentro(id);
+}
+
+// Escribir en Encuentro no repinta la lista (perdería el foco): solo el resumen del renglón
+function setEncuentroSalida(id, valor) {
+  const s = salidaPorId(id);
+  if (!s) return;
+  s.encuentro = valor;
+  s.encAuto = false;
+  const sub = document.getElementById('sal-sub-' + id);
+  if (sub) sub.innerHTML = subSalida(s);
+  marcarSugerencias(id);
 }
 
 // ─────────────────────────────────────────
 //   TERRITORIO PICKER
 // ─────────────────────────────────────────
-function openTerritorioPicker(salidaId, hiddenId, btnId) {
+function openTerritorioPicker(salidaId) {
   if (!window.uiTerritorioPicker) return;
-  const hidden = document.getElementById(hiddenId);
-  const btn    = document.getElementById(btnId);
   uiTerritorioPicker({
     territoriosData,
     allData: allTerritoriosData,
@@ -1116,22 +1014,10 @@ function openTerritorioPicker(salidaId, hiddenId, btnId) {
     label: 'Elegir territorio',
     color: GCOLORS[selectedGrupo] || '#97C459',
   }).then(resultado => {
-    if (resultado === null) return;
-    if (hidden) hidden.value = resultado;
-    if (btn) {
-      if (resultado) {
-        btn.innerHTML = `<span class="ui-fake-input-icon">🗺</span><span style="color:var(--k-tx-eeeeee, #eee);">Territorio ${resultado}</span>`;
-        btn.classList.remove('empty');
-      } else {
-        btn.innerHTML = `<span class="ui-fake-input-icon">🗺</span><span>Elegir territorio</span>`;
-        btn.classList.add('empty');
-      }
-    }
-    showTerrDaysHint(salidaId, resultado);
-    updateCardStatus(salidaId);
-    actualizarSugerenciasEncuentro(salidaId);
+    if (resultado) sumarTerrs(salidaId, [resultado]);
   });
 }
+
 
 // ─────────────────────────────────────────
 //   PICKER DE MAPA
@@ -1192,47 +1078,65 @@ function cargarEncuentrosPrevios() {
   return _encuentrosPromesa;
 }
 
-// Muestra los lugares usados antes para el territorio elegido y, si el campo está vacío (o tiene un
-// valor que puso esta misma función), lo completa con el más usado.
-async function actualizarSugerenciasEncuentro(salidaId) {
-  const cont  = document.getElementById('enc-sugs-' + salidaId);
-  const input = document.getElementById('sal-enc-' + salidaId);
-  if (!cont || !input) return;
-  const terr = document.getElementById('sal-terr-' + salidaId)?.value || '';
-  cont.innerHTML = '';
-  if (!terr) return;
-  await cargarEncuentrosPrevios();
-  if ((document.getElementById('sal-terr-' + salidaId)?.value || '') !== terr) return;   // cambió mientras cargaba
-  const opciones = (encuentrosPorTerr[String(terr)] || []).slice(0, 4);
-  if (!opciones.length) return;
+// Lugares usados antes para el primer territorio de la salida (hasta 4, el más usado primero)
+function opcionesEncuentro(s) {
+  const terr = s?.terrs?.[0];
+  return terr && encuentrosPorTerr ? (encuentrosPorTerr[String(terr)] || []).slice(0, 4) : [];
+}
 
-  if (!input.value.trim() || input.dataset.auto === '1') {
-    input.value = opciones[0].texto;
-    input.dataset.auto = '1';
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+// Al elegir territorio: si Encuentro está vacío (o tiene un valor que puso esta misma función), lo
+// completa con el lugar más usado antes en ese territorio.
+async function actualizarSugerenciasEncuentro(salidaId) {
+  const s = salidaPorId(salidaId);
+  if (!s || s.tipo === 'tel' || !s.terrs.length) return;
+  const terr = s.terrs[0];
+  await cargarEncuentrosPrevios();
+  if (salidaPorId(salidaId)?.terrs[0] !== terr) return;   // cambió mientras cargaba
+  const opciones = opcionesEncuentro(s);
+  if (opciones.length && (!s.encuentro.trim() || s.encAuto)) {
+    s.encuentro = opciones[0].texto;
+    s.encAuto = true;
   }
-  const marcar = () => cont.querySelectorAll('.enc-sug').forEach((b, i) =>
-    b.classList.toggle('activo', input.value.trim().toLowerCase() === opciones[i].texto.toLowerCase()));
-  cont.innerHTML = '<span class="enc-sugs-lbl">Usados antes:</span>' + opciones.map(o =>
-    `<button type="button" class="enc-sug" title="${esc(o.texto)}">${esc(o.texto)}${o.veces > 1 ? ` <small>×${o.veces}</small>` : ''}</button>`
+  pintarSalidas();
+}
+
+// Botones «Plumerillo y King ×4» debajo de Encuentro (salida abierta)
+function pintarSugerencias(salidaId) {
+  const cont = document.getElementById('enc-sugs-' + salidaId);
+  const s = salidaPorId(salidaId);
+  if (!cont || !s) return;
+  if (!encuentrosPorTerr) {
+    if (s.terrs.length) cargarEncuentrosPrevios().then(() => pintarSugerencias(salidaId));
+    return;
+  }
+  const opciones = opcionesEncuentro(s);
+  cont.innerHTML = opciones.map((o, i) =>
+    `<button type="button" class="tf-sug" data-i="${i}" title="${esc(o.texto)}">${esc(o.texto)}${o.veces > 1 ? ` <small>×${o.veces}</small>` : ''}</button>`
   ).join('');
-  cont.querySelectorAll('.enc-sug').forEach((b, i) => {
+  cont.querySelectorAll('.tf-sug').forEach(b => {
     b.onclick = () => {
-      input.value = opciones[i].texto;
-      input.dataset.auto = '1';
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-      marcar();
+      const o = opciones[Number(b.dataset.i)];
+      s.encuentro = o.texto;
+      s.encAuto = true;
+      const input = document.getElementById('sal-enc-' + salidaId);
+      if (input) input.value = o.texto;
+      const sub = document.getElementById('sal-sub-' + salidaId);
+      if (sub) sub.innerHTML = subSalida(s);
+      marcarSugerencias(salidaId);
     };
   });
-  if (!input.dataset.encListener) {
-    input.dataset.encListener = '1';
-    input.addEventListener('input', () => { input.dataset.auto = ''; });
-  }
-  marcar();
+  marcarSugerencias(salidaId);
+}
+
+function marcarSugerencias(salidaId) {
+  const s = salidaPorId(salidaId);
+  const opciones = opcionesEncuentro(s);
+  document.querySelectorAll(`#enc-sugs-${salidaId} .tf-sug`).forEach((b, i) =>
+    b.classList.toggle('activo', (s?.encuentro || '').trim().toLowerCase() === (opciones[i]?.texto || '').toLowerCase()));
 }
 
 function openEncuentroPicker(salidaId) {
-  const terrVal = document.getElementById('sal-terr-' + salidaId)?.value || '';
+  const terrVal = salidaPorId(salidaId)?.terrs[0] || '';
   const popup   = document.getElementById('mapa-popup');
   const iframe  = document.getElementById('mapa-iframe');
   const title   = document.getElementById('mapa-popup-title');
@@ -1248,48 +1152,18 @@ window.addEventListener('message', function(event) {
 
   if (data.type === 'encuentro-result') {
     closeMapaPopup();
-    const encInput = document.getElementById('sal-enc-' + data.salidaId);
-    if (encInput && data.texto) {
-      encInput.value = data.texto;
-      encInput.dispatchEvent(new Event('change', { bubbles: true }));
+    const s = salidaPorId(data.salidaId);
+    if (s && data.texto) {
+      s.encuentro = String(data.texto);
+      s.encAuto = false;
+      pintarSalidas();
     }
     return;
   }
 
   if (data.type === 'picker-result') {
-    const { salidaId, territorios } = data;
     closeMapaPopup();
-    if (!territorios || territorios.length === 0) return;
-
-    const mainHidden = document.getElementById('sal-terr-' + salidaId);
-    const mainBtn    = document.getElementById('sal-terr-btn-' + salidaId);
-    if (mainHidden && territorios[0]) {
-      mainHidden.value = territorios[0];
-      actualizarSugerenciasEncuentro(salidaId);
-      if (mainBtn) {
-        mainBtn.innerHTML = `<span class="ui-fake-input-icon">🗺</span><span style="color:var(--k-tx-eeeeee, #eee);">Territorio ${territorios[0]}</span>`;
-        mainBtn.classList.remove('empty');
-      }
-    }
-
-    const extraContainer = document.getElementById('extra-terrs-' + salidaId);
-    if (extraContainer && territorios.length > 1) {
-      territorios.slice(1).forEach(num => {
-        const idx = extraContainer.children.length + 2;
-        const wrap = document.createElement('div');
-        wrap.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:6px;';
-        const hiddenId = `sal-terr-${salidaId}-x${idx}`;
-        const btnId    = `sal-terr-btn-${salidaId}-x${idx}`;
-        wrap.innerHTML = `
-          <input type="hidden" id="${hiddenId}" value="${num}">
-          <button type="button" id="${btnId}" class="ui-fake-input" style="flex:1;font-size:13px;"
-            onclick="openTerritorioPicker('${salidaId}', '${hiddenId}', '${btnId}')">
-            <span class="ui-fake-input-icon">🗺</span><span style="color:var(--k-tx-eeeeee, #eee);">Territorio ${num}</span>
-          </button>
-          <button type="button" onclick="this.parentElement.remove()" style="padding:6px 9px;background:var(--k-bg-2e1a1a, #2e1a1a);color:var(--k-tx-f09595, #F09595);border:0.5px solid var(--k-bd-a32d2d, #A32D2D);border-radius:8px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;">−</button>`;
-        extraContainer.appendChild(wrap);
-      });
-    }
+    if (data.territorios?.length) sumarTerrs(data.salidaId, data.territorios);
   }
 
   if (data.type === 'picker-cancel') {
@@ -1320,8 +1194,7 @@ function generatePreview() {
   const grupoLabel = selectedGrupo === 'C' ? 'Congregación' : 'Grupo ' + selectedGrupo;
   const color = GROUP_COLORS[selectedGrupo] || '#eee';
   document.getElementById('preview-grupo-title').textContent = `${grupoLabel} — Salidas de la semana`;
-  document.getElementById('preview-grupo-color').innerHTML  = `<span style="color:${color}">${grupoLabel}</span>`;
-  document.getElementById('preview-congre-color').innerHTML = `<span style="color:var(--k-tx-7f77dd, #7F77DD)">${esc(CONGRE_NOMBRE)}</span>`;
+  document.getElementById('preview-sub').textContent = `${nombreGrupo()} · semana del ${formatShort(getWeekDates(semanaOffset).mon)}`;
   const topEl = document.querySelector('.card-preview-top');
   if (topEl) topEl.textContent = /^congregaci[oó]n\b/i.test(CONGRE_NOMBRE) ? CONGRE_NOMBRE : 'Congregación ' + CONGRE_NOMBRE;
   document.querySelector('.card-preview').style.borderColor = color;
@@ -1339,19 +1212,14 @@ function generatePreview() {
     rows.push({ enc:'ID: 844 0225 6636 · Clave: 479104', terr:'TELEFÓNICA', tel:true, badge:'<div class="dia-badge" style="background:var(--k-bg-0a2e24, #0a2e24);color:var(--k-tx-5dcaa5, #5DCAA5);">Lun a Sáb</div>', fecha:'', cond:'—', hora:horaTar.replace(':','.') });
   }
   salidas.forEach(s => {
-    const fecha = document.getElementById('sal-fecha-' + s.id)?.value || '';
-    const hora  = document.getElementById('sal-hora-'  + s.id)?.value || '';
-    const cond  = document.getElementById('sal-cond-'  + s.id)?.value || '—';
-    const enc   = document.getElementById('sal-enc-'   + s.id)?.value || '—';
+    const fecha = s.fecha || '';
+    const hora  = s.hora || '';
+    const cond  = esc(s.conductor || '—');
+    const enc   = esc(s.encuentro.trim() || '—');
     if (s.tipo === 'tel') {
       rows.push({ enc, terr:'TELEFÓNICA', tel:true, badge:getDiaBadge(fecha), fechaISO:fecha, fecha:formatShortFull(fecha).replace(/\//g,'-'), cond, hora:hora.replace(':','.') });
     } else {
-      const mainTerr = document.getElementById('sal-terr-' + s.id)?.value || '—';
-      const extraContainer = document.getElementById('extra-terrs-' + s.id);
-      const extraSelects = extraContainer ? extraContainer.querySelectorAll('input[type="hidden"]') : [];
-      const extraTerrs = [...extraSelects].map(inp => inp.value).filter(v => v && v !== '—');
-      const allTerrs = [mainTerr, ...extraTerrs].filter(v => v && v !== '—');
-      rows.push({ enc, terr: allTerrs.join(', ') || '—', tel:false, badge:getDiaBadge(fecha), fechaISO:fecha, fecha:formatShortFull(fecha).replace(/\//g,'-'), cond, hora:hora.replace(':','.') });
+      rows.push({ enc, terr: esc(terrsDeSalida(s.id).join(', ')) || '—', tel:false, badge:getDiaBadge(fecha), fechaISO:fecha, fecha:formatShortFull(fecha).replace(/\//g,'-'), cond, hora:hora.replace(':','.') });
     }
   });
 
@@ -1372,25 +1240,52 @@ function generatePreview() {
       <td><div class="cond-txt">${r.cond}</div></td>
       <td><div class="hora-txt">${r.hora}</div></td>
     </tr>`).join('');
-  hide('view-config'); show('view-preview'); setStep(3);
+  hide('view-config'); show('view-preview');
+  colorGrupoEnPantallas();
+  document.getElementById('preview-wrap').classList.remove('grande');
+  ajustarImagen();
 }
 
+// La imagen se arma siempre a 900px (es lo que se manda). En el celular se ve entera, achicada;
+// al tocarla queda a tamaño real con scroll horizontal.
+function ajustarImagen() {
+  const wrap = document.getElementById('preview-wrap');
+  const card = wrap?.querySelector('.card-preview');
+  if (!wrap || !card || wrap.offsetParent === null) return;
+  card.style.width = '900px';
+  if (wrap.classList.contains('grande')) {
+    card.style.transform = '';
+    wrap.style.height = '';
+    return;
+  }
+  const esc_ = Math.min(1, wrap.clientWidth / 900);
+  card.style.transform = esc_ < 1 ? `scale(${esc_})` : '';
+  wrap.style.height = esc_ < 1 ? Math.ceil(card.offsetHeight * esc_) + 'px' : '';
+}
+function toggleImagenGrande() {
+  const wrap = document.getElementById('preview-wrap');
+  wrap.classList.toggle('grande');
+  ajustarImagen();
+}
+window.addEventListener('resize', ajustarImagen);
+
 function goBackToConfig() {
-  hide('view-preview'); show('view-config'); setStep(1);
+  hide('view-preview'); show('view-config');
   const btn    = document.getElementById('btn-reg-prog');
   const status = document.getElementById('reg-prog-status');
-  if (btn)    { btn.disabled = false; btn.textContent = 'Registrar territorios como en progreso'; }
-  if (status) status.textContent = '';
+  if (btn)    { btn.disabled = false; btn.textContent = '✓ Guardar semana'; }
+  if (status) { status.className = 'tf-nota'; status.textContent = 'Guarda las salidas y deja los territorios en progreso.'; }
 }
 
 async function canvasSalidas() {
   const el = document.querySelector('.card-preview');
-  const originalWidth = el.style.width;
+  const originalTransform = el.style.transform;
   el.style.width = '900px';
+  el.style.transform = '';   // la vista achicada no va a la imagen
   try {
     return await html2canvas(el, { backgroundColor: '#1e1e1e', scale: 1, width: 900 });
   } finally {
-    el.style.width = originalWidth;
+    el.style.transform = originalTransform;
   }
 }
 
@@ -1439,9 +1334,7 @@ async function enviarWhatsapp() {
 // ─────────────────────────────────────────
 // Todos los territorios de una salida en Planificar: el principal y los «+» extra
 function terrsDeSalida(id) {
-  const main  = document.getElementById('sal-terr-' + id)?.value;
-  const extra = [...(document.getElementById('extra-terrs-' + id)?.querySelectorAll('input[type="hidden"]') || [])].map(i => i.value);
-  return [...new Set([main, ...extra].filter(v => v && v !== '—'))];
+  return [...new Set((salidaPorId(id)?.terrs || []).map(String).filter(v => v && v !== '—'))];
 }
 
 // Territorios de una salida ya guardada (salidas/): terrs si está, si no el terr viejo
@@ -1451,27 +1344,27 @@ function terrsGuardados(s) {
   return t && t !== '—' && !/^tel/i.test(t) ? [t] : [];
 }
 
-async function registrarEnProgreso() {
-  const btn    = document.getElementById('btn-reg-prog');
+function estadoGuardado(texto, tipo = '') {
   const status = document.getElementById('reg-prog-status');
+  if (!status) return;
+  status.className = 'tf-nota' + (tipo ? ' ' + tipo : '');
+  status.textContent = texto;
+}
+
+// «✓ Guardar semana»: guarda las salidas en salidas/ y deja sus territorios en progreso
+async function registrarEnProgreso() {
+  const btn = document.getElementById('btn-reg-prog');
   const territoriosARegistrar = [];
   salidas.forEach(s => {
     if (s.tipo !== 'campo') return;
-    const cond  = document.getElementById('sal-cond-'  + s.id)?.value;
-    const fecha = document.getElementById('sal-fecha-' + s.id)?.value;
-    const mainTerrR = document.getElementById('sal-terr-' + s.id)?.value;
-    const extraContR = document.getElementById('extra-terrs-' + s.id);
-    const allTerrsR = [mainTerrR, ...(extraContR ? [...extraContR.querySelectorAll('input[type="hidden"]')].map(inp => inp.value) : [])].filter(v => v && v !== '—');
-    allTerrsR.forEach(terr => territoriosARegistrar.push({ terr, cond: cond || '—', fecha }));
+    terrsDeSalida(s.id).forEach(terr => territoriosARegistrar.push({ terr, cond: s.conductor || '—', fecha: s.fecha }));
   });
   if (territoriosARegistrar.length === 0) {
-    status.style.color = 'var(--k-tx-f09595, #F09595)';
-    status.textContent = 'No hay territorios de campo asignados.';
+    estadoGuardado('No hay territorios de campo asignados.', 'mal');
     return;
   }
   btn.disabled = true;
-  if (window.uiLoading) uiLoading.show(`Registrando ${territoriosARegistrar.length} territorio(s)...`);
-  else { status.style.color = 'var(--k-tx-888888, #888)'; status.textContent = `Registrando ${territoriosARegistrar.length} territorio(s)...`; }
+  if (window.uiLoading) uiLoading.show(`Guardando la semana (${territoriosARegistrar.length} territorio${territoriosARegistrar.length === 1 ? '' : 's'})...`);
 
   try {
     for (const t of territoriosARegistrar) {
@@ -1486,12 +1379,12 @@ async function registrarEnProgreso() {
     // Guardar salida en historial. terr = el primero (lo que leían las versiones viejas), terrs = todos:
     // antes los territorios extra de una salida se marcaban en progreso pero no quedaban en el registro.
     const salidasParaHistorial = salidas.map(s => ({
-      enc:   document.getElementById('sal-enc-'   + s.id)?.value || '—',
+      enc:   s.encuentro.trim() || '—',
       terr:  s.tipo === 'tel' ? 'TELEFÓNICA' : (terrsDeSalida(s.id)[0] || '—'),
       terrs: s.tipo === 'tel' ? [] : terrsDeSalida(s.id),
-      fecha: document.getElementById('sal-fecha-' + s.id)?.value || '',
-      cond:  document.getElementById('sal-cond-'  + s.id)?.value || '—',
-      hora:  (document.getElementById('sal-hora-' + s.id)?.value || '').replace(':','.'),
+      fecha: s.fecha || '',
+      cond:  s.conductor || '—',
+      hora:  (s.hora || '').replace(':','.'),
       tipo:  s.tipo,
     }));
     await addDoc(salidaCol(), {
@@ -1503,15 +1396,13 @@ async function registrarEnProgreso() {
     territoriosData = {};
     encuentrosPorTerr = null; _encuentrosPromesa = null;   // que la próxima planificación vea lo recién guardado
     if (window.uiLoading) uiLoading.hide();
-    status.style.color = 'var(--k-tx-5dcaa5, #5DCAA5)';
-    status.textContent = `✓ ${territoriosARegistrar.length} territorio(s) registrado(s) como en progreso`;
+    estadoGuardado(`✓ Semana guardada: ${territoriosARegistrar.length} territorio${territoriosARegistrar.length === 1 ? '' : 's'} en progreso`, 'ok');
     btn.disabled = true;
-    btn.textContent = 'Ya registrado ✓';
+    btn.textContent = 'Semana guardada ✓';
     window.lanzarPelotaFestejo?.('⚽');
   } catch(err) {
     if (window.uiLoading) uiLoading.hide();
-    status.style.color = 'var(--k-tx-f09595, #F09595)';
-    status.textContent = 'Error: ' + err.message;
+    estadoGuardado('Error: ' + err.message, 'mal');
     btn.disabled = false;
   }
 }
@@ -1519,19 +1410,24 @@ async function registrarEnProgreso() {
 // ─────────────────────────────────────────
 //   REGISTRAR TERRITORIOS (completar)
 // ─────────────────────────────────────────
+// Lo que se va a guardar de cada territorio en progreso: { cond, ini, fin, estado: 'completado' | 'progreso' }
+let regDatos = {};
+
 async function goToRegistrar() {
   hide('view-modo');
   show('view-registrar');
-  document.getElementById('reg-grupo-label').textContent = selectedGrupo;
-  show('reg-loading'); hide('reg-container'); hide('reg-error'); hide('reg-footer');
+  colorGrupoEnPantallas();
+  document.getElementById('reg-grupo-label').textContent = nombreGrupo();
+  show('reg-loading'); hide('reg-container'); hide('reg-error');
   try {
     territoriosData = await fetchGrupo(selectedGrupo);
+    await conductoresListos();
     hide('reg-loading');
     renderRegistrar();
   } catch(err) {
     hide('reg-loading');
     const errEl = document.getElementById('reg-error');
-    errEl.innerHTML = `<div class="error-wrap">Error: ${err.message}. <button class="btn-secondary" style="font-size:12px;padding:4px 10px;margin-left:8px;" onclick="goToRegistrar()">Reintentar</button></div>`;
+    errEl.innerHTML = `<div class="error-wrap">Error: ${esc(err.message)}. <button class="btn-secondary" style="font-size:12px;padding:4px 10px;margin-left:8px;" onclick="goToRegistrar()">Reintentar</button></div>`;
     show('reg-error');
   }
 }
@@ -1539,125 +1435,121 @@ async function goToRegistrar() {
 function renderRegistrar() {
   const enProgreso = Object.keys(territoriosData).filter(n => territoriosData[n].enProgreso);
   const c = document.getElementById('reg-container');
-  c.innerHTML = '';
+  const sub = document.getElementById('reg-grupo-label');
+  sub.textContent = `${nombreGrupo()} · ${enProgreso.length} en progreso`;
+  regDatos = {};
   if (enProgreso.length === 0) {
     c.innerHTML = '<div class="reg-empty">No hay territorios en progreso para este grupo.</div>';
-    show('reg-container'); show('reg-footer');
+    show('reg-container');
+    setPie(null);
     return;
   }
-  if (enProgreso.length > 1) {
-    const todos = document.createElement('button');
-    todos.type = 'button';
-    todos.className = 'reg-todos';
-    todos.textContent = `✓ Marcar los ${enProgreso.length} como terminados hoy`;
-    todos.onclick = marcarTodosTerminados;
-    c.appendChild(todos);
-  }
+  const hoy = hoyISO();
   enProgreso.forEach(n => {
     const t = territoriosData[n];
-    const ini = t.lastIni || '';
-    const div = document.createElement('div');
-    div.className  = 'reg-card';
-    div.id         = 'reg-card-' + n;
-    div.dataset.estado = 'completado';
-    div.dataset.terr   = n;
-    div.innerHTML = `
-      <div class="reg-header">
-        <span class="reg-terr">Territorio ${n}</span>
-        <span class="reg-ini">Inicio: ${ini ? formatShortFull(ini) : '—'}</span>
-      </div>
-      <div class="toggle-wrap">
-        <button class="toggle-btn active-comp" id="tog-comp-${n}" onclick="setEstado('${n}','completado')">Completado</button>
-        <button class="toggle-btn" id="tog-prog-${n}" onclick="setEstado('${n}','progreso')">Sigue en progreso</button>
-      </div>
-      <div id="reg-fields-${n}">
-        <div class="form-row">
-          <div>
-            <label>Conductor</label>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <select id="reg-cond-${n}" style="flex:1;">${getConductorOptions(selectedGrupo)}</select>
-              <button type="button" onclick="openConductorPicker('reg-cond-${n}', selectedGrupo, this)"
-                style="padding:6px 10px;background:var(--k-bg-1a1a2e, #1a1a2e);color:var(--k-tx-7f77dd, #7F77DD);border:0.5px solid var(--k-bd-4a44a5, #4A44A5);border-radius:8px;cursor:pointer;font-size:13px;flex-shrink:0;font-weight:500;">
-                👤
-              </button>
-            </div>
-          </div>
-          <div><label>Fecha inicio</label><input type="date" id="reg-ini-${n}" value="${ini}"></div>
-        </div>
-        <div><label>Fecha fin</label><input type="date" id="reg-fin-${n}" value="${ini}" style="width:100%;font-size:13px;padding:6px 8px;border:0.5px solid var(--k-bd-555555, #555);border-radius:8px;background:var(--k-bg-1e1e1e, #1e1e1e);color:var(--k-tx-eeeeee, #eee);margin-top:3px;"></div>
-      </div>`;
-    c.appendChild(div);
-    // El conductor viene de cuando se registró «en progreso»: ya queda elegido (se puede cambiar)
-    const cond = t.lastConductor && t.lastConductor !== '—' ? t.lastConductor : '';
-    const sel  = div.querySelector('#reg-cond-' + n);
-    if (sel && cond) {
-      if (![...sel.options].some(o => o.value === cond)) sel.add(new Option(cond, cond));
-      sel.value = cond;
-    }
+    const ini = t.lastIni || hoy;
+    regDatos[n] = {
+      // El conductor viene de cuando se registró «en progreso»: ya queda elegido (se puede cambiar)
+      cond: t.lastConductor && t.lastConductor !== '—' ? t.lastConductor : '',
+      ini,
+      fin: ini > hoy ? ini : hoy,   // terminó hoy (o el día que empezó, si empezó después de hoy)
+      estado: 'completado',
+    };
   });
-  show('reg-container'); show('reg-footer');
-  if (window.upgradeInputs) upgradeInputs(c);
+  c.innerHTML = (enProgreso.length > 1
+      ? `<button type="button" class="tf-chip tf-chip-ancho" onclick="marcarTodosTerminados()">✓ Marcar todos terminados hoy</button>`
+      : '')
+    + enProgreso.map(n => `<div id="reg-card-${esc(n)}"></div>`).join('');
+  enProgreso.forEach(pintarReg);
+  show('reg-container');
+  setPie('Guardar cambios', guardarRegistros);
 }
 
-// Todos «Completado» con fin hoy; el conductor queda el que ya tenía. Hay que tocar Guardar igual.
-function marcarTodosTerminados() {
-  const hoyIso = masDias(getWeekDates(0).mon, (new Date().getDay() + 6) % 7);
-  let n = 0;
-  document.querySelectorAll('#reg-container .reg-card').forEach(card => {
-    const t = card.dataset.terr;
-    setEstado(t, 'completado');
-    const fin = document.getElementById('reg-fin-' + t);
-    if (fin) { fin.value = hoyIso; fin.dispatchEvent(new Event('change', { bubbles: true })); }
-    n++;
-  });
-  uiToast(`${n} marcados como terminados hoy. Revisá y tocá «Guardar cambios».`, 'success');
+function pintarReg(n) {
+  const card = document.getElementById('reg-card-' + n);
+  const r = regDatos[n];
+  if (!card || !r) return;
+  const term = r.estado === 'completado';
+  const hoy = hoyISO();
+  const nArg = `'${esc(n)}'`;
+  card.className = 'tf-reg' + (term ? '' : ' sigue');
+  card.innerHTML = `
+    <div class="tf-reg-cab"><b>Territorio ${esc(n)}</b>
+      <span>empezó ${fechaCorta(r.ini)} · <button type="button" class="tf-link" onclick="cambiarIniReg(${nArg})">cambiar</button></span></div>
+    <div class="tf-reg-quien">👤 ${r.cond ? esc(r.cond) : '<span class="tf-falta">sin conductor</span>'} · <button type="button" class="tf-link" onclick="cambiarCondReg(${nArg})">cambiar</button></div>
+    <div class="tf-seg" role="group" aria-label="Estado del territorio ${esc(n)}">
+      <button type="button" class="${term ? 'on t' : ''}" aria-pressed="${term}" onclick="setEstado(${nArg}, 'completado')">✓ Terminado</button>
+      <button type="button" class="${term ? '' : 'on s'}" aria-pressed="${!term}" onclick="setEstado(${nArg}, 'progreso')">Sigue</button>
+    </div>
+    ${term ? `<div class="tf-reg-fin">Terminó el <button type="button" class="tf-entrada" onclick="cambiarFinReg(${nArg})">📅 ${r.fin === hoy ? 'Hoy, ' + fechaCorta(r.fin).toLowerCase() : fechaCorta(r.fin)}</button></div>` : ''}`;
 }
 
 function setEstado(n, estado) {
-  const card    = document.getElementById('reg-card-' + n);
-  const fields  = document.getElementById('reg-fields-' + n);
-  const btnComp = document.getElementById('tog-comp-' + n);
-  const btnProg = document.getElementById('tog-prog-' + n);
-  card.dataset.estado = estado;
-  if (estado === 'completado') {
-    btnComp.className = 'toggle-btn active-comp';
-    btnProg.className = 'toggle-btn';
-    card.classList.remove('completado');
-    fields.style.display = '';
-  } else {
-    btnComp.className = 'toggle-btn';
-    btnProg.className = 'toggle-btn active-prog';
-    card.classList.add('completado');
-    fields.style.display = 'none';
-  }
+  if (!regDatos[n]) return;
+  regDatos[n].estado = estado;
+  pintarReg(n);
+}
+
+// Todos «Terminado» con fin hoy; el conductor queda el que ya tenía. Hay que tocar Guardar igual.
+function marcarTodosTerminados() {
+  const hoy = hoyISO();
+  const ns = Object.keys(regDatos);
+  ns.forEach(n => {
+    regDatos[n].estado = 'completado';
+    regDatos[n].fin = regDatos[n].ini > hoy ? regDatos[n].ini : hoy;
+    pintarReg(n);
+  });
+  uiToast(`${ns.length} marcados como terminados hoy. Revisá y tocá «Guardar cambios».`, 'success');
+}
+
+async function cambiarIniReg(n) {
+  const r = regDatos[n];
+  if (!r) return;
+  const v = await uiDatePicker({ value: r.ini, label: `Territorio ${n}: ¿cuándo empezó?` });
+  if (!v) return;
+  r.ini = v;
+  if (r.fin < v) r.fin = v;
+  pintarReg(n);
+}
+
+async function cambiarFinReg(n) {
+  const r = regDatos[n];
+  if (!r) return;
+  const v = await uiDatePicker({ value: r.fin, min: r.ini, label: `Territorio ${n}: ¿cuándo terminó?` });
+  if (v) { r.fin = v; pintarReg(n); }
+}
+
+async function cambiarCondReg(n) {
+  const r = regDatos[n];
+  if (!r) return;
+  const conductores = [...(CONDUCTORES_BY_GROUP[selectedGrupo] || [])];
+  if (r.cond && !conductores.includes(r.cond)) conductores.unshift(r.cond);
+  if (!conductores.length) { uiToast('No hay conductores cargados para este grupo', 'error'); return; }
+  const v = await uiConductorPicker({ conductores, value: r.cond, label: `Territorio ${n}: ¿quién lo trabajó?` });
+  if (v !== null && v !== undefined) { r.cond = v; pintarReg(n); }
 }
 
 async function guardarRegistros() {
-  const btn    = document.getElementById('btn-guardar');
-  const status = document.getElementById('save-status');
-  btn.disabled = true;
+  const btn = document.getElementById('tf-pie-btn');
+  const saves = Object.entries(regDatos).map(([n, r]) => ({
+    territorio: n,
+    conductor: r.cond,
+    fechaInicio: r.ini,
+    fechaFin: r.estado === 'completado' ? r.fin : null,
+    estado: r.estado,
+  }));
 
-  const cards = document.querySelectorAll('[id^="reg-card-"]');
-  const saves = [];
-  cards.forEach(card => {
-    const n = card.dataset.terr;
-    const estado = card.dataset.estado;
-    const conductor = document.getElementById('reg-cond-' + n)?.value || '';
-    const ini = document.getElementById('reg-ini-' + n)?.value || '';
-    const fin = estado === 'completado' ? (document.getElementById('reg-fin-' + n)?.value || '') : null;
-    saves.push({ territorio: n, conductor, fechaInicio: ini, fechaFin: fin, estado });
-  });
-
-  const sinConductor = saves.some(s => s.estado === 'completado' && !s.conductor);
-  if (sinConductor) {
-    status.style.color = 'var(--k-tx-f09595, #F09595)';
-    status.textContent = 'Elegí el conductor de cada territorio antes de guardar.';
-    btn.disabled = false;
+  if (saves.some(s => s.estado === 'completado' && !s.conductor)) {
+    uiToast('Elegí el conductor de cada territorio terminado antes de guardar.', 'error');
+    return;
+  }
+  if (saves.some(s => s.fechaFin && s.fechaFin < s.fechaInicio)) {
+    uiToast('Hay un territorio que termina antes de empezar: revisá las fechas.', 'error');
     return;
   }
 
+  btn.disabled = true;
   if (window.uiLoading) uiLoading.show('Guardando registros...');
-  else { status.style.color = 'var(--k-tx-888888, #888)'; status.textContent = 'Guardando...'; }
 
   try {
     for (const s of saves) {
@@ -1684,14 +1576,13 @@ async function guardarRegistros() {
     await Promise.all(saves.map(s => sincronizarUltimoHist(s.territorio)));
     territoriosData = {};
     if (window.uiLoading) uiLoading.hide();
-    status.style.color = 'var(--k-tx-5dcaa5, #5DCAA5)';
-    status.textContent = 'Guardado correctamente';
-    btn.disabled = false;
+    const term = saves.filter(s => s.estado === 'completado').length;
+    uiToast(term ? `Guardado: ${term} territorio${term === 1 ? '' : 's'} terminado${term === 1 ? '' : 's'}` : 'Guardado', 'success');
     logActividad(CONGRE_ID, 'territorios', 'guardado', 'Registros de salidas');
+    goToRegistrar();   // quedan a la vista solo los que siguen en progreso
   } catch(err) {
     if (window.uiLoading) uiLoading.hide();
-    status.style.color = 'var(--k-tx-f09595, #F09595)';
-    status.textContent = 'Error al guardar: ' + err.message;
+    uiToast('Error al guardar: ' + err.message, 'error');
     btn.disabled = false;
   }
 }
@@ -2198,9 +2089,8 @@ async function setTerritoryEstado(estado) {
 // ─────────────────────────────────────────
 async function goToHistorial() {
   hide('view-modo'); show('view-historial');
-  const titulo = document.getElementById('hist-titulo');
-  titulo.textContent = (selectedGrupo === 'C' ? 'Congregación' : 'Grupo ' + selectedGrupo) + ' — Historial';
-  titulo.style.color = GCOLORS[selectedGrupo] || '#97C459';
+  colorGrupoEnPantallas();
+  document.getElementById('hist-titulo').textContent = nombreGrupo();
   show('hist-loading'); hide('hist-content'); hide('hist-error');
   try {
     const q = query(salidaCol(), where('grupoId', '==', String(selectedGrupo)));
@@ -2224,7 +2114,7 @@ async function goToHistorial() {
     show('hist-content');
   } catch(err) {
     hide('hist-loading');
-    document.getElementById('hist-error').innerHTML = `<div class="error-wrap">Error: ${err.message}</div>`;
+    document.getElementById('hist-error').innerHTML = `<div class="error-wrap">Error: ${esc(err.message)}</div>`;
     show('hist-error');
   }
 }
@@ -2233,7 +2123,7 @@ function renderHistorialSalidas(rows, docs) {
   const c = document.getElementById('hist-content');
   c.innerHTML = '';
   if (rows.length === 0) {
-    c.innerHTML = '<div style="text-align:center;color:var(--k-tx-888888, #888);padding:2rem;font-size:14px;">No hay salidas registradas todavía.</div>';
+    c.innerHTML = '<div class="reg-empty">No hay salidas registradas todavía.</div>';
     return;
   }
   // Agrupar por salidaDocId (cada documento = una semana registrada)
@@ -2242,31 +2132,34 @@ function renderHistorialSalidas(rows, docs) {
     if (!grupos[r.salidaDocId]) { grupos[r.salidaDocId] = { rows:[], fechaReg: r.semana || r.fechaReg }; orden.push(r.salidaDocId); }
     grupos[r.salidaDocId].rows.push(r);
   });
-  orden.forEach(docId => {
+  const hoy = hoyISO();
+  c.innerHTML = orden.map((docId, i) => {
     const g = grupos[docId];
-    const group = document.createElement('div');
-    group.className = 'hist-registro-group';
-    group.innerHTML = `
-      <div class="hist-registro-header">
-        <span class="hist-registro-fecha">${/^\d{4}-\d{2}-\d{2}$/.test(g.fechaReg || '')
-          ? 'Semana del ' + formatShort(masDias(g.fechaReg, -((new Date(g.fechaReg + 'T12:00:00').getDay() + 6) % 7)))
-          : 'Registrado el ' + fmtHistDate(g.fechaReg)}</span>
-        <button class="hist-registro-del" onclick="deleteHistorialDoc('${docId}', this)">Eliminar semana</button>
-      </div>`;
-    g.rows.forEach(r => {
-      const esTel = String(r.terr).toUpperCase().includes('TEL');
-      const dia   = r.fecha ? ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date(r.fecha + 'T12:00:00').getDay()] : '';
-      const row   = document.createElement('div');
-      row.className = 'hist-row';
-      row.innerHTML = `
-        <span class="hist-row-terr ${esTel ? 'hist-row-tel' : ''}">${esTel ? 'Tel.' : 'T.' + (terrsGuardados(r).join(', ') || '—')}</span>
-        <span class="hist-row-dia">${dia} ${r.fecha ? formatShort(r.fecha) : ''}</span>
-        <span class="hist-row-cond">${r.cond}</span>
-        <span class="hist-row-hora">${r.hora}</span>`;
-      group.appendChild(row);
-    });
-    c.appendChild(group);
-  });
+    const titulo = /^\d{4}-\d{2}-\d{2}$/.test(g.fechaReg || '')
+      ? tituloSemana(g.fechaReg)
+      : 'Registrado el ' + esc(fmtHistDate(g.fechaReg));
+    const filas = g.rows.map(r => {
+      const esTel = r.tipo === 'tel' || String(r.terr).toUpperCase().includes('TEL');
+      const terrs = terrsGuardados(r);
+      const enc = r.enc && r.enc !== '—' ? ' · ' + esc(r.enc) : '';
+      return `<div class="tf-h-fila${r.fecha && r.fecha < hoy ? ' pasada' : ''}">${bloqueFecha(r.fecha, true)}
+        <span class="tf-sal-tx"><span class="tf-sal-t">${esTel ? '<span class="tf-tel">Telefónica</span>' : esc(nombreTerrs(terrs) || 'Sin territorio')}</span>
+          <span class="tf-sal-s">${esc(r.cond || '—')}${enc}</span></span>
+        <span class="tf-h-hora">${esc(String(r.hora || '').replace('.', ':'))}</span></div>`;
+    }).join('');
+    return `<div class="tf-sem" id="hist-sem-${i}">
+      <div class="tf-sem-cab"><b>${titulo}<span>${g.rows.length} salida${g.rows.length === 1 ? '' : 's'}</span></b>
+        <button type="button" class="tf-mas-btn" aria-label="Más opciones" aria-expanded="false" onclick="toggleMenuSemana(${i}, this)">⋯</button></div>
+      <div class="tf-sem-menu"><button type="button" class="tf-chip tf-chip-mal" data-doc="${esc(docId)}" onclick="deleteHistorialDoc(this.dataset.doc, this)">🗑 Eliminar semana</button></div>
+      ${filas}
+    </div>`;
+  }).join('');
+}
+
+function toggleMenuSemana(i, btn) {
+  const sem = document.getElementById('hist-sem-' + i);
+  const abierto = sem.classList.toggle('menu');
+  btn.setAttribute('aria-expanded', String(abierto));
 }
 
 async function deleteHistorialDoc(docId, btn) {
@@ -2512,7 +2405,6 @@ window.addSalida = addSalida;
 window.cambiarSemana = cambiarSemana;
 window.closeMapaPopup = closeMapaPopup;
 window.openTerritorioPicker = openTerritorioPicker;
-window.openConductorPicker = openConductorPicker;
 window.startEdit = startEdit;
 window.startAddEntry = startAddEntry;
 window.cancelEdit = cancelEdit;
@@ -2525,6 +2417,16 @@ window.sendChatNota = sendChatNota;
 window.openMapaPicker      = openMapaPicker;
 window.openEncuentroPicker = openEncuentroPicker;
 window.saveNota            = saveNota;
-window.updateDiaLabel      = updateDiaLabel;
-window.addExtraTerritory   = addExtraTerritory;
 window.removeSalida        = removeSalida;
+window.abrirSalida          = abrirSalida;
+window.elegirDiaSalida      = elegirDiaSalida;
+window.elegirHoraSalida     = elegirHoraSalida;
+window.elegirConductorSalida = elegirConductorSalida;
+window.quitarTerrSalida     = quitarTerrSalida;
+window.setEncuentroSalida   = setEncuentroSalida;
+window.toggleImagenGrande   = toggleImagenGrande;
+window.setEstado            = setEstado;
+window.cambiarIniReg        = cambiarIniReg;
+window.cambiarFinReg        = cambiarFinReg;
+window.cambiarCondReg       = cambiarCondReg;
+window.toggleMenuSemana     = toggleMenuSemana;
