@@ -283,27 +283,6 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* ── Export a Sheets ── */
-.vm-export-row {
-  display: flex; align-items: center; gap: 8px;
-}
-.vm-export-mes-input {
-  background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 8px;
-  color: var(--text-primary); padding: 7px 10px; font-size: 13px; flex: 1; min-width: 0;
-}
-.vm-export-mes-input:focus { outline: none; border-color: rgba(239,159,39,0.5); }
-.btn-sheets-vm {
-  background: rgba(29,158,117,0.12); border: 1px solid rgba(29,158,117,0.35); border-radius: 8px;
-  color: var(--k-tx-5dcaa5, #5DCAA5); font-size: 12px; font-weight: 600; padding: 7px 12px;
-  cursor: pointer; white-space: nowrap; display: flex; align-items: center;
-  transition: background 0.15s;
-}
-.btn-sheets-vm:hover { background: rgba(29,158,117,0.2); }
-.btn-sheets-vm:disabled { opacity: 0.5; cursor: default; }
-#vm-export-status {
-  font-size: 12px; color: var(--text-muted); margin-top: 6px; min-height: 16px; text-align: center;
-}
-
 /* ── Encabezado de mes con acciones ── */
 .semanas-mes-hdr-row {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;

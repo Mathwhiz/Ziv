@@ -625,9 +625,6 @@ window.goToSemanas = async function() {
   document.getElementById('semanas-congre-sub').textContent = congreNombre || '—';
   const btnCfg = document.getElementById('btn-config-vm');
   if (btnCfg) btnCfg.style.display = modoEncargado ? '' : 'none';
-  // Ocultar sección vieja (reemplazada por botones en headers de mes)
-  const exportSec = document.getElementById('vm-export-section');
-  if (exportSec) exportSec.style.display = 'none';
   const btnSheetSem = document.getElementById('btn-sheet-semana');
   if (btnSheetSem) btnSheetSem.style.display = (modoEncargado && vmScriptUrl) ? '' : 'none';
   showView('view-semanas');

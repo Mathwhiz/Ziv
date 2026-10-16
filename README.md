@@ -31,7 +31,7 @@ Access is role-based (Google sign-in plus manual approval by an admin); guests c
 
 - Plain HTML, CSS and JavaScript: no frameworks, no build step.
 - [Firebase](https://firebase.google.com/) Authentication (Google + anonymous) and Cloud Firestore.
-- Hosted on GitHub Pages. Works offline as a PWA through a service worker.
+- Hosted on GitHub Pages. Installable as a PWA; a service worker keeps every device on the latest version.
 
 ## Self-hosting
 

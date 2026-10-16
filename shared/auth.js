@@ -247,6 +247,10 @@ window.lastAuthError = () => _lastAuthError;
 window.hasPermission = (feature) => {
   if (!_user) return false;
   const roles = normalizeAppRoles(_user);
+  // Todo usuario aprobado (cualquier rol que no sea pendiente/anónimo) tiene al menos lo del publicador:
+  // un encargado_grupo o encargado_edificios "solo" también ve Asignaciones, VM, etc.
+  const aprobado = roles.some(r => r !== 'pendiente' && r !== 'anonimo' && PERMISOS[r]);
+  if (aprobado && PERMISOS.publicador.includes(feature)) return true;
   return roles.some(r => (PERMISOS[r] || []).includes(feature));
 };
 

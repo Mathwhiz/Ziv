@@ -1884,7 +1884,22 @@ body.light-mode .cs-module-card:hover {
       overflow: hidden; text-overflow: ellipsis; max-width: 100px;
     }
     .ziv-sChevron { color: #555; flex-shrink: 0; transition: transform 0.15s; }
-    .ziv-sBtn.open .ziv-sChevron { transform: rotate(180deg); }
+    .ziv-sBtn.open .ziv-sChevron, .ziv-sOpc.open .ziv-sChevron { transform: rotate(180deg); }
+    /* Invitado: el chip es el botón para iniciar sesión y las opciones van en la flechita de al lado */
+    .ziv-sFila { display: flex; align-items: center; gap: 4px; }
+    .ziv-sBtn.ziv-sLogin {
+      padding: 6px 12px; color: #c9c3ff; font-weight: 600;
+      background: rgba(127,119,221,0.16); border-color: rgba(127,119,221,0.45);
+    }
+    .ziv-sBtn.ziv-sLogin:hover { background: rgba(127,119,221,0.26); border-color: rgba(127,119,221,0.6); }
+    .ziv-sOpc {
+      width: 30px; height: 30px; border-radius: 50%; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(35,38,40,0.9); border: 1px solid rgba(255,255,255,0.08);
+    }
+    .ziv-sOpc:hover { background: rgba(50,53,58,0.95); }
+    body.light-mode .ziv-sBtn.ziv-sLogin { color: #4b3fb3; background: rgba(127,119,221,0.14); border-color: rgba(127,119,221,0.4); }
+    body.light-mode .ziv-sOpc { background: rgba(237,234,227,0.92); border-color: rgba(0,0,0,0.1); }
     .ziv-sMenu {
       position: absolute; top: calc(100% + 6px); right: 0;
       background: #252525; border: 1px solid #3a3a3a;
@@ -1937,13 +1952,20 @@ body.light-mode .cs-module-card:hover {
   el.id = 'ziv-session';
   el.style.display = 'none';
   el.innerHTML = `
-    <button class="ziv-sBtn" id="ziv-sBtn" onclick="toggleSessionMenu()">
-      <span id="ziv-sAvatarWrap"></span>
-      <span class="ziv-sName" id="ziv-sName"></span>
-      <svg class="ziv-sChevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
+    <div class="ziv-sFila">
+      <button class="ziv-sBtn" id="ziv-sBtn" onclick="toggleSessionMenu()">
+        <span id="ziv-sAvatarWrap"></span>
+        <span class="ziv-sName" id="ziv-sName"></span>
+        <svg class="ziv-sChevron" id="ziv-sChevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="ziv-sOpc" id="ziv-sOpc" aria-label="Opciones" onclick="toggleSessionMenu()" style="display:none">
+        <svg class="ziv-sChevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
     <div class="ziv-sMenu" id="ziv-sMenu" style="display:none">
       <div class="ziv-sRow" id="ziv-sFilaEscala">
         <span>Tamaño</span>
@@ -1957,8 +1979,9 @@ body.light-mode .cs-module-card:hover {
       <div class="ziv-sDivider"></div>
       <a id="ziv-sPerfil" href="/perfil.html" class="ziv-sItem">Ver perfil</a>
       <a id="ziv-sTutorial" href="/?tutorial#menu" class="ziv-sItem">Ver tutorial</a>
-      <div class="ziv-sDivider"></div>
-      <button class="ziv-sItem ziv-sItem--danger" onclick="sessionSignOut()">Cerrar sesión</button>
+      <button class="ziv-sItem" id="ziv-sCongre" onclick="zivCambiarCongre()">Cambiar de congregación</button>
+      <div class="ziv-sDivider" id="ziv-sDivSalir"></div>
+      <button class="ziv-sItem ziv-sItem--danger" id="ziv-sSalir" onclick="sessionSignOut()">Cerrar sesión</button>
     </div>
   `;
   document.body.appendChild(el);
@@ -1998,28 +2021,24 @@ window.updateSessionHeader = function(user) {
     document.body.insertBefore(bar, document.body.firstChild);
   }
 
-  const tutorial = document.getElementById('ziv-sTutorial');
-  if (tutorial) tutorial.style.display = user.isAnonymous ? 'none' : '';
+  // Invitado: no tiene cuenta que cerrar. El chip es «Iniciar sesión» (va directo a Google) y la flechita de
+  // al lado abre tamaño, tema y «Cambiar de congregación». Con cuenta: chip con su nombre y el menú de siempre.
+  const anon = !!user.isAnonymous;
+  const btn  = document.getElementById('ziv-sBtn');
+  const show = (id, v) => { const x = document.getElementById(id); if (x) x.style.display = v ? '' : 'none'; };
+  show('ziv-sTutorial', !anon);
+  show('ziv-sPerfil', !anon);
+  show('ziv-sCongre', anon);
+  show('ziv-sDivSalir', !anon);
+  show('ziv-sSalir', !anon);
+  show('ziv-sOpc', anon);
+  show('ziv-sChevron', !anon);
+  btn.classList.toggle('ziv-sLogin', anon);
+  btn.onclick = () => (anon ? window.zivIniciarSesion() : window.toggleSessionMenu());
 
-  if (user.isAnonymous) {
-    wrap.innerHTML = `
-      <div class="ziv-sAvatarAnon">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-        </svg>
-      </div>`;
-    name.textContent   = 'Invitado';
-    perfil.textContent = 'Vincular con Google';
-    perfil.removeAttribute('href');
-    perfil.onclick = function(e) {
-      e.preventDefault();
-      window.closeSessionMenu();
-      if (typeof window.linkWithGoogle === 'function') {
-        window.linkWithGoogle()
-          .then(() => window.location.replace('/perfil.html'))
-          .catch(err => console.error(err));
-      }
-    };
+  if (anon) {
+    wrap.innerHTML = '';
+    name.textContent = 'Iniciar sesión';
   } else {
     const ini = (user.displayName || user.email || '?')
       .trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
@@ -2035,17 +2054,45 @@ window.updateSessionHeader = function(user) {
 
 window.toggleSessionMenu = function() {
   const m    = document.getElementById('ziv-sMenu');
-  const b    = document.getElementById('ziv-sBtn');
   const open = m && m.style.display !== 'none';
   if (m) m.style.display = open ? 'none' : 'block';
-  if (b) b.classList.toggle('open', !open);
+  ['ziv-sBtn', 'ziv-sOpc'].forEach(id => document.getElementById(id)?.classList.toggle('open', !open));
 };
 
 window.closeSessionMenu = function() {
   const m = document.getElementById('ziv-sMenu');
-  const b = document.getElementById('ziv-sBtn');
   if (m) m.style.display = 'none';
-  if (b) b.classList.remove('open');
+  ['ziv-sBtn', 'ziv-sOpc'].forEach(id => document.getElementById(id)?.classList.remove('open'));
+};
+
+// Invitado → cuenta de Google (vincula la sesión anónima). Después va al menú, que manda a completar el perfil
+// si hace falta. Cerrar el popup de Google no es un error.
+window.zivIniciarSesion = async function() {
+  window.closeSessionMenu();
+  if (typeof window.linkWithGoogle !== 'function') return;
+  try {
+    await window.linkWithGoogle();
+    if (/^\/(index\.html)?$/.test(location.pathname)) {
+      location.hash = 'menu';
+      location.reload();
+    } else {
+      location.replace('/#menu');
+    }
+  } catch (err) {
+    if (['auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(err?.code)) return;
+    console.error(err);
+    window.uiToast?.('No se pudo iniciar sesión: ' + (err?.message || err), 'error');
+  }
+};
+
+// Invitado: elegir otra congregación (no hay sesión que cerrar). Olvida la guardada para que la próxima
+// visita no vuelva a abrir la anterior.
+window.zivCambiarCongre = function() {
+  window.closeSessionMenu();
+  ['ziv_congre_id', 'ziv_congre_nombre', 'ziv_congre_color'].forEach(k => localStorage.removeItem(k));
+  if (typeof window.volverACongres === 'function') { window.volverACongres(); return; }
+  ['congreId', 'congreNombre', 'congreColor'].forEach(k => sessionStorage.removeItem(k));
+  location.replace('/#menu');
 };
 
 /* ─────────────────────────────────────────

@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../shared/styles-base.css?v=1.5">
-  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=3.7">
+  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=3.8">
 </head>
 <body class="ziv-booting">
 <div class="ziv-boot loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
@@ -181,28 +181,6 @@
       <div class="vm-tab-panel active" data-tab="semanas">
         <div id="semanas-list">
           <div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
-        </div>
-        <div id="vm-export-section" style="display:none; margin-top:10px;">
-          <!-- Mes + botón export -->
-          <div class="vm-export-row">
-            <span style="font-size:13px;color:var(--text-muted);white-space:nowrap;">Mes:</span>
-            <input type="month" id="vm-export-mes" class="vm-export-mes-input" onchange="onMesExportChange()">
-            <button class="btn-sheets-vm" id="btn-sheets-export" style="display:none;" onclick="exportarMesASheets()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:middle;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              Exportar
-            </button>
-          </div>
-          <!-- Sala Auxiliar del mes (solo si tieneAuxiliar) -->
-          <div id="vm-aux-mes-row" style="display:none; margin-top:8px;">
-            <div class="vm-aux-row">
-              <span class="vm-aux-label">Sala Auxiliar este mes:</span>
-              <button class="vm-aux-btn" id="btn-aux-mes" onclick="abrirPickerAuxMes()">
-                <span id="aux-mes-nombre">Sin asignar</span>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-            </div>
-          </div>
-          <div id="vm-export-status"></div>
         </div>
       </div>
 
@@ -478,7 +456,7 @@
 
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="../shared/ui-utils.js?v=3.8"></script>
+<script src="../shared/ui-utils.js?v=3.9"></script>
 <script type="module" src="/vida-ministerio/app.js"></script>
 </body>
 </html>

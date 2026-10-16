@@ -1828,8 +1828,12 @@ async function abrirRolesModal(uid) {
 
 window.confirmarRolesModal = async function() {
   const checked   = document.querySelectorAll('#roles-cb-list input[type="checkbox"]:checked');
-  const newRoles  = Array.from(checked).map(cb => cb.value);
+  let newRoles  = Array.from(checked).map(cb => cb.value);
   if (newRoles.length === 0) { uiToast('Seleccioná al menos un rol', 'error'); return; }
+  // Cualquier rol (encargado, anciano…) incluye ser publicador; 'pendiente' solo tiene sentido solo
+  if (newRoles.some(r => r !== 'pendiente')) {
+    newRoles = ['publicador', ...newRoles.filter(r => r !== 'pendiente' && r !== 'publicador')];
+  }
 
   let grupoEncargado = null;
   if (newRoles.includes('encargado_grupo')) {

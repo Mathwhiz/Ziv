@@ -26,7 +26,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Asignaciones — Ziv</title>
 <link rel="stylesheet" href="../shared/styles-base.css?v=1.5">
-<link rel="stylesheet" href="/asignaciones/styles.css?v=3.9">
+<link rel="stylesheet" href="/asignaciones/styles.css?v=4.0">
 </head>
 <body class="ziv-booting">
 <div class="ziv-boot loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
@@ -222,23 +222,11 @@
     </div>
   </div>
 
-
-  <!-- ── MODAL PREVIEW AUTOMÁTICO ── -->
-  <div id="auto-preview-modal" class="preview-modal" style="display:none;" onclick="if(event.target===this)cerrarPreviewModal()">
-    <div class="preview-modal-card">
-      <div class="preview-modal-header">
-        <span class="preview-modal-title" id="auto-preview-modal-title">Preview</span>
-        <button class="preview-modal-close" onclick="cerrarPreviewModal()">✕</button>
-      </div>
-      <div class="preview-modal-body" id="auto-preview-modal-body"></div>
-    </div>
-  </div>
-  
 </div><!-- /.app -->
 
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="../shared/ui-utils.js?v=3.8"></script>
+<script src="../shared/ui-utils.js?v=3.9"></script>
 <script type="module" src="/asignaciones/app.js"></script>
 </body>
 </html>
