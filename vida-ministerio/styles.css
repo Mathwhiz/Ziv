@@ -981,3 +981,21 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
   #semana-content { column-count: 2; column-gap: 28px; }
   #semana-content > * { break-inside: avoid; }
 }
+
+/* ── Semana sin sala auxiliar (interruptor arriba de la semana) ── */
+.vm-sinaux {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+  background: var(--bg-card, #232628); border: 1px solid var(--border-primary, #2e3033);
+  border-radius: 12px; padding: 11px 14px; margin-bottom: 12px;
+}
+.vm-sinaux.on { border-color: rgba(239,159,39,0.55); background: color-mix(in srgb, #EF9F27 9%, var(--bg-card, #232628)); }
+.vm-sinaux input { position: absolute; opacity: 0; pointer-events: none; }
+.vm-sinaux-track { width: 42px; height: 24px; border-radius: 12px; background: var(--border-input, #4a4d52); position: relative; flex: none; transition: background .2s; }
+.vm-sinaux-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.vm-sinaux input:checked + .vm-sinaux-track { background: #EF9F27; }
+.vm-sinaux input:checked + .vm-sinaux-track .vm-sinaux-thumb { transform: translateX(18px); }
+.vm-sinaux input:focus-visible + .vm-sinaux-track { outline: 2px solid #9B8FFF; outline-offset: 2px; }
+.vm-sinaux-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vm-sinaux-tx b { font-size: 14px; color: var(--text-primary, #e8e8e8); }
+.vm-sinaux-tx small { font-size: 12.5px; color: var(--text-secondary, #aaa); line-height: 1.4; }

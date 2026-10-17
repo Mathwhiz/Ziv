@@ -509,7 +509,7 @@ function renderGrupoButtons() {
     const btn = document.createElement('button');
     btn.className = 'grupo-btn grupo-btn-congre';
     btn.dataset.grupo = g.id;
-    btn.innerHTML = `<div class="gbcard-badge gbcard-badge-sm">${g.id}</div><span class="gbcard-label">${g.label}</span>`;
+    btn.innerHTML = `<div class="gbcard-badge gbcard-badge-sm">${g.id}</div><span class="gbcard-label">${esc(g.label)}</span>`;
     btn.onclick = () => selectGrupo(btn, g.id, true);
     _applyGrupoColorToBtn(btn, g.id);
     wrap.appendChild(btn);
@@ -1234,10 +1234,10 @@ function generatePreview() {
 
   document.getElementById('preview-body').innerHTML = rows.map(r => `
     <tr${r.tel ? ' class="tel-row"' : ''}>
-      <td>${r.enc}</td>
-      <td>${r.tel ? '<div class="tel-terr">Telefónica</div>' : `<div class="terr-num-big">${r.terr}</div>`}</td>
+      <td>${esc(r.enc)}</td>
+      <td>${r.tel ? '<div class="tel-terr">Telefónica</div>' : `<div class="terr-num-big">${esc(r.terr)}</div>`}</td>
       <td>${r.badge}<div class="fecha-num">${r.fecha}</div></td>
-      <td><div class="cond-txt">${r.cond}</div></td>
+      <td><div class="cond-txt">${esc(r.cond)}</div></td>
       <td><div class="hora-txt">${r.hora}</div></td>
     </tr>`).join('');
   hide('view-config'); show('view-preview');
@@ -1716,7 +1716,7 @@ async function goToInforme() {
             <span class="informe-bullet">${bullet}</span>
             <span class="informe-entry-fecha">${formatShortFull(e.fechaInicio)} → ${fin}</span>
             <span class="informe-entry-sep">·</span>
-            <span class="informe-entry-cond">${e.conductor}</span>
+            <span class="informe-entry-cond">${esc(e.conductor)}</span>
           </div>`;
         }).join('');
     card.innerHTML = `
@@ -1769,7 +1769,7 @@ function renderInfoBtn(container, n) {
     <div class="va-terr-dias">
       <span class="va-terr-days-val ${daysClass(dias)}">${diasTxt}</span>
     </div>
-    <div class="va-terr-conductor">${conductor || 'Sin conductor'}</div>
+    <div class="va-terr-conductor">${conductor ? esc(conductor) : 'Sin conductor'}</div>
   `;
   card.onclick = () => openModal(n);
   container.appendChild(card);
@@ -1954,11 +1954,11 @@ function renderHistorial(rows) {
   } else {
     tbody.innerHTML = rows.map((r, i) => `
       <tr>
-        <td>${r.conductor || '—'}</td>
+        <td>${r.conductor ? esc(r.conductor) : '—'}</td>
         <td>${r.fechaInicio ? formatShortFull(r.fechaInicio) : '—'}</td>
         <td>${r.fechaFin ? formatShortFull(r.fechaFin) : '<span class="hist-en-prog">en prog.</span>'}</td>
         <td style="white-space:nowrap;text-align:right;">
-          <button class="hist-edit-btn" onclick="startEdit('${r.id}', '${r.conductor||''}', '${r.fechaInicio||''}', '${r.fechaFin||''}')">Editar</button>
+          <button class="hist-edit-btn" onclick="startEdit('${r.id}')">Editar</button>
           <button class="hist-del-btn" onclick="deleteEntry('${r.id}')">✕</button>
         </td>
       </tr>`).join('');
@@ -1996,22 +1996,25 @@ function startAddEntry() {
   document.getElementById('modal-edit-form').style.display = '';
   const conductores = CONDUCTORES_BY_GROUP[selectedGrupo] || [];
   const dl = document.getElementById('conductores-list');
-  if (dl) dl.innerHTML = conductores.map(c => `<option value="${c}">`).join('');
+  if (dl) dl.innerHTML = conductores.map(c => `<option value="${esc(c)}">`).join('');
   document.getElementById('edit-cond').value = '';
   document.getElementById('edit-ini').value = '';
   document.getElementById('edit-fin').value = '';
   if (window.upgradeInputs) upgradeInputs(document.getElementById('modal-edit-form'));
 }
 
-function startEdit(docId, conductor, ini, fin) {
+// Los datos salen de historialRows: el nombre del conductor dentro del onclick rompía el botón con un apóstrofo
+function startEdit(docId) {
+  const row = historialRows.find(r => r.id === docId) || {};
+  const conductor = row.conductor || '', ini = row.fechaInicio || '', fin = row.fechaFin || '';
   editingRow = docId;
   document.getElementById('modal-edit-form').style.display = '';
   const conductores = CONDUCTORES_BY_GROUP[selectedGrupo] || [];
   const sel = document.getElementById('edit-cond');
   sel.innerHTML = '<option value="">— Elegir —</option>' +
-    conductores.map(c => `<option value="${c}" ${c===conductor?'selected':''}>${c}</option>`).join('');
+    conductores.map(c => `<option value="${esc(c)}" ${c===conductor?'selected':''}>${esc(c)}</option>`).join('');
   if (conductor && !conductores.includes(conductor))
-    sel.innerHTML += `<option value="${conductor}" selected>${conductor}</option>`;
+    sel.innerHTML += `<option value="${esc(conductor)}" selected>${esc(conductor)}</option>`;
   document.getElementById('edit-ini').value = ini;
   document.getElementById('edit-fin').value = fin;
   if (window.upgradeInputs) upgradeInputs(document.getElementById('modal-edit-form'));

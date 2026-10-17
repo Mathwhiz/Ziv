@@ -833,7 +833,7 @@ function renderEditar(rows, lunesDate) {
       const lista = hermanos[listaKey] || [];
       const valActual = existing[r] || '';
       const opts = `<option value="">— Sin asignar —</option>` +
-        lista.map(h => `<option value="${h}" ${norm(h)===norm(valActual)?'selected':''}>${h}</option>`).join('');
+        lista.map(h => `<option value="${esc(h)}" ${norm(h)===norm(valActual)?'selected':''}>${esc(h)}</option>`).join('');
       return `<div class="edit-rol-row">
         <label class="edit-rol-label">${ROLES_LABELS[r]}</label>
         <select class="edit-rol-select" data-rol="${r}">${opts}</select>
@@ -991,7 +991,7 @@ function renderAutoPreview(rows) {
     const diaColor = DIA_COLORS[row.dia] || '#eee';
     const diaBg    = DIA_BG[row.dia] || '#1e1e1e';
     const rolesHTML = ROLES.map(r => row[r] ?
-      `<div class="rol-row"><span class="rol-label">${ROLES_LABELS[r]}</span><span class="rol-valor">${row[r]}</span></div>` : ''
+      `<div class="rol-row"><span class="rol-label">${ROLES_LABELS[r]}</span><span class="rol-valor">${esc(row[r])}</span></div>` : ''
     ).filter(Boolean).join('');
     c.innerHTML += `
       <div class="reunion-card" style="--dc:${diaColor};--db:${diaBg};">
@@ -1055,7 +1055,7 @@ function renderTablaImagen(rows) {
     const rolesHTML = ROLES.map(r => {
       const val = row[r] || '';
       if (!val) return '';
-      return `<tr><td class="tabla-rol">${ROLES_LABELS[r]}</td><td class="tabla-val">${val}</td></tr>`;
+      return `<tr><td class="tabla-rol">${ROLES_LABELS[r]}</td><td class="tabla-val">${esc(val)}</td></tr>`;
     }).filter(Boolean).join('');
     c.innerHTML += `
       <div class="tabla-reunion-wrap" style="--dc:${diaColor};">

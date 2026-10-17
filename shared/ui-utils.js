@@ -1264,9 +1264,9 @@ window.uiConductorPicker = function({ conductores = [], value = '', label = 'Ele
                   const rango = enPrio
                     ? `<span class="cp-rank" style="min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;background:#185FA5;color:#fff;border-radius:50%;font-size:11px;font-weight:700;margin-right:8px;flex:0 0 auto;">${(prioPos.get(c) ?? 0) + 1}</span>`
                     : '';
-                  return `<button class="cp-item ${c===sel?'selected':''}" data-name="${c.replace(/"/g,'&quot;')}">
-                    ${enPrio ? rango : `<span class="cp-item-avatar">${initials}</span>`}
-                    <span class="cp-item-name">${c}</span>
+                  return `<button class="cp-item ${c===sel?'selected':''}" data-name="${window.esc(c)}">
+                    ${enPrio ? rango : `<span class="cp-item-avatar">${window.esc(initials)}</span>`}
+                    <span class="cp-item-name">${window.esc(c)}</span>
                     <span class="cp-item-check">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                         <path d="M5 13l4 4L19 7" stroke="#185FA5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1657,7 +1657,7 @@ window.upgradeInputs = function(container) {
     function updateBtn() {
       const v = select.value;
       if (v) {
-        btn.innerHTML = `<span class="ui-fake-input-icon">👤</span><span style="color:#eee;">${v}</span>`;
+        btn.innerHTML = `<span class="ui-fake-input-icon">👤</span><span style="color:#eee;">${window.esc(v)}</span>`;
         btn.classList.remove('empty');
       } else {
         btn.innerHTML = `<span class="ui-fake-input-icon">👤</span><span>Elegir conductor</span>`;

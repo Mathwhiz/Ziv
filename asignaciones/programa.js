@@ -43,6 +43,10 @@ let semanaActual = null;
 let programacion = [];
 let especiales = {};
 
+// Los nombres vienen de la planilla (los carga el robot): se escapan antes de ponerlos en la página.
+// Esta página no carga shared/ui-utils.js, por eso tiene su propio esc().
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 function fmtDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
@@ -143,7 +147,7 @@ function renderSemana(rows, especial) {
       if (esSuper && r === 'LECTOR' && dia === 'Sábado') return '';
       const val = row.roles?.[r] || '';
       if (!val) return '';
-      return `<div class="rol-row"><span class="rol-label">${ROLES_LABELS[r]}</span><span class="rol-valor">${val}</span></div>`;
+      return `<div class="rol-row"><span class="rol-label">${ROLES_LABELS[r]}</span><span class="rol-valor">${esc(val)}</span></div>`;
     }).filter(Boolean).join('');
 
     return `
@@ -216,7 +220,7 @@ async function init() {
     especiales = {};
     especialesSnap.forEach(d => { especiales[d.id] = d.data(); });
   } catch (e) {
-    document.getElementById('prog-contenido').innerHTML = `<div class="prog-error">Error al cargar: ${e.message}</div>`;
+    document.getElementById('prog-contenido').innerHTML = `<div class="prog-error">Error al cargar: ${esc(e.message)}</div>`;
     return;
   }
 

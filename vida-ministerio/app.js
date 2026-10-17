@@ -1258,6 +1258,19 @@ function renderSemanaEdit() {
   const s = semanaData;
   let html = vmBannerHtml(s.fecha);
 
+  // ── Semana puntual sin sala auxiliar (sinSalaAux). Solo si la congregación tiene auxiliar y no es la
+  // semana del superintendente (ahí ya no se abre).
+  if (tieneAuxiliar && !esSemanaSuper(s.fecha)) {
+    const sin = s.sinSalaAux === true;
+    html += `<label class="vm-sinaux${sin ? ' on' : ''}">
+      <input type="checkbox" ${sin ? 'checked' : ''} onchange="toggleSinSalaAux(this.checked, this)">
+      <span class="vm-sinaux-track" aria-hidden="true"><span class="vm-sinaux-thumb"></span></span>
+      <span class="vm-sinaux-tx"><b>Esta semana sin sala auxiliar</b><small>${sin
+        ? 'No hay auxiliar: sin sus lugares, sin sus S-89 ni auto-asignación, y el programa público muestra una sola sala.'
+        : 'Prendelo si esta semana no se abre la auxiliar (por ejemplo, un problema en el Salón).'}</small></span>
+    </label>`;
+  }
+
   // ── Canciones y Presidencia
   html += `<div class="seccion-bloque">
     <div class="seccion-hdr hdr-general">
@@ -1723,6 +1736,35 @@ function _validacionHtml(v) {
     + bloque(`○ Sin asignar (${v.vacios.length})`, v.vacios, 'var(--text-muted)')
     + `</div>`;
 }
+
+// Interruptor «Esta semana sin sala auxiliar». Al prenderlo se sacan las asignaciones de la auxiliar de esta
+// semana (pidiendo confirmación si había alguna): sin eso quedaban guardadas aunque no se mostraran.
+// La lectura de la auxiliar vive en lecturaBiblica.ayudante.
+window.toggleSinSalaAux = async function(on, input) {
+  if (!semanaData) return;
+  if (on) {
+    const lect = semanaData.tesoros?.lecturaBiblica;
+    const asignados = [
+      lect?.ayudante,
+      ...(semanaData.ministerio || []).flatMap(p => [p.salaAux?.pubId, p.salaAux?.ayudante]),
+    ].filter(Boolean);
+    if (asignados.length) {
+      const ok = await uiConfirm({
+        title: 'Semana sin sala auxiliar',
+        msg: `Se quitan ${asignados.length === 1 ? 'la asignación' : `las ${asignados.length} asignaciones`} de la sala auxiliar de esta semana.`,
+        confirmText: 'Quitar', type: 'warn',
+      });
+      if (!ok) { if (input) input.checked = false; return; }
+    }
+    semanaData.sinSalaAux = true;
+    if (lect) lect.ayudante = null;
+    (semanaData.ministerio || []).forEach(p => { delete p.salaAux; });
+  } else {
+    delete semanaData.sinSalaAux;   // los lugares de la auxiliar se vuelven a crear al asignar (setSlotPubId)
+  }
+  _marcarModificada();
+  renderSemanaEdit();
+};
 
 window.guardarSemana = async function() {
   if (!semanaData) return;
