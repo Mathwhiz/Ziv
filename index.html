@@ -2425,30 +2425,32 @@
             partesVm(s, pubId).forEach(p => items.push({ fecha: f, c: '#EF9F27', ic: '📖', t: p, s: 'Vida y Ministerio', href: 'vida-ministerio/index.html' }));
           });
         })),
-        // Salidas del grupo esta semana (la de HOY va aparte, como tarjeta grande: salidasHoy)
+        // Salidas de esta semana: las del grupo y las de Congregación (grupo C, son para todos).
+        // La de HOY va aparte, como tarjeta grande: salidasHoy
         tarea(fichaP.then(async ficha => {
-          if (!ficha?.grupoId) return;
-          const snap = await getDocs(query(col('salidas'), where('grupoId', '==', String(ficha.grupoId))));
+          const grupos = [...new Set([ficha?.grupoId ? String(ficha.grupoId) : null, 'C'].filter(Boolean))];
+          const snap = await getDocs(query(col('salidas'), where('grupoId', 'in', grupos)));
           const vistas = new Set();   // el mismo día y hora puede estar en dos registros: una sola vez
-          snap.forEach(d => (d.data().salidas || []).forEach(s => {
+          snap.forEach(d => { const g = String(d.data().grupoId); (d.data().salidas || []).forEach(s => {
             if (!s.fecha || s.fecha < hoyIso || s.fecha > en(6 - ((hoy.getDay() + 6) % 7))) return;
             const tel = s.tipo === 'tel';
             const sinValor = v => !v || v === '—';
             // terrs = todos los territorios de la salida (los registros viejos solo tienen terr)
             const terrs = tel ? [] : (Array.isArray(s.terrs) && s.terrs.length ? s.terrs.map(String) : (sinValor(s.terr) ? [] : [String(s.terr)]));
-            const clave = [s.fecha, s.hora, s.tipo, terrs.join(',')].join('|');
+            const clave = [g, s.fecha, s.hora, s.tipo, terrs.join(',')].join('|');
             if (vistas.has(clave)) return;
             vistas.add(clave);
             if (s.fecha === hoyIso) {
-              salidasHoy.push({ ...s, tel, grupoId: String(ficha.grupoId), terrs,
+              salidasHoy.push({ ...s, tel, grupoId: g, terrs,
                 terr: terrs[0] || '', enc: sinValor(s.enc) ? '' : s.enc, cond: sinValor(s.cond) ? '' : s.cond });
               return;
             }
             const lugar = tel ? 'Telefónica' : (terrs.length ? nombreTerrs(terrs) : 'Salida');
             const hora = s.hora ? s.hora.replace('.', ':') + ' · ' : '';
             const enc = !tel && s.enc && s.enc !== '—' ? ' · ' + s.enc : '';
-            items.push({ fecha: s.fecha, c: '#1D9E75', ic: '🗺️', t: hora + lugar, s: 'Salida del grupo' + enc, href: 'predicacion/index.html' });
-          }));
+            items.push({ fecha: s.fecha, c: '#1D9E75', ic: '🗺️', t: hora + lugar,
+              s: (g === 'C' ? 'Salida de la congregación' : 'Salida del grupo') + enc, href: 'predicacion/index.html' });
+          }); });
           if (salidasHoy.length) await prepararComoLlegar(cid, salidasHoy);
         })),
         // Discursos públicos que da afuera (próximo mes) — solo quien tiene el módulo

@@ -1,6 +1,6 @@
 // Subir este número en cada deploy importante: el service worker nuevo se instala solo y
 // las pestañas abiertas avisan (ver 'Actualización de la app' en shared/ui-utils.js).
-const CACHE = 'ziv-v25';
+const CACHE = 'ziv-v26';
 
 // Lo que se guarda en el celular al instalar: las páginas y el código de cada módulo, para que con mala
 // señal (o sin) el módulo abra igual con la última versión que se vio. El panel de admin no va: casi nadie
