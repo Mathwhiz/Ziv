@@ -2441,6 +2441,9 @@
             if (vistas.has(clave)) return;
             vistas.add(clave);
             if (s.fecha === hoyIso) {
+              // Pasadas 3 horas desde la hora de salida ya no se muestra (sin hora: todo el día)
+              const [hh, mm] = (String(s.hora || '').match(/^\s*(\d{1,2})(?:[.:](\d{2}))?/) || []).slice(1).map(Number);
+              if (Number.isFinite(hh) &&hoy.getHours() * 60 + hoy.getMinutes() > hh * 60 + (mm || 0) + 180) return;
               salidasHoy.push({ ...s, tel, grupoId: g, terrs,
                 terr: terrs[0] || '', enc: sinValor(s.enc) ? '' : s.enc, cond: sinValor(s.cond) ? '' : s.cond });
               return;
