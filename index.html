@@ -354,6 +354,14 @@
     }
     /* Resumen personal arriba de los módulos (solo cuenta aprobada y vinculada a su ficha) */
     .resumen-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+    .resumen-list:not(.abierta) .res-extra { display: none; }
+    .res-mas {
+      align-self: center; background: color-mix(in srgb, var(--accent, #7F77DD) 10%, transparent);
+      border: 1.5px solid var(--accent, #7F77DD); border-radius: 20px;
+      padding: 7px 18px; font: inherit; font-size: 13px; font-weight: 700; color: var(--accent, #7F77DD); cursor: pointer;
+    }
+    .res-mas:hover { background: color-mix(in srgb, var(--accent, #7F77DD) 20%, transparent); }
+    body.light-mode .res-mas { color: color-mix(in srgb, var(--accent, #7F77DD) 70%, #1d1e22); }
     .res-it {
       display: flex; gap: 12px; align-items: center; text-decoration: none; color: inherit;
       background: var(--bg-card, #232628); border: 1px solid var(--border-primary, #2e3033);
@@ -2482,12 +2490,22 @@
         const dia = f === hoyIso ? 'Hoy' : f === en(1) ? 'Mañana' : DIAS[d.getDay()];
         return `<span class="res-f"><span class="res-f-d">${dia}</span><span class="res-f-n">${d.getDate()}</span></span>`;
       };
-      lista.innerHTML = hoyHtml + (items.length ? '<div class="resumen-list">' + items.map(x => {
+      // Solo las primeras RES_MAX a la vista (un anciano puede tener muchas): el resto, con «Mostrar N más»
+      const RES_MAX = 3;
+      const ocultas = items.length > RES_MAX + 1 ? items.length - RES_MAX : 0;
+      lista.innerHTML = hoyHtml + (items.length ? '<div class="resumen-list">' + items.map((x, i) => {
         const pronto = x.fecha && x.fecha <= en(2);
-        return `<a class="res-it${pronto ? ' pronto' : ''}" href="${x.href}" style="--rc:${x.c}">
+        const extra = ocultas && i >= RES_MAX ? ' res-extra' : '';
+        return `<a class="res-it${pronto ? ' pronto' : ''}${extra}" href="${x.href}" style="--rc:${x.c}">
           ${bloqueFecha(x.fecha)}
           <span class="res-tx"><span class="res-t">${window.esc(x.t)}</span><span class="res-s"><span aria-hidden="true">${x.ic}</span> ${window.esc(x.s)}</span></span></a>`;
-      }).join('') + '</div>' : (hoyHtml ? '' : '<div class="res-vacio">Sin novedades en los próximos días</div>'));
+      }).join('') + (ocultas ? `<button type="button" class="res-mas" aria-expanded="false" data-n="${ocultas}">Mostrar ${ocultas} más</button>` : '')
+        + '</div>' : (hoyHtml ? '' : '<div class="res-vacio">Sin novedades en los próximos días</div>'));
+      lista.querySelector('.res-mas')?.addEventListener('click', e => {
+        const b = e.currentTarget, abierto = b.parentElement.classList.toggle('abierta');
+        b.setAttribute('aria-expanded', abierto);
+        b.textContent = abierto ? 'Mostrar menos' : `Mostrar ${b.dataset.n} más`;
+      });
       caja.style.display = '';
     }
 
