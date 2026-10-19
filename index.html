@@ -2425,14 +2425,14 @@
             partesVm(s, pubId).forEach(p => items.push({ fecha: f, c: '#EF9F27', ic: '📖', t: p, s: 'Vida y Ministerio', href: 'vida-ministerio/index.html' }));
           });
         })),
-        // Salidas de esta semana: las del grupo y las de Congregación (grupo C, son para todos).
+        // Salidas de los próximos 7 días: las del grupo y las de Congregación (grupo C, son para todos).
         // La de HOY va aparte, como tarjeta grande: salidasHoy
         tarea(fichaP.then(async ficha => {
           const grupos = [...new Set([ficha?.grupoId ? String(ficha.grupoId) : null, 'C'].filter(Boolean))];
           const snap = await getDocs(query(col('salidas'), where('grupoId', 'in', grupos)));
           const vistas = new Set();   // el mismo día y hora puede estar en dos registros: una sola vez
           snap.forEach(d => { const g = String(d.data().grupoId); (d.data().salidas || []).forEach(s => {
-            if (!s.fecha || s.fecha < hoyIso || s.fecha > en(6 - ((hoy.getDay() + 6) % 7))) return;
+            if (!s.fecha || s.fecha < hoyIso || s.fecha > en(7)) return;
             const tel = s.tipo === 'tel';
             const sinValor = v => !v || v === '—';
             // terrs = todos los territorios de la salida (los registros viejos solo tienen terr)
