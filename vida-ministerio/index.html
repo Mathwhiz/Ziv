@@ -301,18 +301,11 @@
       </div>
       <select id="lh-rol" class="rol-filter" onchange="filtrarListaHermanosVM()">
         <option value="">— Todos los roles —</option>
-        <option value="__sin_roles__">Sin asignación</option>
+        <option value="__sin_roles__">Sin partes de VM</option>
         <option value="__inactivos__">🚫 Inactivos</option>
-        <optgroup label="Asignaciones">
-          <option value="LECTOR">Lector</option>
-          <option value="SONIDO">Sonido</option>
-          <option value="PLATAFORMA">Plataforma</option>
-          <option value="MICROFONISTAS">Micrófonos</option>
-          <option value="ACOMODADOR_AUDITORIO">Acod. Auditorio</option>
-          <option value="ACOMODADOR_ENTRADA">Acod. Entrada</option>
-          <option value="PRESIDENTE">Pres. Reunión</option>
-          <option value="REVISTAS">Revistas</option>
-          <option value="PUBLICACIONES">Publicaciones</option>
+        <optgroup label="Privilegio">
+          <option value="ANCIANO">Anciano</option>
+          <option value="SIERVO_MINISTERIAL">Siervo ministerial</option>
         </optgroup>
         <optgroup label="Vida y Ministerio">
           <option value="VM_PRESIDENTE">Presidente VM</option>
@@ -326,6 +319,7 @@
           <option value="VM_MINISTERIO_DISCURSO">Min. Discurso</option>
           <option value="VM_VIDA_CRISTIANA">Vida Cristiana</option>
           <option value="VM_ESTUDIO_CONDUCTOR">Conductor Estudio</option>
+          <option value="VM_QUE_DIRIA">¿Qué diría? (s. min.)</option>
         </optgroup>
       </select>
       <div id="lh-list" style="margin-top:12px;">

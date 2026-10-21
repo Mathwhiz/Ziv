@@ -588,6 +588,19 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 
 /* ── Chip congregación (naranja, para roles de Responsabilidades) ── */
 .chip-congre { background: rgba(216,90,48,0.12); color: var(--k-tx-d85a30, #D85A30); border: 1px solid rgba(216,90,48,0.25); }
+.chip-inactivo { background: rgba(220,60,60,0.12); color: var(--k-tx-e07a7a, #e07a7a); border: 1px solid rgba(220,60,60,0.3); font-weight: 700; }
+
+/* ── Desactivar / reactivar hermano (igual que la ficha de VM) ── */
+.btn-desactivar {
+  width: 100%; margin-top: 10px;
+  background: transparent; border: 1px solid rgba(220,60,60,0.35);
+  color: var(--k-tx-e07a7a, #e07a7a); border-radius: 10px; padding: 10px;
+  font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-desactivar:hover { background: rgba(220,60,60,0.08); border-color: rgba(220,60,60,0.6); }
+.btn-desactivar.btn-reactivar { border-color: rgba(29,158,117,0.4); color: var(--k-tx-4cc79b, #4CC79B); }
+.btn-desactivar.btn-reactivar:hover { background: rgba(29,158,117,0.1); border-color: rgba(29,158,117,0.7); }
 
 /* ── Responsabilidades ── */
 .resp-section { margin-bottom: 20px; }

@@ -3543,6 +3543,8 @@ let _lhModalPrivilegiado = false; // true si el pub tiene ANCIANO o SIERVO_MINIS
 let _lhModalNoDisp       = []; // Mejora C — fechas (lunes ISO) en que el hermano no está disponible
 let _lhModalSala         = null; // override de sala fija en Ministerio: 'principal' | 'auxiliar' | null (ambas)
 
+const LH_PRIVILEGIO = { ANCIANO: 'Anciano', SIERVO_MINISTERIAL: 'Siervo ministerial' };
+
 function _lhRolLabel(id) {
   return LH_TODOS_ROLES.find(r => r.id === id)?.label || id;
 }
@@ -3634,13 +3636,14 @@ function _lhRenderLista(lista) {
     return;
   }
   el.innerHTML = lista.map(h => {
-    const asignChips = (h.roles || []).filter(r => !r.startsWith('VM_'))
-      .map(r => `<span class="vm-rol-chip" style="background:rgba(90,163,217,0.12);color:var(--k-tx-5ba3d9, #5BA3D9);border-color:rgba(90,163,217,0.3);">${esc(_lhRolLabel(r))}</span>`).join('');
+    // Solo lo que importa en VM: privilegio + roles VM (Asignaciones se ve en Administrador)
+    const asignChips = (h.roles || []).filter(r => LH_PRIVILEGIO[r])
+      .map(r => `<span class="vm-rol-chip" style="background:rgba(90,163,217,0.12);color:var(--k-tx-5ba3d9, #5BA3D9);border-color:rgba(90,163,217,0.3);">${esc(LH_PRIVILEGIO[r])}</span>`).join('');
     const vmChips = (h.roles || []).filter(r => r.startsWith('VM_'))
       .map(r => `<span class="vm-rol-chip">${esc(_lhRolLabel(r))}</span>`).join('');
     const inactivoChip = h.activo === false
       ? '<span class="vm-inactivo-chip">🚫 Inactivo</span>' : '';
-    const chips = (inactivoChip + asignChips + vmChips) || '<span style="font-size:11px;color:var(--text-muted);">Sin roles</span>';
+    const chips = (inactivoChip + asignChips + vmChips) || '<span style="font-size:11px;color:var(--text-muted);">Sin partes de VM</span>';
     const sexoChip = h.sexo === 'H'
       ? `<span class="chip-sexo chip-sexo-h" onclick="event.stopPropagation();toggleSexoVM('${h.id}','H')" title="Hombre — clic para cambiar">♂</span>`
       : h.sexo === 'M'
@@ -3669,7 +3672,7 @@ function _lhFiltrar() {
     const activo = h.activo !== false;
     if (verInactivos ? activo : !activo) return false;          // activos vs inactivos
     if (q && !norm(h.nombre).includes(q)) return false;          // búsqueda
-    if (rol === '__sin_roles__') return (h.roles || []).length === 0;
+    if (rol === '__sin_roles__') return !(h.roles || []).some(r => r.startsWith('VM_'));
     if (rol && !verInactivos) return (h.roles || []).includes(rol);
     return true;
   }));

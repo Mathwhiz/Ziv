@@ -416,7 +416,7 @@ async function cargarYMostrar() {
     const snap = await getDocs(pubCol());
     publicadores = snap.docs.map(d => ({ id: d.id, ...d.data(), roles: d.data().roles || [] }));
     publicadores.sort((a, b) => norm(a.nombre).localeCompare(norm(b.nombre)));
-    renderLista(publicadores);
+    filtrarLista();
   } catch(e) {
     document.getElementById('hermanos-list').innerHTML =
       `<div class="error-wrap">Error al cargar: ${e.message}</div>`;
@@ -619,6 +619,7 @@ function renderLista(lista) {
     const asignRoles  = (h.roles || []).filter(r => !r.startsWith('VM_') && !CONGRE_ROLE_IDS.has(r));
     const vmRoles     = (h.roles || []).filter(r => r.startsWith('VM_'));
     const chips = [
+      ...(h.activo === false ? ['<span class="chip chip-inactivo">🚫 Inactivo</span>'] : []),
       ...congreRoles.map(r => `<span class="chip chip-congre">${esc(rolLabel(r))}</span>`),
       ...asignRoles.map(r  => `<span class="chip chip-asign">${esc(rolLabel(r))}</span>`),
       ...vmRoles.map(r     => `<span class="chip chip-vm">${esc(rolLabel(r))}</span>`),
@@ -646,12 +647,15 @@ function renderLista(lista) {
 window.filtrarLista = function() {
   const q   = norm(document.getElementById('h-search')?.value || '');
   const rol = document.getElementById('h-rol')?.value || '';
-  renderLista(publicadores.filter(h =>
-    (!q   || norm(h.nombre).includes(q)) &&
-    (!rol || (rol === '__sin_roles__'
-      ? (h.roles || []).length === 0
-      : (h.roles || []).includes(rol)))
-  ));
+  const verInactivos = rol === '__inactivos__';
+  renderLista(publicadores.filter(h => {
+    const activo = h.activo !== false;
+    if (verInactivos ? activo : !activo) return false;          // activos vs inactivos (igual que en VM)
+    if (q && !norm(h.nombre).includes(q)) return false;
+    if (rol === '__sin_roles__') return (h.roles || []).length === 0;
+    if (rol && !verInactivos) return (h.roles || []).includes(rol);
+    return true;
+  }));
 };
 
 // ─────────────────────────────────────────
@@ -696,6 +700,8 @@ window.abrirNuevo = function() {
     if (cb) cb.checked = false;
   });
   renderSexoBtns();
+  const btnAct = document.getElementById('btn-activo');
+  if (btnAct) btnAct.style.display = 'none';
   const navRow = document.getElementById('modal-nav-row');
   if (navRow) navRow.style.display = 'none';
   document.getElementById('modal-hermano').style.display = 'flex';
@@ -716,7 +722,45 @@ window.abrirEditar = function(id) {
   });
   renderSexoBtns();
   _actualizarNavModal(id);
+  const btnAct = document.getElementById('btn-activo');
+  if (btnAct) {
+    const activo = h.activo !== false;
+    btnAct.style.display = '';
+    btnAct.textContent = activo ? 'Desactivar hermano' : '↩ Reactivar hermano';
+    btnAct.classList.toggle('btn-reactivar', !activo);
+  }
   document.getElementById('modal-hermano').style.display = 'flex';
+};
+
+// Desactivar / reactivar — mismo dato que la ficha de VM (activo + bajaEn): conserva el
+// historial y lo saca de las listas y de la auto-asignación.
+window.toggleActivoHermano = async function() {
+  if (!editandoId) return;
+  const h = publicadores.find(p => p.id === editandoId);
+  if (!h) return;
+  const activo = h.activo !== false;
+  const ok = await uiConfirm({
+    title: activo ? 'Desactivar hermano' : 'Reactivar hermano',
+    msg: activo
+      ? `${esc(h.nombre)} dejará de aparecer en la lista y en la auto-asignación. Su historial se conserva y podés reactivarlo cuando quieras (filtro "Inactivos").`
+      : `${esc(h.nombre)} volverá a aparecer en la lista y en la auto-asignación.`,
+    confirmText: activo ? 'Desactivar' : 'Reactivar',
+    cancelText: 'Cancelar',
+    type: activo ? 'warn' : 'info',
+  });
+  if (!ok) return;
+  const data = activo ? { activo: false, bajaEn: fmtDateLocal(new Date()) } : { activo: true, bajaEn: null };
+  try {
+    await updateDoc(doc(pubCol(), editandoId), data);
+    const idx = publicadores.findIndex(p => p.id === editandoId);
+    if (idx >= 0) publicadores[idx] = { ...publicadores[idx], ...data };
+    logActividad(CONGRE_ID, 'hermanos', 'guardado', (activo ? 'Hermano desactivado: ' : 'Hermano reactivado: ') + h.nombre);
+    cerrarModal();
+    filtrarLista();
+    uiToast(activo ? 'Hermano desactivado' : 'Hermano reactivado', 'success');
+  } catch(e) {
+    uiToast('Error: ' + e.message, 'error');
+  }
 };
 
 window.cerrarModal = function() {

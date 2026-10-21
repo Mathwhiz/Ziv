@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../shared/styles-base.css?v=1.5">
-  <link rel="stylesheet" href="/hermanos/styles.css?v=2.6">
+  <link rel="stylesheet" href="/hermanos/styles.css?v=2.7">
 </head>
 <body class="ziv-booting">
 <div class="ziv-boot loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
@@ -196,6 +196,7 @@
     <select id="h-rol" class="rol-filter" onchange="filtrarLista()">
       <option value="">— Todos los roles —</option>
       <option value="__sin_roles__">Sin asignación</option>
+      <option value="__inactivos__">🚫 Inactivos</option>
       <optgroup label="Asignaciones" id="opt-asign">
         <!-- se rellena dinámicamente desde buildConductorUI() -->
         <option value="LECTOR">Lector</option>
@@ -325,6 +326,7 @@
         <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
         <button class="btn-primary" onclick="guardarHermano()">Guardar</button>
       </div>
+      <button type="button" id="btn-activo" class="btn-desactivar" onclick="toggleActivoHermano()" style="display:none;">Desactivar hermano</button>
     </div>
   </div>
 
