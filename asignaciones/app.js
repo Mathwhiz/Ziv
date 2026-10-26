@@ -125,8 +125,10 @@ function privateModuleConfigRef() {
       }
       if (mergedConfig.scriptUrl) {
         SCRIPT_URL = mergedConfig.scriptUrl;
-        const btn = document.getElementById('btn-guardar-planilla');
-        if (btn) btn.style.display = '';
+        ['btn-guardar-planilla', 'btn-planilla-edicion', 'btn-exportar-planilla'].forEach(id => {
+          const btn = document.getElementById(id);
+          if (btn) btn.style.display = '';
+        });
       }
       if (mergedConfig.sheetsUrl) {
         SHEETS_URL = mergedConfig.sheetsUrl;
@@ -1017,27 +1019,128 @@ async function guardarAutomatico() {
   }
 }
 
-/* ─── Fetch helper (para Apps Script) ─── */
-async function apiFetch(params) {
-  const qs = Object.entries(params).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&');
-  // no-cors: evita errores de CORS; la respuesta es opaca pero la request llega al servidor
-  await fetch(`${SCRIPT_URL}?${qs}`, { mode: 'no-cors', keepalive: true });
-  return { ok: true };
+/* ─── Export a la planilla de Google (Apps Script: tools/asignaciones-sheets-script.gs) ───
+   Un solo POST con todas las reuniones + las listas de hermanos por puesto. El script deja la
+   pestaña «Base» con el formato de la planilla oficial (ventana de 26 reuniones). Si está
+   publicado para «Cualquier usuario» la respuesta se puede leer y se confirma lo escrito;
+   si no, se manda igual sin poder leerla (no-cors). Reenviar es seguro: actualiza por fecha. */
+const PLANILLA_VENTANA = 26;
+
+function filaParaPlanilla(row) {
+  const d = parseFecha(row.fecha);
+  const fila = {
+    fecha: row.fecha,
+    dia: row.dia || getNombreDia(row.fecha),
+    especial: d ? (semanasEspeciales[lunesISO(d)]?.tipo || null) : null,
+  };
+  ROLES.forEach(r => { fila[r] = row[r] || ''; });
+  return fila;
 }
 
-async function guardarEnPlanilla() {
-  const status = document.getElementById('auto-status');
-  if (!autoResult.length) { if(status){status.style.color='var(--k-tx-888888, #888)';status.textContent='Nada que guardar.';} return; }
-  if (!SCRIPT_URL) { if(status){status.style.color='var(--k-tx-f09595, #F09595)';status.textContent='No hay planilla configurada.';} return; }
-  const btn = document.getElementById('btn-guardar-planilla');
-  if (btn) btn.disabled = true;
-  // Enviar de a una entrada para no exceder el límite de URL de Apps Script
-  for (let i = 0; i < autoResult.length; i++) {
-    if (status){ status.style.color='var(--k-tx-888888, #888)'; status.textContent=`Enviando a planilla... (${i+1}/${autoResult.length})`; }
-    await apiFetch({ action: 'saveProgramacion', data: JSON.stringify([autoResult[i]]) });
+// { LECTOR: [...], SONIDO_1: [...], SONIDO_2: [...] , ... } — Sonido y Micrófonos usan la misma lista
+// en sus dos columnas, igual que la rotación. null si no se cargaron los hermanos (el script conserva las suyas).
+function listasParaPlanilla() {
+  if (!listaHermanos.length) return null;
+  const listas = {};
+  ROLES.forEach(r => {
+    const key = ROL_LISTA_MAP[r] || r;
+    listas[r] = listaHermanos
+      .filter(h => h.activo !== false && (h.roles || []).some(rol => (ROL_LISTA_MAP[rol] || rol) === key))
+      .map(h => h.nombre)
+      .sort((a, b) => a.localeCompare(b, 'es'));
+  });
+  return listas;
+}
+
+async function enviarAPlanilla(rows, { reemplazar = false } = {}) {
+  const body = JSON.stringify({
+    action: 'guardarAsignaciones',
+    reemplazar,
+    reuniones: rows.map(filaParaPlanilla),
+    listas: listasParaPlanilla(),
+  });
+  let r;
+  try {
+    r = await fetch(SCRIPT_URL, { method: 'POST', body });
+  } catch (e) {
+    // CORS (script no publicado para «Cualquier usuario») o red: mandar igual sin leer la respuesta
+    await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body });
+    return { ok: true, sinConfirmar: true };
   }
-  if (status){status.style.color='var(--k-tx-5dcaa5, #5DCAA5)';status.textContent=`✓ Planilla actualizada (${autoResult.length} reuniones)`;}
+  let res;
+  try { res = await r.json(); }
+  catch (e) { throw new Error('La planilla respondió algo inesperado. ¿Está pegada la versión nueva del script?'); }
+  if (!res.ok) throw new Error(res.error || 'La planilla respondió con un error');
+  return res;
+}
+
+function textoResultadoPlanilla(res) {
+  if (res.sinConfirmar) return 'Enviado a la planilla (sin confirmación: el script no está publicado para «Cualquier usuario»)';
+  return `✓ Planilla: ${res.reuniones} reuniones, del ${res.desde} al ${res.hasta}`;
+}
+
+async function exportarAPlanilla(rows, { statusId, btnId, reemplazar = false } = {}) {
+  const status = document.getElementById(statusId);
+  const pinta = (color, txt) => { if (status) { status.style.color = color; status.textContent = txt; } };
+  if (!rows.length) { pinta('var(--k-tx-888888, #888)', 'Nada que enviar.'); return; }
+  if (!SCRIPT_URL) { pinta('var(--k-tx-f09595, #F09595)', 'No hay planilla configurada.'); return; }
+  const btn = document.getElementById(btnId);
+  if (btn) btn.disabled = true;
+  pinta('var(--k-tx-888888, #888)', 'Enviando a la planilla...');
+  try {
+    const res = await enviarAPlanilla(rows, { reemplazar });
+    pinta(res.sinConfirmar ? 'var(--k-tx-888888, #888)' : 'var(--k-tx-5dcaa5, #5DCAA5)', textoResultadoPlanilla(res));
+    logActividad(CONGRE_ID, 'asignaciones', 'guardado', `Planilla: ${rows.length} reuniones`);
+  } catch (err) {
+    pinta('var(--k-tx-f09595, #F09595)', 'Error: ' + err.message);
+  }
   if (btn) btn.disabled = false;
+}
+
+function guardarEnPlanilla() {
+  return exportarAPlanilla(autoResult, { statusId: 'auto-status', btnId: 'btn-guardar-planilla' });
+}
+
+// Lo que se ve en Editar (semana actual), tal como está en pantalla
+function planillaEdicion() {
+  const data = [];
+  document.querySelectorAll('#editar-content .edit-card').forEach(card => {
+    if (card.dataset.cancelada) return;
+    const entry = { fecha: card.dataset.fecha, dia: card.dataset.dia };
+    card.querySelectorAll('select[data-rol]').forEach(sel => { entry[sel.dataset.rol] = sel.value; });
+    data.push(entry);
+  });
+  return exportarAPlanilla(data, { statusId: 'editar-status', btnId: 'btn-planilla-edicion' });
+}
+
+// Reescribe la ventana entera: 26 reuniones desde 4 semanas atrás (como la oficial, mitad hecho y mitad por venir)
+async function exportarProgramaPlanilla() {
+  if (!SCRIPT_URL) return;
+  if (!listaHermanos.length) { try { hermanos = await getHermanos(); } catch (e) {} }
+  const filas = (await getProgramacion()).filter(r => fechaToNum(r.fecha))
+    .sort((a, b) => fechaToNum(a.fecha) - fechaToNum(b.fecha));
+  const desde = new Date(); desde.setHours(0, 0, 0, 0);
+  desde.setDate(desde.getDate() - ((desde.getDay() + 6) % 7) - 28);
+  const desdeNum = desde.getFullYear() * 10000 + (desde.getMonth() + 1) * 100 + desde.getDate();
+  let ventana = filas.filter(r => fechaToNum(r.fecha) >= desdeNum).slice(0, PLANILLA_VENTANA);
+  if (!ventana.length) ventana = filas.slice(-PLANILLA_VENTANA);   // el programa terminó antes
+  if (!ventana.length) { uiToast('No hay programa para enviar', 'error'); return; }
+  const ok = await uiConfirm({
+    title: 'Exportar programa a la planilla',
+    msg: `Se reescribe la planilla con ${ventana.length} reuniones, del ${ventana[0].fecha} al ${ventana[ventana.length - 1].fecha}, y las listas de hermanos.`,
+    confirmText: 'Exportar', cancelText: 'Cancelar', type: 'purple',
+  });
+  if (!ok) return;
+  uiLoading.show('Enviando a la planilla...');
+  try {
+    const res = await enviarAPlanilla(ventana, { reemplazar: true });
+    uiLoading.hide();
+    uiToast(textoResultadoPlanilla(res), res.sinConfirmar ? undefined : 'success', 5000);
+    logActividad(CONGRE_ID, 'asignaciones', 'guardado', `Planilla, programa completo: ${ventana.length} reuniones`);
+  } catch (err) {
+    uiLoading.hide();
+    uiToast('Error: ' + err.message, 'error', 6000);
+  }
 }
 
 /* ─── Tabla imagen ─── */
@@ -1188,6 +1291,8 @@ window.setAutoDesde = setAutoDesde;
 window.abrirPlanilla = () => { if (SHEETS_URL) window.open(SHEETS_URL, '_blank'); };
 window.guardarAutomatico = guardarAutomatico;
 window.guardarEnPlanilla = guardarEnPlanilla;
+window.planillaEdicion = planillaEdicion;
+window.exportarProgramaPlanilla = exportarProgramaPlanilla;
 window.goToGenerarImagen = goToGenerarImagen;
 window.cambiarSemanaImagen = cambiarSemanaImagen;
 window.guardarImagen = guardarImagen;

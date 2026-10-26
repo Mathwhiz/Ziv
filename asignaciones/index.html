@@ -125,6 +125,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
         Ver planilla en Sheets
       </button>
+      <button id="btn-exportar-planilla" class="enc-footer-btn" onclick="exportarProgramaPlanilla()" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        Exportar programa a la planilla
+      </button>
       <button class="enc-footer-btn danger" onclick="cerrarSesionEncargado()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
         Cerrar sesión
@@ -146,6 +150,7 @@
       <button class="btn-secondary" onclick="goToEncargado()" style="flex:1;">← Volver</button>
       <button class="btn-guardar" id="btn-guardar-edicion" onclick="guardarEdicion()" style="flex:2;">Guardar cambios</button>
     </div>
+    <button id="btn-planilla-edicion" class="btn-secondary" style="width:100%;margin-top:8px;display:none;" onclick="planillaEdicion()">Guardar también en planilla</button>
     <div class="save-status" id="editar-status"></div>
   </div>
 
