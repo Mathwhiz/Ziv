@@ -57,8 +57,6 @@ export const PERMISOS = {
     'acceso_hermanos',
     'acceso_predicacion',
     'acceso_telefonica',
-    'acceso_edificios',
-    'administrar_edificios',
     'acceso_conferencias',
     'editar_conferencias',
     'editar_publicadores',
@@ -70,7 +68,6 @@ export const PERMISOS = {
     'acceso_hermanos',
     'acceso_predicacion',
     'acceso_telefonica',
-    'acceso_edificios',
   ],
 
   encargado_vm: [
@@ -78,16 +75,15 @@ export const PERMISOS = {
     'acceso_hermanos',
     'acceso_predicacion',
     'acceso_telefonica',
-    'acceso_edificios',
   ],
 
   encargado_grupo: [
     'acceso_territorios',
     'acceso_predicacion',
     'acceso_telefonica',
-    'acceso_edificios',
   ],
 
+  // Edificios solo lo ven admin_general, encargado_edificios, ancianos y siervos ministeriales (2026-10-26).
   // Edificios: asigna el responsable de cada edificio y lo da por terminado (igual que un encargado de grupo
   // con los territorios). Ancianos y siervos ministeriales también pueden.
   encargado_edificios: [
@@ -104,7 +100,6 @@ export const PERMISOS = {
     's89_vm',
     'acceso_predicacion',
     'acceso_telefonica',
-    'acceso_edificios',
   ],
 
   encargado_conferencias: [
@@ -112,7 +107,6 @@ export const PERMISOS = {
     'editar_conferencias',
     'acceso_predicacion',
     'acceso_telefonica',
-    'acceso_edificios',
   ],
 
   // acceso_conferencias: solo anciano/siervo_ministerial entre los roles de
@@ -143,7 +137,6 @@ export const PERMISOS = {
     'acceso_vm',
     'acceso_predicacion',
     'acceso_telefonica',
-    'acceso_edificios',
   ],
 
   precursor_auxiliar: [
@@ -151,7 +144,6 @@ export const PERMISOS = {
     'acceso_vm',
     'acceso_predicacion',
     'acceso_telefonica',
-    'acceso_edificios',
   ],
 
   publicador: [
@@ -159,7 +151,6 @@ export const PERMISOS = {
     'acceso_vm',
     'acceso_predicacion',
     'acceso_telefonica',
-    'acceso_edificios',
   ],
 
   pendiente: [

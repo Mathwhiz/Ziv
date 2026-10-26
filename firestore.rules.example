@@ -76,8 +76,9 @@ service cloud.firestore {
     function rolesAsig()  { return ['admin_congre', 'encargado_asignaciones', 'encargado_vm']; }
     function rolesVm()    { return ['admin_congre', 'encargado_vm']; }
     function rolesConf()  { return ['admin_congre', 'encargado_conferencias']; }
-    // Edificios: asignan responsables y agregan/borran edificios (como el encargado de grupo en Territorios)
-    function rolesEdif()  { return ['admin_congre', 'encargado_edificios', 'anciano', 'siervo_ministerial']; }
+    // Edificios: los únicos que lo ven y lo usan (desde 2026-10-26). Asignan responsables y agregan/borran
+    // edificios (como el encargado de grupo en Territorios). admin_general pasa siempre (hasCongreRole).
+    function rolesEdif()  { return ['encargado_edificios', 'anciano', 'siervo_ministerial']; }
     function rolesStaff() {
       return ['admin_congre', 'encargado_asignaciones', 'encargado_vm', 'encargado_grupo', 'encargado_conferencias'];
     }
@@ -258,29 +259,16 @@ service cloud.firestore {
       match /salidas/{id}          { allow read: if isMember(c); allow write: if hasCongreRole(c, rolesTerr()); }
       match /grupos/{id}           { allow read: if isMember(c); allow write: if hasCongreRole(c, ['admin_congre']); }
 
-      // Edificios (predicación por portero). Un miembro aprobado solo marca timbres. El responsable de
-      // ese edificio (asignado.pubId == su publicador vinculado) además arma el portero, empieza vuelta
-      // y mueve el pin. Todo lo demás (responsable, historial, crear, borrar) es de rolesEdif(), igual
-      // que un encargado de grupo con los territorios.
+      // Edificios (predicación por portero): solo rolesEdif() (encargado de edificios, ancianos, siervos
+      // ministeriales) y admin_general leen, marcan timbres, asignan responsables, crean y borran.
+      // Hasta 2026-10-26 cualquier miembro leía y marcaba timbres, y el responsable armaba el portero.
       match /edificios/{id} {
-        allow read: if isMember(c);
-        allow create, delete: if hasCongreRole(c, rolesEdif());
-        allow update: if hasCongreRole(c, rolesEdif()) || (
-          isMember(c) && (
-            onlyKeys(['timbres', 'actualizadoEn', 'actualizadoPor']) ||
-            (
-              resource.data.get('asignado', null) != null &&
-              resource.data.asignado.get('pubId', null) != null &&
-              resource.data.asignado.pubId == me().get('matchedPublisherId', null) &&
-              onlyKeys(['timbres', 'forma', 'vuelta', 'punto', 'precision', 'actualizadoEn', 'actualizadoPor'])
-            )
-          )
-        );
+        allow read, create, update, delete: if hasCongreRole(c, rolesEdif());
 
         // Registro de cada timbre marcado (quién y cuándo). Solo se agrega: nadie lo edita.
         match /visitas/{v} {
-          allow read: if isMember(c);
-          allow create: if isMember(c) && request.resource.data.uid == request.auth.uid;
+          allow read: if hasCongreRole(c, rolesEdif());
+          allow create: if hasCongreRole(c, rolesEdif()) && request.resource.data.uid == request.auth.uid;
           allow update: if false;
           allow delete: if hasCongreRole(c, rolesEdif());
         }

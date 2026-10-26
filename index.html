@@ -2472,10 +2472,10 @@
             items.push({ fecha: c.fecha, c: '#0DB6CC', ic: '🗣️', t: 'Discurso' + (c.discursoNumero ? ' N.º ' + c.discursoNumero : '') + (c.congregacionNombre ? ' en ' + c.congregacionNombre : ''), s: c.discursoTitulo || 'Conferencia', href: 'conferencias/index.html' });
           });
         })) : null,
-        // Edificios a su cargo
-        tarea(getDocs(query(col('edificios'), where('asignado.pubId', '==', pubId))).then(snap => {
+        // Edificios a su cargo (solo quien ve Edificios: las reglas no se lo dejan leer a nadie más)
+        window.hasPermission?.('acceso_edificios') ? tarea(getDocs(query(col('edificios'), where('asignado.pubId', '==', pubId))).then(snap => {
           snap.forEach(d => items.push({ fecha: null, c: '#A3B84C', ic: '🏢', t: d.data().direccion || 'Edificio', s: 'Edificio a tu cargo', href: 'edificios/index.html' }));
-        })),
+        })) : null,
       ].filter(Boolean));
 
       items.sort((a, b) => (a.fecha || '9999').localeCompare(b.fecha || '9999'));
