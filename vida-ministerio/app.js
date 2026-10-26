@@ -3229,67 +3229,59 @@ window.cerrarS89 = function() {
   document.getElementById('s89-overlay').style.display = 'none';
 };
 
-window.s89Whatsapp = function(idx) {
-  const s = window._s89Slips?.[idx];
-  if (!s) return;
-  const sala = s.sala === 'auxiliar' ? 'Sala auxiliar núm. 1' : 'Sala principal';
-  const ayLine = s.ayudante ? `\n👤 Ayudante: ${s.ayudante}` : '';
-  const mensaje = s89Mensaje();
-  const texto = mensaje ? [
-    mensaje,
-    ``,
-    `*${s.nombre}* · Vida y Ministerio Cristianos del *${s.fecha}*`,
-    `📌 Intervención núm. ${s.intervencion}${ayLine}`,
-    `📍 Se presentará en: *${sala}*`,
-  ].join('\n') : [
-    `Hola *${s.nombre}*! 👋`,
-    ``,
-    `Tenés asignación en la reunión *Vida y Ministerio Cristianos* del *${s.fecha}*:`,
-    ``,
-    `📌 Intervención núm. ${s.intervencion}${ayLine}`,
-    `📍 Se presentará en: *${sala}*`,
-    ``,
+// Texto que acompaña a la imagen en WhatsApp: el mensaje del ayudante, o un saludo corto (los datos ya van en la imagen)
+function s89TextoWhatsapp(s) {
+  return s89Mensaje() || [
+    `Hola *${s.nombre}*! 👋 Te paso tu asignación para la reunión *Vida y Ministerio Cristianos* del *${s.fecha}*.`,
     `Repasá tu *Guía de actividades* para prepararte. 📖`,
   ].join('\n');
-  window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
-};
+}
 
-window.s89Compartir = async function(idx) {
+// Imagen del papelito (html2canvas sobre la vista previa) como archivo JPG
+async function s89ImagenArchivo(idx) {
   const el = document.getElementById(`s89-slip-${idx}`);
-  if (!el || typeof html2canvas === 'undefined') {
-    uiToast('html2canvas no disponible', 'error');
-    return;
-  }
+  if (!el || typeof html2canvas === 'undefined') throw new Error('html2canvas no disponible');
+  const canvas = await html2canvas(el, { scale: 3, backgroundColor: '#ffffff', useCORS: true, logging: false });
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.96));
+  const nombre = window._s89Slips?.[idx]?.nombre?.split(' ')[0] || 'S89';
+  return new File([blob], `s89-${nombre}.jpg`, { type: 'image/jpeg' });
+}
+
+function s89Bajar(file) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(file);
+  a.download = file.name;
+  a.click();
+}
+
+// Comparte la imagen del papelito. Con `conTexto` (botón WhatsApp) va el mensaje como texto al pie.
+// Sin poder compartir archivos (casi todas las PC): baja la imagen y, con texto, abre WhatsApp con el mensaje.
+async function s89CompartirImagen(idx, conTexto) {
+  const s = window._s89Slips?.[idx];
+  if (!s) return;
   uiLoading.show('Generando imagen…');
+  let file;
   try {
-    const canvas = await html2canvas(el, {
-      scale: 3,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-      logging: false,
-    });
-    canvas.toBlob(async blob => {
-      uiLoading.hide();
-      const s = window._s89Slips?.[idx];
-      const nombre = s?.nombre?.split(' ')[0] || 'S89';
-      const file = new File([blob], `s89-${nombre}.jpg`, { type: 'image/jpeg' });
-      if (navigator.canShare?.({ files: [file] })) {
-        const text = s89Mensaje() || undefined;
-        try { await navigator.share({ files: [file], title: `S-89 – ${s?.nombre}`, text }); return; }
-        catch { /* cancelado por el usuario */ return; }
-      }
-      // Fallback: descargar
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = file.name;
-      a.click();
-    }, 'image/jpeg', 0.96);
-  } catch(err) {
+    file = await s89ImagenArchivo(idx);
+  } catch (err) {
     uiLoading.hide();
     uiToast('Error al generar imagen', 'error');
     console.error(err);
+    return;
   }
-};
+  uiLoading.hide();
+  const text = conTexto ? s89TextoWhatsapp(s) : undefined;
+  if (navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: `S-89 – ${s.nombre}`, text }); }
+    catch { /* cancelado por el usuario */ }
+    return;
+  }
+  s89Bajar(file);
+  if (text) window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+window.s89Whatsapp  = idx => s89CompartirImagen(idx, true);
+window.s89Compartir = idx => s89CompartirImagen(idx, false);
 
 function s89GenerarHtml(slips, { autoPrint = false } = {}) {
   const e = t => (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
