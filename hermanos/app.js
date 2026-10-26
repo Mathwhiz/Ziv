@@ -67,10 +67,13 @@ const LABELS_CONGRE = {
   PRECURSOR_AUXILIAR:       'Precursor auxiliar',
 };
 const CONGRE_ROLE_IDS = new Set(Object.keys(LABELS_CONGRE));
+// Encargado de grupo: rol propio (ENCARGADO_GRUPO_N), aparte de los conductores (CONDUCTOR_GRUPO_N)
+const esRolCongre = r => CONGRE_ROLE_IDS.has(r) || r.startsWith('ENCARGADO_GRUPO_');
 
 function rolLabel(id) {
   return TODOS_LOS_ROLES.find(r => r.id === id)?.label
     || LABELS_CONGRE[id]
+    || (id.startsWith('ENCARGADO_GRUPO_') ? `Enc. Grupo ${id.slice(16)}` : '')
     || id;
 }
 
@@ -279,7 +282,7 @@ function renderResponsabilidades() {
     : [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }];
   const encargados = [
     ...RESP_ENCARGADOS_FIJOS,
-    ...grupos.map(g => ({ id: `CONDUCTOR_GRUPO_${g.id}`, label: `Encargado Grupo ${g.id}` })),
+    ...grupos.map(g => ({ id: `ENCARGADO_GRUPO_${g.id}`, label: `Encargado Grupo ${g.id}` })),
   ];
 
   const encEl = document.getElementById('resp-encargados-list');
@@ -346,9 +349,11 @@ window.cambiarEncargado = async function(rolId, rolLabelText) {
         p.roles = newRoles;
       }
     }
-    // Asignar al nuevo
-    if (newPub && !(newPub.roles||[]).includes(rolId)) {
-      const newRoles = [...(newPub.roles||[]), rolId];
+    // Asignar al nuevo. El encargado de grupo también conduce: se le suma CONDUCTOR_GRUPO_N
+    // (sin tocar a los demás conductores del grupo).
+    const extra = rolId.startsWith('ENCARGADO_GRUPO_') ? [rolId.replace('ENCARGADO_', 'CONDUCTOR_')] : [];
+    if (newPub && [rolId, ...extra].some(r => !(newPub.roles||[]).includes(r))) {
+      const newRoles = [...new Set([...(newPub.roles||[]), rolId, ...extra])];
       await updateDoc(doc(pubCol(), newPub.id), { roles: newRoles });
       newPub.roles = newRoles;
     }
@@ -615,8 +620,8 @@ function renderLista(lista) {
     return;
   }
   el.innerHTML = lista.map(h => {
-    const congreRoles = (h.roles || []).filter(r => CONGRE_ROLE_IDS.has(r));
-    const asignRoles  = (h.roles || []).filter(r => !r.startsWith('VM_') && !CONGRE_ROLE_IDS.has(r));
+    const congreRoles = (h.roles || []).filter(esRolCongre);
+    const asignRoles  = (h.roles || []).filter(r => !r.startsWith('VM_') && !esRolCongre(r));
     const vmRoles     = (h.roles || []).filter(r => r.startsWith('VM_'));
     const chips = [
       ...(h.activo === false ? ['<span class="chip chip-inactivo">🚫 Inactivo</span>'] : []),
