@@ -2,7 +2,7 @@ import { db } from '../shared/firebase.js';
 import '../shared/auth.js';
 import { logActividad } from '../shared/actividad.js';
 import {
-  collection, doc, getDoc, getDocs, setDoc, deleteDoc, addDoc, updateDoc, query, orderBy, writeBatch
+  collection, doc, getDoc, getDocs, setDoc, deleteDoc, addDoc, updateDoc, query, orderBy, where, writeBatch
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 await window.authGuard('acceso_vm');
@@ -541,7 +541,7 @@ function showView(id) {
 window.goToCover = function() {
   // Sin rol de encargado la portada no sirve (solo tiene «Ver programa», donde ya está): la casita
   // vuelve directo al menú de módulos en vez de dejarlo en una pantalla intermedia.
-  if (!puedeVerComoEncargado()) { window.location.href = '../index.html#menu'; return; }
+  if (!puedeVerComoEncargado() && !puedeS89()) { window.location.href = '../index.html#menu'; return; }
   showView('view-cover');
 };
 
@@ -550,6 +550,12 @@ function puedeVerComoEncargado() {
   if (!u) return false;
   const roles = u.appRoles || (u.appRol ? [u.appRol] : []);
   return roles.some(r => ['admin_general', 'admin_congre', 'encargado_vm'].includes(r));
+}
+
+// Ayudante de VM (rol ayudante_vm): solo los papelitos S-89. No es encargado, así que todo lo lee
+// de los espejos públicos (usaEspejoPublico) y no ve el botón Encargado.
+function puedeS89() {
+  return !puedeVerComoEncargado() && window.hasPermission?.('s89_vm') === true;
 }
 
 window.goToPin = function() {
@@ -3416,14 +3422,82 @@ window.generarS89Semana = function() {
   s89MostrarOverlay(slips, titulo);
 };
 
-window.generarS89 = function(mesISO) {
-  const semanas = semanasLista
+window.generarS89 = function(mesISO, fuente = semanasLista) {
+  const semanas = fuente
     .filter(s => s.fecha?.startsWith(mesISO))
     .sort((a, b) => a.fecha.localeCompare(b.fecha));
   if (!semanas.length) { uiToast('No hay semanas cargadas para ese mes', 'error'); return; }
   const slips = semanas.flatMap(s89SlipsDeSemana);
   const [anio, mes] = mesISO.split('-');
   s89MostrarOverlay(slips, `S-89 — ${MESES_ES[Number(mes)-1]} ${anio}`);
+};
+
+// ── Pantalla «Papelitos S-89» del ayudante de VM ──
+// Las semanas salen de vm_programa (misma forma que vidaministerio: trae ayudantes, sala auxiliar y
+// sinSalaAux) y los nombres de vm_publicadores: el ayudante no lee publicadores ni vidaministerio.
+let _s89Semanas = [];
+
+window.goToS89 = async function() {
+  if (!vmInitReady || !puedeS89()) return;
+  const cont = document.getElementById('s89-meses');
+  cont.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>';
+  showView('view-s89');
+  try {
+    // Desde el mes pasado: los papelitos se mandan para lo que viene
+    const d = new Date();
+    const desde = fmtDate(new Date(d.getFullYear(), d.getMonth() - 1, 1));
+    const [snap] = await Promise.all([
+      getDocs(query(vmProgramaCol(), where('fecha', '>=', desde))),
+      ensureVmLookupsLoaded(),
+    ]);
+    _s89Semanas = snap.docs.map(x => x.data())
+      .filter(s => /^\d{4}-\d{2}-\d{2}$/.test(s?.fecha || ''))
+      .sort((a, b) => a.fecha.localeCompare(b.fecha));
+    renderS89Meses();
+  } catch (e) {
+    cont.innerHTML = `<div class="error-wrap">Error al cargar: ${esc(e.message)}</div>`;
+  }
+};
+
+function renderS89Meses() {
+  const cont = document.getElementById('s89-meses');
+  if (!_s89Semanas.length) {
+    cont.innerHTML = '<div class="empty-state">Todavía no hay programa cargado para los próximos meses.</div>';
+    return;
+  }
+  const porMes = {};
+  _s89Semanas.forEach(s => (porMes[s.fecha.slice(0, 7)] ||= []).push(s));
+  const hoy = lunesDeHoy();
+  cont.innerHTML = Object.entries(porMes).map(([mes, semanas]) => {
+    const [anio, m] = mes.split('-');
+    const total = semanas.reduce((n, s) => n + s89SlipsDeSemana(s).length, 0);
+    const filas = semanas.map(s => {
+      const n = s89SlipsDeSemana(s).length;
+      const actual = s.fecha === hoy ? ' actual' : '';
+      return `<button class="s89-sem${actual}" ${n ? '' : 'disabled'} onclick="s89AyudanteSemana('${s.fecha}')">
+        <span class="s89-sem-fecha">Semana del ${fmtDisplay(s.fecha).slice(0, 5)}${actual ? ' · esta semana' : ''}</span>
+        <span class="s89-sem-n">${n ? `${n} papelito${n === 1 ? '' : 's'}` : 'Sin papelitos'}</span>
+      </button>`;
+    }).join('');
+    return `<section class="s89-mes">
+      <div class="semanas-mes-hdr-row">
+        <span class="semanas-mes-hdr-txt">${MESES_ES[Number(m) - 1]} ${anio}</span>
+        <button class="vm-mes-action-btn vm-mes-s89-btn" ${total ? '' : 'disabled'} onclick="s89AyudanteMes('${mes}')">Todo el mes · ${total}</button>
+      </div>
+      <div class="s89-sems">${filas}</div>
+    </section>`;
+  }).join('');
+}
+
+window.s89AyudanteMes = function(mes) {
+  window.generarS89(mes, _s89Semanas);
+};
+
+window.s89AyudanteSemana = function(fecha) {
+  const s = _s89Semanas.find(x => x.fecha === fecha);
+  if (!s) return;
+  const d = new Date(fecha + 'T12:00:00');
+  s89MostrarOverlay(s89SlipsDeSemana(s), `S-89 — ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`);
 };
 
 window.exportarSemanaActualASheets = function() {
@@ -3466,8 +3540,9 @@ window.exportarSemanaActualASheets = function() {
   // y saltar después) y se completa cuando llegan los datos. Esa carga va EN PARALELO
   // con el fetch de config de abajo (no depende de ella).
   const esEncargadoVM = puedeVerComoEncargado();
+  const conPortada = esEncargadoVM || puedeS89();
   let verProgramaPrefetch = null;
-  if (!esEncargadoVM) {
+  if (!conPortada) {
     verProgramaPrefetch = ensureVmLookupsLoaded();
     pubFecha = lunesDeHoy();
     mostrarProgramaPublicoCargando();
@@ -3491,7 +3566,9 @@ window.exportarSemanaActualASheets = function() {
     vmInitReady = true;
     const btnEnc = document.getElementById('btn-encargado-vm');
     if (btnEnc) btnEnc.style.display = esEncargadoVM ? '' : 'none';
-    if (esEncargadoVM) {
+    const btnS89 = document.getElementById('btn-s89-vm');
+    if (btnS89) btnS89.style.display = puedeS89() ? '' : 'none';
+    if (conPortada) {
       // Recién ahora: antes, "Encargado" no respondía (goToPin espera vmInitReady)
       showView('view-cover');
       window.zivBootListo();
@@ -3502,7 +3579,7 @@ window.exportarSemanaActualASheets = function() {
     }
   } catch(e) {
     console.error('Error al inicializar:', e);
-    if (esEncargadoVM) showView('view-cover');
+    if (conPortada) showView('view-cover');
     else document.getElementById('pub-contenido').innerHTML =
       `<div class="error-wrap">Error al cargar: ${esc(e.message)}</div>`;
     window.zivBootListo();

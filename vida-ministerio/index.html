@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../shared/styles-base.css?v=1.5">
-  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=3.9">
+  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=4.0">
 </head>
 <body class="ziv-booting">
 <div class="ziv-boot loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
@@ -72,6 +72,19 @@
         </div>
       </button>
 
+      <button id="btn-s89-vm" class="cs-module-card" style="display:none;--card-hover-border:rgba(91,141,222,0.55);--card-hover-bg:#141b27;--card-hover-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 1px rgba(91,141,222,0.55),0 4px 20px rgba(91,141,222,0.12);" onclick="goToS89()">
+        <div class="cs-module-card-icon" style="background:rgba(91,141,222,0.15);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#5B8DDE" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M14 2v6h6M8 13h8M8 17h5" stroke="#5B8DDE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-module-card-title">Papelitos S-89</div>
+          <div class="cs-module-card-sub">Descargar, imprimir o mandar por WhatsApp</div>
+        </div>
+      </button>
+
       <a href="../index.html#menu" class="cs-back-btn">← Volver al módulo</a>
     </div>
   </div>
@@ -93,6 +106,24 @@
         </button>
       </div>
       <div id="pub-contenido">
+        <div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
+      </div>
+      <div style="height:14px;"></div>
+      <button class="cs-back-btn" style="background:transparent;cursor:pointer;font-family:inherit;display:block;margin:0 auto;" onclick="goToCover()">← Volver</button>
+      <div style="height:2rem;"></div>
+    </div>
+  </div>
+
+  <!-- ── PAPELITOS S-89 (ayudante_vm: solo lectura, desde los espejos vm_*) ── -->
+  <div id="view-s89" class="view">
+    <div style="padding-top:4px;">
+      <div class="view-header">
+        <div style="flex:1">
+          <div class="view-title">Papelitos S-89</div>
+          <div class="view-sub">Elegí un mes o una semana</div>
+        </div>
+      </div>
+      <div id="s89-meses">
         <div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
       </div>
       <div style="height:14px;"></div>

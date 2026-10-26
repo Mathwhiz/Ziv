@@ -15,6 +15,7 @@ export const APP_ROLES = {
   ENCARGADO_GRUPO:          'encargado_grupo',
   ENCARGADO_CONFERENCIAS:   'encargado_conferencias',
   ENCARGADO_EDIFICIOS:      'encargado_edificios',  // asigna responsables de edificios (como encargado de grupo)
+  AYUDANTE_VM:              'ayudante_vm',          // solo los papelitos S-89 de VM (sin editar el programa)
   ANCIANO:                  'anciano',
   SIERVO_MINISTERIAL:       'siervo_ministerial',
   PRECURSOR_REGULAR:        'precursor_regular',
@@ -94,6 +95,16 @@ export const PERMISOS = {
     'administrar_edificios',
     'acceso_predicacion',
     'acceso_telefonica',
+  ],
+
+  // Ayuda al encargado de VM mandando los papelitos S-89. En VM ve «Papelitos S-89» (armados con los
+  // espejos públicos vm_*), sin el botón Encargado: no edita nada. El resto, como cualquier publicador.
+  ayudante_vm: [
+    'acceso_vm',
+    's89_vm',
+    'acceso_predicacion',
+    'acceso_telefonica',
+    'acceso_edificios',
   ],
 
   encargado_conferencias: [

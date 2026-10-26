@@ -999,3 +999,23 @@ body { font-family: system-ui, sans-serif; background: var(--bg-primary); color:
 .vm-sinaux-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .vm-sinaux-tx b { font-size: 14px; color: var(--text-primary, #e8e8e8); }
 .vm-sinaux-tx small { font-size: 12.5px; color: var(--text-secondary, #aaa); line-height: 1.4; }
+
+/* ── Papelitos S-89 del ayudante de VM (#view-s89) ── */
+.s89-mes .vm-mes-s89-btn { font-size: 12.5px; padding: 6px 11px; }
+.vm-mes-action-btn:disabled { opacity: .45; cursor: default; }
+.s89-sems { display: flex; flex-direction: column; gap: 8px; }
+.s89-sem {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; text-align: left; font-family: inherit; cursor: pointer;
+  background: var(--bg-card, #232628); border: 1px solid var(--border-primary, #2e3033);
+  border-radius: 12px; padding: 13px 14px; color: var(--text-primary, #e8e8e8);
+  transition: border-color .15s, background .15s;
+}
+.s89-sem:hover:not(:disabled) { border-color: rgba(91,141,222,0.55); }
+.s89-sem.actual { border-color: rgba(91,141,222,0.55); background: color-mix(in srgb, #5B8DDE 9%, var(--bg-card, #232628)); }
+.s89-sem:disabled { opacity: .5; cursor: default; }
+.s89-sem-fecha { font-size: 14.5px; font-weight: 600; }
+.s89-sem-n { font-size: 12.5px; color: var(--text-secondary, #aaa); white-space: nowrap; }
+@media (min-width: 1000px) {
+  #s89-meses { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; align-items: start; }
+}

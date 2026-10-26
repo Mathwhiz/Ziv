@@ -1517,6 +1517,7 @@ const ROL_LABELS = {
   encargado_grupo:          'Encargado de grupo',
   encargado_asignaciones:   'Encargado de asignaciones',
   encargado_vm:             'Encargado de VM',
+  ayudante_vm:              'Ayudante de VM (S-89)',
   encargado_conferencias:   'Encargado de conferencias',
   encargado_edificios:      'Encargado de edificios',
   admin_congre:             'Admin congregación',
@@ -1526,7 +1527,7 @@ const ROL_LABELS = {
 const ROLES_ASIGNABLES = [
   'publicador', 'precursor_auxiliar', 'precursor_regular',
   'siervo_ministerial', 'anciano', 'encargado_grupo',
-  'encargado_asignaciones', 'encargado_vm', 'encargado_conferencias', 'encargado_edificios',
+  'encargado_asignaciones', 'encargado_vm', 'ayudante_vm', 'encargado_conferencias', 'encargado_edificios',
   'admin_congre', 'pendiente',
 ];
 
