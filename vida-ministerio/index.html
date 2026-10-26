@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../shared/styles-base.css?v=1.5">
-  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=4.0">
+  <link rel="stylesheet" href="/vida-ministerio/styles.css?v=4.1">
 </head>
 <body class="ziv-booting">
 <div class="ziv-boot loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
@@ -121,6 +121,14 @@
         <div style="flex:1">
           <div class="view-title">Papelitos S-89</div>
           <div class="view-sub">Elegí un mes o una semana</div>
+        </div>
+      </div>
+      <div class="s89-msg-card">
+        <label for="s89-msg" class="s89-msg-tit">Mensaje que va con cada papelito</label>
+        <textarea id="s89-msg" rows="4" oninput="s89GuardarMensaje(this.value)"></textarea>
+        <div class="s89-msg-pie">
+          <span>Va arriba de los datos de la asignación. Se guarda en este celular.</span>
+          <button type="button" onclick="s89RestablecerMensaje()">Restablecer</button>
         </div>
       </div>
       <div id="s89-meses">

@@ -3234,7 +3234,14 @@ window.s89Whatsapp = function(idx) {
   if (!s) return;
   const sala = s.sala === 'auxiliar' ? 'Sala auxiliar núm. 1' : 'Sala principal';
   const ayLine = s.ayudante ? `\n👤 Ayudante: ${s.ayudante}` : '';
-  const texto = [
+  const mensaje = s89Mensaje();
+  const texto = mensaje ? [
+    mensaje,
+    ``,
+    `*${s.nombre}* · Vida y Ministerio Cristianos del *${s.fecha}*`,
+    `📌 Intervención núm. ${s.intervencion}${ayLine}`,
+    `📍 Se presentará en: *${sala}*`,
+  ].join('\n') : [
     `Hola *${s.nombre}*! 👋`,
     ``,
     `Tenés asignación en la reunión *Vida y Ministerio Cristianos* del *${s.fecha}*:`,
@@ -3267,7 +3274,8 @@ window.s89Compartir = async function(idx) {
       const nombre = s?.nombre?.split(' ')[0] || 'S89';
       const file = new File([blob], `s89-${nombre}.jpg`, { type: 'image/jpeg' });
       if (navigator.canShare?.({ files: [file] })) {
-        try { await navigator.share({ files: [file], title: `S-89 – ${s?.nombre}` }); return; }
+        const text = s89Mensaje() || undefined;
+        try { await navigator.share({ files: [file], title: `S-89 – ${s?.nombre}`, text }); return; }
         catch { /* cancelado por el usuario */ return; }
       }
       // Fallback: descargar
@@ -3432,6 +3440,30 @@ window.generarS89 = function(mesISO, fuente = semanasLista) {
   s89MostrarOverlay(slips, `S-89 — ${MESES_ES[Number(mes)-1]} ${anio}`);
 };
 
+// Mensaje que el ayudante manda con cada papelito (WhatsApp e imagen). Lo edita en su pantalla y queda
+// guardado en el dispositivo; el encargado sigue con el mensaje de siempre.
+const S89_MSG_DEFAULT = 'Hola, ¡buenas tardes! ¿Cómo andás? Te paso esta asignación para la reunión. '
+  + 'Cualquier duda o consulta pueden comunicarse con Enzo Acosta o conmigo. ¡Muchas gracias y bendiciones!';
+const s89MsgKey = () => `ziv_s89_mensaje_${congreId}`;
+
+function s89Mensaje() {
+  if (!puedeS89()) return '';
+  try {
+    const v = localStorage.getItem(s89MsgKey());
+    if (v !== null) return v.trim();
+  } catch {}
+  return S89_MSG_DEFAULT;
+}
+
+window.s89GuardarMensaje = function(v) {
+  try { localStorage.setItem(s89MsgKey(), v); } catch {}
+};
+
+window.s89RestablecerMensaje = function() {
+  try { localStorage.removeItem(s89MsgKey()); } catch {}
+  document.getElementById('s89-msg').value = S89_MSG_DEFAULT;
+};
+
 // ── Pantalla «Papelitos S-89» del ayudante de VM ──
 // Las semanas salen de vm_programa (misma forma que vidaministerio: trae ayudantes, sala auxiliar y
 // sinSalaAux) y los nombres de vm_publicadores: el ayudante no lee publicadores ni vidaministerio.
@@ -3441,6 +3473,7 @@ window.goToS89 = async function() {
   if (!vmInitReady || !puedeS89()) return;
   const cont = document.getElementById('s89-meses');
   cont.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>';
+  document.getElementById('s89-msg').value = s89Mensaje();
   showView('view-s89');
   try {
     // Desde el mes pasado: los papelitos se mandan para lo que viene
