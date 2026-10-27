@@ -1963,7 +1963,8 @@ function parseWOL(html) {
     tesoros: {
       discurso:       { titulo: tesorosParts[0]?.titulo || '',                  duracion: tesorosParts[0]?.duracion || 10, pubId: null },
       joyas:          { titulo: tesorosParts[1]?.titulo || 'Perlas escondidas', duracion: tesorosParts[1]?.duracion || 10, pubId: null },
-      lecturaBiblica: { titulo: tesorosParts[2]?.titulo || '',                  duracion: tesorosParts[2]?.duracion || 4,  pubId: null, ayudante: null },
+      lecturaBiblica: { titulo: tesorosParts[2]?.titulo || '',                  duracion: tesorosParts[2]?.duracion || 4,  pubId: null, ayudante: null,
+                        instruccion: tesorosParts[2]?.instruccion ?? null },  // «Pr 3:1-10 (th lección 10)»: de acá sale la lección del S-89
     },
     ministerio,
     vidaCristiana,
@@ -2011,6 +2012,9 @@ function aplicarWOLaSemana(importado) {
   merge(semanaData.tesoros.discurso,       importado.tesoros.discurso);
   merge(semanaData.tesoros.joyas,          importado.tesoros.joyas);
   merge(semanaData.tesoros.lecturaBiblica, importado.tesoros.lecturaBiblica);
+  if (semanaData.tesoros.lecturaBiblica && importado.tesoros.lecturaBiblica?.instruccion) {
+    semanaData.tesoros.lecturaBiblica.instruccion = importado.tesoros.lecturaBiblica.instruccion;
+  }
 
   // Ministerio: reemplaza la lista completa de títulos/duraciones, conserva pubIds
   const minOld = semanaData.ministerio || [];
@@ -3127,22 +3131,35 @@ function s89FechaReunion(semana) {
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
+// Lección del estudiante sacada de la instrucción de WOL: «DE CASA EN CASA. (lmd lección 3 punto 4)» →
+// «lmd lección 3, punto 4». Si hay dos referencias («lff lección 19 punto 6 (th lección 19)») vale la última.
+function s89Leccion(instruccion) {
+  const ms = [...String(instruccion || '').matchAll(/\b(lmd|th|lff|be)\s+lecci[oó]n\s+(\d+)(?:\s*,?\s*punto\s+(\d+))?/gi)];
+  const m = ms[ms.length - 1];
+  if (!m) return '';
+  return `${m[1].toLowerCase()} lección ${m[2]}${m[3] ? `, punto ${m[3]}` : ''}`;
+}
+
+// «4 (lmd lección 3, punto 3)», o solo el número si la parte no trae lección
+const s89Intervencion = s => `${s.intervencion}${s.leccion ? ` (${s.leccion})` : ''}`;
+
 function s89SlipsDeSemana(semana) {
   const slips = [];
   const fecha = s89FechaReunion(semana);
   const aux   = auxEnSemana(semana.fecha, semana);
 
-  const add = (pubId, ayudanteId, intervencion, sala) => {
+  const add = (pubId, ayudanteId, intervencion, sala, leccion) => {
     const nombre = nombreDePub(pubId);
     if (!nombre) return;
-    slips.push({ nombre, ayudante: nombreDePub(ayudanteId) || '', fecha, intervencion, sala });
+    slips.push({ nombre, ayudante: nombreDePub(ayudanteId) || '', fecha, intervencion, sala, leccion });
   };
 
   // Lectura Bíblica → intervención 3
   // SP: pubId; SA: ayudante (así lo almacena el app cuando tieneAuxiliar)
-  add(semana.tesoros?.lecturaBiblica?.pubId, null, 3, 'principal');
+  const lecLectura = s89Leccion(semana.tesoros?.lecturaBiblica?.instruccion);
+  add(semana.tesoros?.lecturaBiblica?.pubId, null, 3, 'principal', lecLectura);
   if (aux) {
-    add(semana.tesoros?.lecturaBiblica?.ayudante, null, 3, 'auxiliar');
+    add(semana.tesoros?.lecturaBiblica?.ayudante, null, 3, 'auxiliar', lecLectura);
   }
 
   // Seamos Mejores Maestros → intervenciones 4, 5, 6 …
@@ -3152,9 +3169,10 @@ function s89SlipsDeSemana(semana) {
     // la da el presidente u otro anciano/siervo ministerial → no lleva S-89.
     if (esAnalisisMin(parte)) return;
     const conAyudante = !minSinAyudante(parte);
-    add(parte.pubId, conAyudante ? parte.ayudante : null, num, 'principal');
+    const lec = s89Leccion(parte.instruccion);
+    add(parte.pubId, conAyudante ? parte.ayudante : null, num, 'principal', lec);
     if (aux && parte.salaAux?.pubId) {
-      add(parte.salaAux.pubId, conAyudante ? parte.salaAux.ayudante : null, num, 'auxiliar');
+      add(parte.salaAux.pubId, conAyudante ? parte.salaAux.ayudante : null, num, 'auxiliar', lec);
     }
   });
 
@@ -3186,7 +3204,7 @@ function s89SlipHtml(s, idx) {
     </div>
     <div class="s89-campo">
       <span class="s89-etiqueta">Intervención núm.:</span>
-      <span class="s89-linea">${s.intervencion}</span>
+      <span class="s89-linea">${e(s89Intervencion(s))}</span>
     </div>
     <div class="s89-se-en">Se presentará en:</div>
     <div class="s89-opciones">
@@ -3306,7 +3324,7 @@ function s89GenerarHtml(slips, { autoPrint = false } = {}) {
   </div>
   <div style="display:flex;align-items:flex-end;gap:4px;margin-bottom:7mm;">
     <b style="white-space:nowrap;font-size:13pt;">Intervención núm.:</b>
-    <span style="flex:1;border-bottom:1.5px solid var(--k-bd-000000, #000);font-size:13pt;padding-left:4px;">${s.intervencion}</span>
+    <span style="flex:1;border-bottom:1.5px solid var(--k-bd-000000, #000);font-size:13pt;padding-left:4px;">${e(s89Intervencion(s))}</span>
   </div>
   <div style="font-size:13pt;font-weight:700;margin-bottom:5mm;">Se presentará en:</div>
   <div style="margin-left:8mm;font-size:13pt;">
