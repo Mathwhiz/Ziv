@@ -3247,12 +3247,10 @@ window.cerrarS89 = function() {
   document.getElementById('s89-overlay').style.display = 'none';
 };
 
-// Texto que acompaña a la imagen en WhatsApp: el mensaje del ayudante, o un saludo corto (los datos ya van en la imagen)
-function s89TextoWhatsapp(s) {
-  return s89Mensaje() || [
-    `Hola *${s.nombre}*! 👋 Te paso tu asignación para la reunión *Vida y Ministerio Cristianos* del *${s.fecha}*.`,
-    `Repasá tu *Guía de actividades* para prepararte. 📖`,
-  ].join('\n');
+// Texto que acompaña a la imagen en WhatsApp: solo el mensaje del ayudante. El resto manda la imagen sola
+// (cada uno escribe lo que quiera en WhatsApp).
+function s89TextoWhatsapp() {
+  return s89Mensaje();
 }
 
 // Imagen del papelito (html2canvas sobre la vista previa) como archivo JPG
@@ -3288,7 +3286,7 @@ async function s89CompartirImagen(idx, conTexto) {
     return;
   }
   uiLoading.hide();
-  const text = conTexto ? s89TextoWhatsapp(s) : undefined;
+  const text = (conTexto && s89TextoWhatsapp()) || undefined;
   if (navigator.canShare?.({ files: [file] })) {
     try { await navigator.share({ files: [file], title: `S-89 – ${s.nombre}`, text }); }
     catch { /* cancelado por el usuario */ }
