@@ -2518,15 +2518,43 @@
     // ── Salida de hoy: «Cómo llegar» ──
     // Si el encuentro es una dirección («Tellez y King», «Esq. Belgrano y Mitre») se busca en Google Maps
     // dentro de la ciudad de la congregación; si es una familia («Flia. Scalese») o no hay, al centro del territorio.
+    // Lo que va entre paréntesis es una nota («(completar el 39)») y no se busca, salvo que la dirección esté ahí
+    // («Flia. Busto (Dugu Thyen 1125)»). «Salón del Reino» va al punto del salón.
     const ES_FAMILIA = /^(flia|familia|casa|hno|hna|hermano|hermana)\b/i;
+    const PARECE_DIR = s => /\s(y|e|entre)\s/i.test(s) || /\d/.test(s);
+    function destinoEncuentro(enc) {
+      const txt = String(enc || '').trim();
+      if (!txt || txt === '—') return null;
+      const parens = [...txt.matchAll(/\(([^)]*)\)/g)].map(m => m[1].trim());
+      const base = txt.replace(/\([^)]*\)?/g, ' ').split(/\s+-\s+|[;,]/)[0].replace(/\s+/g, ' ').trim();
+      const limpiar = s => s.split(/[;,]/)[0].replace(/^esq(uina)?\.?\s*/i, '')
+        .replace(/^(.+?)\s+entre\s+(.+?)\s+y\s+.+$/i, '$1 y $2').trim();
+      if (/^sal[oó]n del reino/i.test(base)) {
+        const p = parens[0] || '';
+        return !p || /^(despu[eé]s|antes)\b/i.test(p) ? { salon: true } : null;
+      }
+      if (ES_FAMILIA.test(base)) {
+        const p = parens.find(PARECE_DIR);
+        return p ? { dir: limpiar(p) } : null;
+      }
+      return PARECE_DIR(base) ? { dir: limpiar(base) } : null;
+    }
     async function prepararComoLlegar(cid, salidas) {
-      let ciudad = '';
-      try { ciudad = (await getDoc(doc(db, 'congregaciones', cid))).data()?.ciudadPrincipal || ''; } catch {}
+      let ciudad = '', salon = null;
+      try {
+        const c = (await getDoc(doc(db, 'congregaciones', cid))).data() || {};
+        ciudad = c.ciudadPrincipal || '';
+        if (Number.isFinite(c.salonDelReino?.lat) && Number.isFinite(c.salonDelReino?.lng)) salon = c.salonDelReino;
+      } catch {}
       await Promise.all(salidas.map(async s => {
         if (s.tel) return;
-        if (s.enc && !ES_FAMILIA.test(s.enc.trim())) {
-          const dir = s.enc.replace(/^esq(uina)?\.?\s*/i, '') + (ciudad ? ', ' + ciudad : '');
-          s.llegar = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(dir);
+        const dest = destinoEncuentro(s.enc);
+        if (dest?.salon && salon) {
+          s.llegar = `https://www.google.com/maps/dir/?api=1&destination=${salon.lat.toFixed(6)},${salon.lng.toFixed(6)}`;
+          return;
+        }
+        if (dest?.dir) {
+          s.llegar = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(dest.dir + (ciudad ? ', ' + ciudad : ''));
           return;
         }
         if (!s.terr) return;
