@@ -373,6 +373,15 @@ async function irAMesDeFecha(fecha) {
  */
 async function materializarMesImportado() {
   if (_diasMes.length > 0) return;
+  // `_diasMes` puede estar vacío porque el mes todavía no terminó de cargar (o la carga falló):
+  // se confirma en la base. Si no, el total ya cargado se duplicaba como «importado» (pasó 2026-10-31).
+  const diasSnap = await getDocs(diasRef(_mesMostrado));
+  if (!diasSnap.empty) {
+    _diasMes = [];
+    diasSnap.forEach(d => _diasMes.push({ id: d.id, ...d.data() }));
+    _diasMes.sort((a, b) => b.fecha.localeCompare(a.fecha));
+    return;
+  }
   const snap = await getDoc(mesRef(_mesMostrado));
   if (!snap.exists()) return;
   const prev       = snap.data();
