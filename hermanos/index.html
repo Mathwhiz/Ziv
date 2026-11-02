@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="Ziv">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../shared/styles-base.css?v=1.5">
-  <link rel="stylesheet" href="/hermanos/styles.css?v=2.7">
+  <link rel="stylesheet" href="/hermanos/styles.css?v=2.8">
 </head>
 <body class="ziv-booting">
 <div class="ziv-boot loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div>
@@ -99,6 +99,19 @@
         <div>
           <div class="cs-module-card-title" style="color:var(--k-tx-76abff, #76abff);">Grupos</div>
           <div class="cs-module-card-sub">Ver publicadores por grupo</div>
+        </div>
+      </button>
+
+      <button class="cs-module-card" style="--card-hover-border:rgba(45,140,255,0.55);--card-hover-bg:#0f1a2b;--card-hover-shadow:0 6px 24px rgba(0,0,0,0.35),0 0 0 1px rgba(45,140,255,0.55),0 4px 20px rgba(45,140,255,0.12);" onclick="goToZoom()">
+        <div class="cs-module-card-icon" style="background:rgba(45,140,255,0.14);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="6" width="14" height="12" rx="3" stroke="#2D8CFF" stroke-width="1.8"/>
+            <path d="M16 10.5l5-3v9l-5-3" stroke="#2D8CFF" stroke-width="1.8" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="cs-module-card-title zoom-tx-azul" style="color:var(--k-tx-5ea4ff, #5ea4ff);">Salas de Zoom</div>
+          <div class="cs-module-card-sub">Reuniones y telefónica: link, ID y horarios</div>
         </div>
       </button>
 
@@ -256,6 +269,57 @@
     <div id="especiales-resumen"></div>
     <div id="especiales-lista"><div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div></div>
 
+    <div style="height:2rem;"></div>
+  </div>
+
+  <!-- ── SALAS DE ZOOM (congregaciones/{id}/zoom, ver docs/zoom.md) ── -->
+  <div id="view-zoom" class="view">
+    <div class="main-header">
+      <div>
+        <div class="main-title zoom-tx-azul" style="color:var(--k-tx-5ea4ff, #5ea4ff);">Salas de Zoom</div>
+        <div class="main-sub js-congre">—</div>
+      </div>
+      <button class="btn-esp-add" onclick="abrirSalaZoom(null)" title="Agregar sala" aria-label="Agregar sala">+</button>
+    </div>
+    <p class="zoom-ayuda">En el menú de cada hermano aparece «Unirse» desde 15 minutos antes de cada horario, en los días marcados.</p>
+
+    <div id="zoom-lista"><div class="loading-wrap"><div class="spinner"></div><div class="loading-txt">Cargando…</div></div></div>
+
+    <div id="zoom-form" class="zoom-form" style="display:none;">
+      <div class="zoom-form-t" id="zoom-form-t">Nueva sala</div>
+      <label class="zoom-l">Link de invitación <span>(opcional, el que manda Zoom con ?pwd=)</span>
+        <input id="zf-link" type="url" inputmode="url" placeholder="https://jworg.zoom.us/j/…?pwd=…" autocomplete="off">
+      </label>
+      <label class="zoom-l">Nombre
+        <input id="zf-nombre" placeholder="Reunión del fin de semana" autocomplete="off">
+      </label>
+      <div class="zoom-dos">
+        <label class="zoom-l">ID de reunión<input id="zf-id" inputmode="numeric" placeholder="825 1073 7243" autocomplete="off"></label>
+        <label class="zoom-l">Clave<input id="zf-clave" placeholder="123456" autocomplete="off"></label>
+      </div>
+      <div class="zoom-l">Para</div>
+      <div class="zoom-chips" id="zf-uso">
+        <button type="button" data-uso="reunion">Reunión</button>
+        <button type="button" data-uso="predicacion">Predicación</button>
+      </div>
+      <div class="zoom-l">Días</div>
+      <div class="zoom-chips" id="zf-dias">
+        <button type="button" data-dia="1">Lun</button><button type="button" data-dia="2">Mar</button>
+        <button type="button" data-dia="3">Mié</button><button type="button" data-dia="4">Jue</button>
+        <button type="button" data-dia="5">Vie</button><button type="button" data-dia="6">Sáb</button>
+        <button type="button" data-dia="0">Dom</button>
+      </div>
+      <label class="zoom-l">Horarios <span>(separados por coma)</span>
+        <input id="zf-horas" placeholder="10:00, 18:30" autocomplete="off">
+      </label>
+      <div class="zoom-acciones">
+        <button type="button" class="btn-secondary" onclick="cerrarSalaZoom()">Cancelar</button>
+        <button type="button" class="btn-primary" onclick="guardarSalaZoom()">Guardar</button>
+      </div>
+      <button type="button" class="zoom-borrar" id="zf-borrar" onclick="borrarSalaZoom()">Borrar sala</button>
+    </div>
+
+    <a href="#" class="cs-back-btn" onclick="showView('view-menu');return false;">← Volver</a>
     <div style="height:2rem;"></div>
   </div>
 

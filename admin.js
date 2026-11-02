@@ -650,7 +650,7 @@ async function editCongre(id) {
 // al eliminar (y se pierde al renombrar).
 const CONGRE_SUBCOLS = [
   'grupos', 'territorios', 'salidas', 'publicadores', 'asignaciones', 'semanasEspeciales',
-  'vidaministerio', 'vmMeses', 'conferencias', 'congregacionesCircuito', 'edificios',
+  'vidaministerio', 'vmMeses', 'conferencias', 'congregacionesCircuito', 'edificios', 'zoom',
   'mapa_config', 'mapa_grupos', 'mapa_territorios', 'config_privada',
   'vm_config', 'vm_programa', 'vm_publicadores', 'vm_especiales',
   'asig_config', 'asig_programa', 'asig_especiales', 'actividad', 'visitas_mapa',

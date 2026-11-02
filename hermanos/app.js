@@ -1,6 +1,7 @@
 import { db } from '../shared/firebase.js';
 import '../shared/auth.js';
 import { logActividad } from '../shared/actividad.js';
+import { leerSalasZoom, leerLinkZoom, fmtIdZoom, soloDigitos } from '../shared/zoom.js?v=1';
 import {
   collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, setDoc, query, orderBy, limit, Timestamp
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
@@ -232,6 +233,129 @@ window.goToResponsabilidades = async function() {
 window.goToGrupos = async function() {
   showView('view-grupos');
   await cargarVistaGrupos();
+};
+
+// ─────────────────────────────────────────
+//   SALAS DE ZOOM (congregaciones/{id}/zoom — el menú muestra «Unirse» 15 min antes, ver shared/zoom.js)
+// ─────────────────────────────────────────
+const DIAS_CORTO = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+let _salasZoom = [];
+let _zoomEditId = null;
+const zoomCol = () => collection(db, 'congregaciones', CONGRE_ID, 'zoom');
+
+window.goToZoom = async function() {
+  showView('view-zoom');
+  cerrarSalaZoom();
+  await cargarSalasZoom();
+};
+
+async function cargarSalasZoom() {
+  const cont = document.getElementById('zoom-lista');
+  try {
+    _salasZoom = await leerSalasZoom(db, CONGRE_ID);
+  } catch (e) {
+    cont.innerHTML = '<div class="zoom-vacio">No se pudieron cargar las salas.</div>';
+    return;
+  }
+  const diasTxt = d => [1, 2, 3, 4, 5, 6, 0].filter(x => (d || []).includes(x)).map(x => DIAS_CORTO[x]).join(' ');
+  cont.innerHTML = _salasZoom.length ? _salasZoom.map(s => `
+    <button type="button" class="zoom-sala" onclick="abrirSalaZoom('${esc(s.id)}')">
+      <span>
+        <span class="zoom-sala-t">${esc(s.nombre || 'Sin nombre')}<span class="zoom-uso${s.uso === 'predicacion' ? ' pred">PREDICACIÓN' : '">REUNIÓN'}</span></span>
+        <span class="zoom-sala-s">${esc(diasTxt(s.dias))} · ${esc((s.horas || []).join(', ') || 'sin horario')}</span>
+        <span class="zoom-sala-s">ID ${esc(fmtIdZoom(s.meetingId) || '—')}${s.clave ? ' · Clave ' + esc(s.clave) : ''}${s.link ? ' · con link' : ''}</span>
+      </span>
+    </button>`).join('') : '<div class="zoom-vacio">Todavía no hay salas. Tocá + para agregar una.</div>';
+}
+
+function zoomChips(id, attr, activos) {
+  document.querySelectorAll(`#${id} [${attr}]`).forEach(b => b.classList.toggle('on', activos.includes(b.getAttribute(attr))));
+}
+
+window.abrirSalaZoom = function(id) {
+  _zoomEditId = id;
+  const s = _salasZoom.find(x => x.id === id) || { uso: 'reunion', dias: [], horas: [] };
+  document.getElementById('zoom-form-t').textContent = id ? 'Editar sala' : 'Nueva sala';
+  document.getElementById('zf-link').value   = s.link || '';
+  document.getElementById('zf-nombre').value = s.nombre || '';
+  document.getElementById('zf-id').value     = fmtIdZoom(s.meetingId || '');
+  document.getElementById('zf-clave').value  = s.clave || '';
+  document.getElementById('zf-horas').value  = (s.horas || []).join(', ');
+  zoomChips('zf-uso', 'data-uso', [s.uso || 'reunion']);
+  zoomChips('zf-dias', 'data-dia', (s.dias || []).map(String));
+  document.getElementById('zf-borrar').style.display = id ? '' : 'none';
+  const form = document.getElementById('zoom-form');
+  form.style.display = '';
+  form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+window.cerrarSalaZoom = function() {
+  _zoomEditId = null;
+  document.getElementById('zoom-form').style.display = 'none';
+};
+
+document.getElementById('zf-uso').addEventListener('click', e => {
+  const b = e.target.closest('[data-uso]');
+  if (b) zoomChips('zf-uso', 'data-uso', [b.dataset.uso]);
+});
+document.getElementById('zf-dias').addEventListener('click', e => {
+  const b = e.target.closest('[data-dia]');
+  if (b) b.classList.toggle('on');
+});
+// Al pegar el link de invitación se completa el ID (la clave del link es cifrada: la que se tipea va aparte)
+document.getElementById('zf-link').addEventListener('input', e => {
+  const r = leerLinkZoom(e.target.value);
+  if (r) document.getElementById('zf-id').value = fmtIdZoom(r.id);
+});
+
+window.guardarSalaZoom = async function() {
+  const link = document.getElementById('zf-link').value.trim();
+  const nombre = document.getElementById('zf-nombre').value.trim();
+  const meetingId = soloDigitos(document.getElementById('zf-id').value);
+  const clave = document.getElementById('zf-clave').value.trim();
+  const uso = document.querySelector('#zf-uso .on')?.dataset.uso || 'reunion';
+  const dias = [...document.querySelectorAll('#zf-dias .on')].map(b => Number(b.dataset.dia));
+  const horasTxt = document.getElementById('zf-horas').value.split(/[,;\s]+/).filter(Boolean);
+  const horas = horasTxt.map(h => {
+    const m = /^(\d{1,2})(?:[:.](\d{2}))?$/.exec(h);
+    return m && +m[1] < 24 && +(m[2] || 0) < 60 ? `${m[1].padStart(2, '0')}:${m[2] || '00'}` : null;
+  });
+  if (!nombre) return uiToast('Falta el nombre', 'error');
+  if (link && !leerLinkZoom(link)) return uiToast('El link no parece de Zoom (https://…zoom.us/j/…)', 'error');
+  if (meetingId.length < 9 || meetingId.length > 11) return uiToast('El ID de reunión tiene 9 a 11 números', 'error');
+  if (horas.includes(null)) return uiToast('Horario no válido: usá 10:00, 18:30…', 'error');
+  if (!dias.length || !horas.length) return uiToast('Marcá al menos un día y un horario', 'error');
+  const data = { nombre, uso, link, meetingId, clave, dias, horas: [...new Set(horas)].sort(),
+    orden: _salasZoom.find(s => s.id === _zoomEditId)?.orden ?? _salasZoom.length + 1 };
+  uiLoading.show('Guardando…');
+  try {
+    if (_zoomEditId) await setDoc(doc(zoomCol(), _zoomEditId), data);
+    else await addDoc(zoomCol(), data);
+    logActividad(CONGRE_ID, 'hermanos', 'guardado', `Sala de Zoom: ${nombre}`);
+    uiToast('Sala guardada', 'success');
+    cerrarSalaZoom();
+    await cargarSalasZoom();
+  } catch (e) {
+    console.error(e);
+    uiToast('No se pudo guardar: ' + (e.code || e.message), 'error');
+  } finally {
+    uiLoading.hide();
+  }
+};
+
+window.borrarSalaZoom = async function() {
+  const s = _salasZoom.find(x => x.id === _zoomEditId);
+  if (!s) return;
+  const ok = await uiConfirm({ title: 'Borrar sala', msg: `¿Borrar «${s.nombre}»? El botón de Zoom deja de aparecer en el menú.`, confirmText: 'Borrar', type: 'danger' });
+  if (!ok) return;
+  try {
+    await deleteDoc(doc(zoomCol(), s.id));
+    uiToast('Sala borrada', 'success');
+    cerrarSalaZoom();
+    await cargarSalasZoom();
+  } catch (e) {
+    uiToast('No se pudo borrar: ' + (e.code || e.message), 'error');
+  }
 };
 
 // ─────────────────────────────────────────

@@ -258,6 +258,8 @@ service cloud.firestore {
       match /territorios/{id=**}   { allow read: if isMember(c); allow write: if hasCongreRole(c, rolesTerr()); }
       match /salidas/{id}          { allow read: if isMember(c); allow write: if hasCongreRole(c, rolesTerr()); }
       match /grupos/{id}           { allow read: if isMember(c); allow write: if hasCongreRole(c, ['admin_congre']); }
+      // Salas de Zoom (link, ID y clave): las ve cualquier miembro, las editan los encargados de Administrador
+      match /zoom/{id}             { allow read: if isMember(c); allow write: if hasCongreRole(c, rolesAsig()); }
 
       // Edificios (predicación por portero): solo rolesEdif() (encargado de edificios, ancianos, siervos
       // ministeriales) y admin_general leen, marcan timbres, asignan responsables, crean y borran.

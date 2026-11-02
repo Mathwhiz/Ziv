@@ -1,6 +1,7 @@
 import { db } from '../shared/firebase.js';
 import '../shared/auth.js';
 import { logActividad } from '../shared/actividad.js';
+import { leerSalasZoom, fmtIdZoom } from '../shared/zoom.js?v=1';
 import {
   collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, Timestamp,
@@ -768,18 +769,31 @@ function renderSalidas() {
   pintarSalidas();
 }
 
-// Congregación: telefónica fija de lunes a sábado (sale en la imagen; no se guarda como salida)
-function pintarTelFija() {
+// Congregación: telefónica fija de lunes a sábado (sale en la imagen; no se guarda como salida).
+// ID, clave y horarios vienen de la primera sala de Zoom de predicación (Administrador → Salas de Zoom).
+let telFija = null;
+let _telFijaP = null;
+const salaTelFija = () => _telFijaP ||= leerSalasZoom(db, CONGRE_ID)
+  .then(s => (telFija = s.find(x => x.uso === 'predicacion') || null))
+  .catch(() => null);
+const textoTelFija = () => telFija
+  ? `ID ${fmtIdZoom(telFija.meetingId)}${telFija.clave ? ' · Clave ' + telFija.clave : ''}`
+  : 'Sin sala cargada (Administrador → Salas de Zoom)';
+
+async function pintarTelFija() {
   const c = document.getElementById('tel-fija');
   if (selectedGrupo !== 'C') { c.innerHTML = ''; return; }
+  await salaTelFija();
+  if (selectedGrupo !== 'C') return;
+  const [manana = '10:00', tarde = '18:30'] = telFija?.horas || [];
   c.innerHTML = `
     <div class="tf-sal tf-sal-fija">
       <div class="tf-fija-in">
         <div class="tf-sal-t"><span class="tf-tel">📞 Telefónica fija</span> · Lunes a Sábado</div>
-        <div class="tf-sal-s">ID 844 0225 6636 · Clave 479104</div>
+        <div class="tf-sal-s">${esc(textoTelFija())}</div>
         <div class="tf-dos tf-campo">
-          <div><label>Hora mañana</label><input type="time" id="tel-fija-manana" value="10:00"></div>
-          <div><label>Hora tarde</label><input type="time" id="tel-fija-tarde" value="17:00"></div>
+          <div><label>Hora mañana</label><input type="time" id="tel-fija-manana" value="${esc(manana)}"></div>
+          <div><label>Hora tarde</label><input type="time" id="tel-fija-tarde" value="${esc(tarde)}"></div>
         </div>
       </div>
     </div>`;
@@ -1207,9 +1221,10 @@ function generatePreview() {
   const rows = [];
   if (selectedGrupo === 'C') {
     const horaMan = document.getElementById('tel-fija-manana')?.value || '10:00';
-    const horaTar = document.getElementById('tel-fija-tarde')?.value  || '17:00';
-    rows.push({ enc:'ID: 844 0225 6636 · Clave: 479104', terr:'TELEFÓNICA', tel:true, badge:'<div class="dia-badge" style="background:var(--k-bg-0a2e24, #0a2e24);color:var(--k-tx-5dcaa5, #5DCAA5);">Lun a Sáb</div>', fecha:'', cond:'—', hora:horaMan.replace(':','.') });
-    rows.push({ enc:'ID: 844 0225 6636 · Clave: 479104', terr:'TELEFÓNICA', tel:true, badge:'<div class="dia-badge" style="background:var(--k-bg-0a2e24, #0a2e24);color:var(--k-tx-5dcaa5, #5DCAA5);">Lun a Sáb</div>', fecha:'', cond:'—', hora:horaTar.replace(':','.') });
+    const horaTar = document.getElementById('tel-fija-tarde')?.value  || '18:30';
+    const encFija = esc(textoTelFija().replace(/^ID /, 'ID: ').replace(' · Clave ', ' · Clave: '));
+    rows.push({ enc:encFija, terr:'TELEFÓNICA', tel:true, badge:'<div class="dia-badge" style="background:var(--k-bg-0a2e24, #0a2e24);color:var(--k-tx-5dcaa5, #5DCAA5);">Lun a Sáb</div>', fecha:'', cond:'—', hora:horaMan.replace(':','.') });
+    rows.push({ enc:encFija, terr:'TELEFÓNICA', tel:true, badge:'<div class="dia-badge" style="background:var(--k-bg-0a2e24, #0a2e24);color:var(--k-tx-5dcaa5, #5DCAA5);">Lun a Sáb</div>', fecha:'', cond:'—', hora:horaTar.replace(':','.') });
   }
   salidas.forEach(s => {
     const fecha = s.fecha || '';
